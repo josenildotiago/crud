@@ -14,6 +14,7 @@ class CrudGenerator extends GeneratorCommand
      */
     protected $signature = 'getic:crud
                             {name : Table name}
+                            {stack=heron : name da stack}
                             {--route= : Custom route name}';
 
     /**
@@ -21,7 +22,7 @@ class CrudGenerator extends GeneratorCommand
      *
      * @var string
      */
-    protected $description = 'Criar operações CRUD de bootstrap';
+    protected $description = 'Criar operações CRUD de bootstrap|tailwind';
 
     /**
      * Execute the console command.
@@ -126,6 +127,7 @@ class CrudGenerator extends GeneratorCommand
      */
     protected function buildViews()
     {
+        $stack = $this->argument('stack');
         $this->info('Criando Views ...');
 
         $tableHead = "\n";
@@ -150,16 +152,70 @@ class CrudGenerator extends GeneratorCommand
         ]);
 
         // $this->buildLayout();
+        switch ($stack) {
+            case 'heron':
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/{$view}")
+                    );
 
-        foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-            $viewTemplate = str_replace(
-                array_keys($replace),
-                array_values($replace),
-                $this->getStub("views/{$view}")
-            );
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
+            case 'blade-vue':
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/vue/{$view}")
+                    );
 
-            $this->write($this->_getViewPath($view), $viewTemplate);
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
+            case 'blade-bootstrap':
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/bootstrap/{$view}")
+                    );
+
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
+            case 'vue':
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/vue/{$view}")
+                    );
+
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
+            default:
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/{$view}")
+                    );
+
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
         }
+        // foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+        //     $viewTemplate = str_replace(
+        //         array_keys($replace), array_values($replace), $this->getStub("views/{$view}")
+        //     );
+
+        //     $this->write($this->_getViewPath($view), $viewTemplate);
+        // }
         $this->info('View adicionadas com sucesso.');
         return $this;
     }
