@@ -160,7 +160,7 @@ class CrudGenerator extends GeneratorCommand
 
             $this->write($this->_getViewPath($view), $viewTemplate);
         }
-
+        $this->info('View adicionadas com sucesso.');
         return $this;
     }
 
@@ -206,24 +206,5 @@ class CrudGenerator extends GeneratorCommand
         $this->files->put($webPath, $newWebContent);
 
         $this->info('Rotas adicionadas com sucesso.');
-
-        // ----------------------------------------------------------------
-        // $replace = $this->buildReplacements();
-
-        // $routesTemplate = str_replace(
-        //     array_keys($replace),
-        //     array_values($replace),
-        //     $this->getStub('routes')
-        // );
-
-        // file_put_contents(
-        //     base_path('routes/web.php'),
-        //     file_get_contents(__DIR__ . '/../../src/stubs/routes.stub'),
-        //     FILE_APPEND
-        // );
-
-        // $this->write($controllerPath, $routesTemplate);
-
-        // return $this;
     }
 }
