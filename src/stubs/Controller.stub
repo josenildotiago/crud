@@ -104,6 +104,6 @@ class {{modelName}}Controller extends Controller
         ${{modelNameLowerCase}} = {{modelName}}::find($id)->delete();
 
         return redirect()->route('{{modelRouteNotPlural}}.index')
-            ->with('success', '${{modelNameLowerCase}}->name deletado com sucesso.');
+            ->with('success', 'Deletado com sucesso.');
     }
 }
