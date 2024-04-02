@@ -1,0 +1,7 @@
+Route::get('{{modelNameLowerCase}}-index', [\App\Http\Controllers\{{modelName}}Controller::class, 'index'])->name('{{modelNameLowerCase}}.index');
+Route::get('{{modelNameLowerCase}}-show/{id}', [\App\Http\Controllers\{{modelName}}Controller::class, 'show'])->name('{{modelNameLowerCase}}.show');
+Route::get('{{modelNameLowerCase}}-create', [\App\Http\Controllers\{{modelName}}Controller::class, 'create'])->name('{{modelNameLowerCase}}.create');
+Route::get('{{modelNameLowerCase}}-edit/{id}', [\App\Http\Controllers\{{modelName}}Controller::class, 'edit'])->name('{{modelNameLowerCase}}.edit');
+Route::post('{{modelNameLowerCase}}-store', [\App\Http\Controllers\{{modelName}}Controller::class, 'store'])->name('{{modelNameLowerCase}}.store');
+Route::put('{{modelNameLowerCase}}-update', [\App\Http\Controllers\{{modelName}}Controller::class, 'update'])->name('{{modelNameLowerCase}}.update');
+Route::delete('{{modelNameLowerCase}}-destroy/{id}', [\App\Http\Controllers\{{modelName}}Controller::class, 'destroy'])->name('{{modelNameLowerCase}}.destroy');

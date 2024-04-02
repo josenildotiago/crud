@@ -1,0 +1,35 @@
+{
+    "name": "josenildotiago/crud",
+    "description": "Simple CRUD creation package in Laravel",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Crud\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            
+        }
+    },
+    "authors": [
+        {
+            "name": "josenildotiagosilva",
+            "email": "josenildo.tiago.designer@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "orchestra/testbench": "^7.7"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Crud\\CrudServiceProvider"
+            ],
+            "aliases": {
+                "crud": "Crud\\Facades\\Crud"
+            }
+        }
+    },
+    "version": "1.0.0"
+}
