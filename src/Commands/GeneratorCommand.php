@@ -44,6 +44,7 @@ abstract class GeneratorCommand extends Command
      * @var string
      */
     protected $table = null;
+    protected $stack = 'heron';
 
     /**
      * Formatted Class name from Table.
@@ -51,6 +52,7 @@ abstract class GeneratorCommand extends Command
      * @var string
      */
     protected $nameTable = null;
+    protected $nameStack = '';
 
     /**
      * Store the DB table columns.
@@ -497,6 +499,14 @@ abstract class GeneratorCommand extends Command
     protected function getNameInput()
     {
         return trim($this->argument('name'));
+    }
+
+    protected function getNameSatck()
+    {
+        $stackWithPrefix = trim($this->argument('stack'));
+        $stackParts = explode('=', $stackWithPrefix);
+        return isset($stackParts[1]) ? trim($stackParts[1]) : '';
+        // return trim($this->argument('stack'));
     }
 
     /**

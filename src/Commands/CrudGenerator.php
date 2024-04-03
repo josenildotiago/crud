@@ -36,7 +36,9 @@ class CrudGenerator extends GeneratorCommand
         $this->info('Gerador de Crud da GETIC em execução ...');
 
         $this->table = $this->getNameInput();
+        $this->stack = $this->getNameSatck();
         $this->nameTable = $this->table;
+        $this->nameStack = $this->stack;
 
         // If table not exist in DB return
         if (!$this->tableExists()) {
@@ -127,8 +129,8 @@ class CrudGenerator extends GeneratorCommand
      */
     protected function buildViews()
     {
-        $stack = $this->argument('stack');
-        $this->info('Criando Views ...');
+        $stack = trim($this->argument('stack'));
+        $this->info("Criando Views $this->nameStack...");
 
         $tableHead = "\n";
         $tableBody = "\n";
@@ -152,24 +154,35 @@ class CrudGenerator extends GeneratorCommand
         ]);
 
         // $this->buildLayout();
-        switch ($stack) {
+        switch ($this->nameStack) {
             case 'heron':
                 foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
                     $viewTemplate = str_replace(
                         array_keys($replace),
                         array_values($replace),
-                        $this->getStub("views/{$view}")
+                        $this->getStub("views/heron/{$view}")
                     );
 
                     $this->write($this->_getViewPath($view), $viewTemplate);
                 }
                 break;
-            case 'blade-vue':
+            case 'vue-tailwind':
                 foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
                     $viewTemplate = str_replace(
                         array_keys($replace),
                         array_values($replace),
-                        $this->getStub("views/vue/{$view}")
+                        $this->getStub("views/vue-tailwind/{$view}")
+                    );
+
+                    $this->write($this->_getViewPath($view), $viewTemplate);
+                }
+                break;
+            case 'vue-bootstrap':
+                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
+                    $viewTemplate = str_replace(
+                        array_keys($replace),
+                        array_values($replace),
+                        $this->getStub("views/vue-bootstrap/{$view}")
                     );
 
                     $this->write($this->_getViewPath($view), $viewTemplate);
@@ -180,18 +193,18 @@ class CrudGenerator extends GeneratorCommand
                     $viewTemplate = str_replace(
                         array_keys($replace),
                         array_values($replace),
-                        $this->getStub("views/bootstrap/{$view}")
+                        $this->getStub("views/blade-bootstrap/{$view}")
                     );
 
                     $this->write($this->_getViewPath($view), $viewTemplate);
                 }
                 break;
-            case 'vue':
+            case 'blade-tailwind':
                 foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
                     $viewTemplate = str_replace(
                         array_keys($replace),
                         array_values($replace),
-                        $this->getStub("views/vue/{$view}")
+                        $this->getStub("views/blade-tailwind/{$view}")
                     );
 
                     $this->write($this->_getViewPath($view), $viewTemplate);
