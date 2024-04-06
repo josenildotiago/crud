@@ -1,65 +1,135 @@
 <?php
 
-namespace Crud\Commands;
+namespace Crud\Console;
 
+use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use RuntimeException;
+use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Process\PhpExecutableFinder;
+use Symfony\Component\Process\Process;
 
+use function Laravel\Prompts\confirm;
+use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\select;
+use function Laravel\Prompts\text;
 
-class CrudGenerator extends GeneratorCommand
+#[AsCommand(name: 'getic:install')]
+class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'getic:crud
-                            {name : Table name}
-                            {stack=heron : name da stack}
-                            {--route= : Custom route name}';
+    protected $signature = 'getic:install {name : Table name}
+                                            {--stack : name da stack}
+                                            {--route= : Custom route name}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Criar operações CRUD de bootstrap|tailwind';
+    protected $description = 'Cria um simples template com base no banco de dados';
 
     /**
      * Execute the console command.
      *
-     * @return bool|null
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     *
+     * @return int|null
      */
     public function handle()
     {
-        $this->info('Gerador de Crud da GETIC em execução ...');
-
         $this->table = $this->getNameInput();
-        $this->stack = $this->getNameSatck();
+        $this->stack = $this->template;
         $this->nameTable = $this->table;
         $this->nameStack = $this->stack;
 
         // If table not exist in DB return
         if (!$this->tableExists()) {
-            $this->error("`{$this->table}` tabela nao existe");
+            $this->components->error("Esta tabela `{$this->table}` nao existe");
 
             return false;
         }
 
-        // Build the class name from table name
         $this->name = $this->_buildClassName();
 
-        // Generate the crud
+        $this->components->info('Gerador de Crud da GETIC em execução');
         $this->buildOptions()
             ->buildController()
             ->buildModel()
             ->buildViews()
             ->buildRouter();
+        $this->components->info('Criado com sucesso');
+        return 1;
+    }
 
-        $this->info('Criado com sucesso.');
+    /**
+     * Run the given commands.
+     *
+     * @param  array  $commands
+     * @return void
+     */
+    protected function runCommands($commands)
+    {
+        $process = Process::fromShellCommandline(implode(' && ', $commands), null, null, null, null);
 
-        return true;
+        if ('\\' !== DIRECTORY_SEPARATOR && file_exists('/dev/tty') && is_readable('/dev/tty')) {
+            try {
+                $process->setTty(true);
+            } catch (RuntimeException $e) {
+                $this->output->writeln('  <bg=yellow;fg=black> WARN </> ' . $e->getMessage() . PHP_EOL);
+            }
+        }
+
+        $process->run(function ($type, $line) {
+            $this->output->write('    ' . $line);
+        });
+    }
+
+    /**
+     * Prompt for missing input arguments using the returned questions.
+     *
+     * @return array
+     */
+    protected function promptForMissingArgumentsUsing()
+    {
+        return [
+            'name' => fn () => select(
+                label: 'Qual tabela você deseja?',
+                options: $this->getAllTableNames(),
+            )
+        ];
+    }
+
+    /**
+     * Interact further with the user if they were prompted for missing arguments.
+     *
+     * @param  \Symfony\Component\Console\Input\InputInterface  $input
+     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
+     * @return void
+     */
+    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    {
+        $input = select(
+            label: 'Deseja algum Template?',
+            options: [
+                'heron' => "Padrão GETIC",
+                'blade-bootstrap' => 'Blade com bootstrap',
+                'blade-tailwind' => 'Blade com tailwind',
+                'vue-bootstrap' => 'Vue com bootstrap',
+                'vue-tailwind' => 'Vue com tailwind',
+            ],
+            default: 'heron',
+            hint: 'GETIC é um bootstrap modificado por Heronildes'
+        );
+        $this->template = $input;
     }
 
     /**
@@ -73,11 +143,15 @@ class CrudGenerator extends GeneratorCommand
     {
         $controllerPath = $this->_getControllerPath($this->name);
 
-        if ($this->files->exists($controllerPath) && $this->ask('Já existe Controlador. Deseja substituir (y/n)?', 'y') == 'n') {
+        if ($this->files->exists($controllerPath) && !confirm(
+            label: 'Este Controlador já existe. Você quer sobrescrever?',
+            default: false,
+            hint: 'Mesmo que opte por não sobrescrever, o fluxo seguirá normalmente'
+        )) {
             return $this;
         }
 
-        $this->info('Criando Controller ...');
+        $this->components->info('Criando Controller ...');
 
         $replace = $this->buildReplacements();
 
@@ -101,11 +175,15 @@ class CrudGenerator extends GeneratorCommand
     {
         $modelPath = $this->_getModelPath($this->name);
 
-        if ($this->files->exists($modelPath) && $this->ask('Já existe Model. Você quer sobrescrever (y/n)?', 'y') == 'n') {
+        if ($this->files->exists($modelPath) && !confirm(
+            label: 'Esta Model já existe. Você quer sobrescrever?',
+            default: false,
+            hint: 'Mesmo que opte por não sobrescrever, o fluxo seguirá normalmente'
+        )) {
             return $this;
         }
 
-        $this->info('Criando Model ...');
+        $this->components->info('Criando Model ...');
 
         // Make the models attributes and replacement
         $replace = array_merge($this->buildReplacements(), $this->modelReplacements());
@@ -129,8 +207,7 @@ class CrudGenerator extends GeneratorCommand
      */
     protected function buildViews()
     {
-        $stack = trim($this->argument('stack'));
-        $this->info("Criando Views $this->nameStack...");
+        $this->components->info("Criando Views $this->nameStack...");
 
         $tableHead = "\n";
         $tableBody = "\n";
@@ -222,14 +299,7 @@ class CrudGenerator extends GeneratorCommand
                 }
                 break;
         }
-        // foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-        //     $viewTemplate = str_replace(
-        //         array_keys($replace), array_values($replace), $this->getStub("views/{$view}")
-        //     );
-
-        //     $this->write($this->_getViewPath($view), $viewTemplate);
-        // }
-        $this->info('View adicionadas com sucesso.');
+        $this->components->info('View adicionadas com sucesso.');
         return $this;
     }
 
@@ -252,7 +322,7 @@ class CrudGenerator extends GeneratorCommand
      */
     public function buildRouter()
     {
-        $this->info('Criando rotas ...');
+        $this->components->info('Criando rotas ...');
         $webPath = base_path('routes/web.php');
 
         // Caminho para o stub de rotas
@@ -274,6 +344,6 @@ class CrudGenerator extends GeneratorCommand
         // Escreve o novo conteúdo de volta ao arquivo web.php
         $this->files->put($webPath, $newWebContent);
 
-        $this->info('Rotas adicionadas com sucesso.');
+        $this->components->info('Rotas adicionadas com sucesso.');
     }
 }

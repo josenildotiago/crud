@@ -3,35 +3,43 @@
 namespace Crud;
 
 use Illuminate\Support\ServiceProvider;
-use Crud\Commands\CrudGenerator;
+use Illuminate\Contracts\Support\DeferrableProvider;
 
-class CrudServiceProvider extends ServiceProvider
+class CrudServiceProvider extends ServiceProvider implements DeferrableProvider
 {
     /**
-     * Bootstrap services.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                CrudGenerator::class,
-            ]);
-        }
-
-        $this->publishes([
-            __DIR__ . '/config/crud.php' => config_path('crud.php'),
-        ], 'crud');
-    }
-
-    /**
-     * Register services.
+     * Register any application services.
      *
      * @return void
      */
     public function register()
     {
         //
+    }
+
+    /**
+     * Bootstrap any application services.
+     *
+     * @return void
+     */
+    public function boot()
+    {
+        if (!$this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->commands([
+            Console\InstallCommand::class,
+        ]);
+    }
+
+    /**
+     * Get the services provided by the provider.
+     *
+     * @return array
+     */
+    public function provides()
+    {
+        return [Console\InstallCommand::class];
     }
 }

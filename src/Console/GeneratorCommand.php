@@ -1,11 +1,12 @@
 <?php
 
-namespace Crud\Commands;
+namespace Crud\Console;
 
 use Crud\ModelGenerator;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -16,6 +17,7 @@ use Symfony\Component\Console\Input\InputArgument;
  */
 abstract class GeneratorCommand extends Command
 {
+    use buildOptions;
     /**
      * The filesystem instance.
      *
@@ -45,6 +47,7 @@ abstract class GeneratorCommand extends Command
      */
     protected $table = null;
     protected $stack = 'heron';
+    protected $template = null;
 
     /**
      * Formatted Class name from Table.
@@ -501,29 +504,29 @@ abstract class GeneratorCommand extends Command
         return trim($this->argument('name'));
     }
 
-    protected function getNameSatck()
-    {
-        $stackWithPrefix = trim($this->argument('stack'));
-        $stackParts = explode('=', $stackWithPrefix);
-        return isset($stackParts[1]) ? trim($stackParts[1]) : '';
-        // return trim($this->argument('stack'));
-    }
+    // protected function getNameSatck()
+    // {
+    //     $stackWithPrefix = trim($this->argument('stack'));
+    //     $stackParts = explode('=', $stackWithPrefix);
+    //     return isset($stackParts[1]) ? trim($stackParts[1]) : '';
+    //     // return trim($this->argument('stack'));
+    // }
 
     /**
      * Build the options
      *
      * @return $this|array
      */
-    protected function buildOptions()
-    {
-        $route = $this->option('route');
+    // protected function buildOptions()
+    // {
+    //     $route = $this->option('route');
 
-        if (!empty($route)) {
-            $this->options['route'] = $route;
-        }
+    //     if (!empty($route)) {
+    //         $this->options['route'] = $route;
+    //     }
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     /**
      * Get the console command arguments.
@@ -545,5 +548,25 @@ abstract class GeneratorCommand extends Command
     protected function tableExists()
     {
         return Schema::hasTable($this->table);
+    }
+
+    /**
+     * Get all table names.
+     *
+     * @return array
+     */
+    protected function getAllTableNames()
+    {
+        $tableNames = [];
+
+        // Get all table names from the database
+        $tablesInfo = DB::select('SHOW TABLES');
+
+        foreach ($tablesInfo as $tableInfo) {
+            $tableName = reset($tableInfo);
+            $tableNames[] = $tableName;
+        }
+
+        return $tableNames;
     }
 }

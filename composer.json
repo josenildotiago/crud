@@ -19,10 +19,16 @@
         }
     },
     "require": {
-        "php": ">=8.0.0"
+        "php": ">=8.0.0",
+        "illuminate/console": "^10.0",
+        "illuminate/filesystem": "^10.0|^11.0",
+        "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
+        "illuminate/validation": "^10.0",
+        "symfony/console": "^6.0|^7.0",
+        "laravel/prompts": "^0.1.17"
     },
     "require-dev": {
-        "orchestra/testbench": "^7.7"
+        "orchestra/testbench": "^7.7|^8.0"
     },
     "extra": {
         "laravel": {
@@ -34,5 +40,5 @@
             }
         }
     },
-    "version": "1.1.1"
+    "version": "2.0.0"
 }
