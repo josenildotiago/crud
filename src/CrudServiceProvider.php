@@ -31,6 +31,10 @@ class CrudServiceProvider extends ServiceProvider implements DeferrableProvider
         $this->commands([
             Console\InstallCommand::class,
         ]);
+
+        $this->publishes([
+            __DIR__ . '/config/crud.php' => base_path('config/crud.php'),
+        ], 'config');
     }
 
     /**
