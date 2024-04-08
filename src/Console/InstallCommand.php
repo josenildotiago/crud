@@ -185,6 +185,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      */
     protected function buildModel()
     {
+        //descobre onde é a pasta Models
         $modelPath = $this->_getModelPath($this->name);
 
         if ($this->files->exists($modelPath) && !confirm(
@@ -196,16 +197,16 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         }
 
         $this->components->info('Criando Model ...');
-
+        $relatedTablePlural = Str::camel($this->relationship);
+        $relatedTable = Str::studly(Str::singular($relatedTablePlural));
+        $relacao = $this->getRelations($relatedTablePlural, $relatedTable, 'relations');
         // Make the models attributes and replacement
         $replace = array_merge($this->buildReplacements(), $this->modelReplacements());
 
         // Verificar se o relacionamento foi especificado pelo usuário
         if ($this->relationship) {
-            // Gerar o código do relacionamento dinamicamente
-            $relationshipCode = $this->generateRelationshipCode($this->relationship);
-            // Adicionar o código do relacionamento ao array de substituições
-            $replace['{{relations}}'] = $relationshipCode;
+            // Adicionar o código do relacionamento do stub
+            $replace['{{relations}}'] = $relacao;
         } else {
             // Caso o relacionamento não tenha sido especificado, deixe o marcador de posição vazio
             $replace['{{relations}}'] = '';
@@ -368,24 +369,5 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $this->files->put($webPath, $newWebContent);
 
         $this->components->info('Rotas adicionadas com sucesso.');
-    }
-
-    private function getSpace($no = 1)
-    {
-        $tabs = '';
-        for ($i = 0; $i < $no; $i++) {
-            $tabs .= "\t";
-        }
-        return $tabs;
-    }
-
-    // Método para gerar o código do relacionamento
-    protected function generateRelationshipCode($relatedTable)
-    {
-        $relatedModel = Str::studly(Str::singular($relatedTable));
-        $relationshipCode = "public function {$relatedTable}() {\n";
-        $relationshipCode .=  $this->getSpace(1) . "\treturn \$this->belongsTo({$relatedModel}::class);\n";
-        $relationshipCode .= "\t}\n";
-        return $relationshipCode;
     }
 }

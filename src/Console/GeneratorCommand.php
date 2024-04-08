@@ -319,6 +319,20 @@ abstract class GeneratorCommand extends Command
         );
     }
 
+    protected function getRelations($relatedTablePlural, $relatedTable, $type = 'relations')
+    {
+        $replace = array_merge($this->buildReplacements(), [
+            '{{relatedTablePlural}}' => $relatedTablePlural,
+            '{{relatedTable}}' => $relatedTable,
+        ]);
+
+        return str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub($type)
+        );
+    }
+
     /**
      * Build the form fields for form.
      *
