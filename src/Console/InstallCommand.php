@@ -30,7 +30,8 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      */
     protected $signature = 'getic:install {name : Table name}
                                             {--stack : name da stack}
-                                            {--route= : Custom route name}';
+                                            {--route= : Custom route name}
+                                            {--relationship : Specify if you want to establish a relationship}';
 
     /**
      * The console command description.
@@ -130,6 +131,17 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             hint: 'GETIC é um bootstrap modificado por Heronildes'
         );
         $this->template = $input;
+
+        // Lógica para relacionamento
+        if ($input = confirm('Deseja estabelecer um relacionamento?')) {
+            $relatedTable = select(
+                label: 'Com qual tabela você deseja estabelecer o relacionamento?',
+                options: $this->getAllTableNames($this->getNameInput()),
+                hint: "Estabelecer relação da tabela {$this->getNameInput()}?",
+            );
+            // Aqui você pode manipular a tabela relacionada $relatedTable
+            $this->relationship = $relatedTable;
+        }
     }
 
     /**
@@ -187,6 +199,17 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         // Make the models attributes and replacement
         $replace = array_merge($this->buildReplacements(), $this->modelReplacements());
+
+        // Verificar se o relacionamento foi especificado pelo usuário
+        if ($this->relationship) {
+            // Gerar o código do relacionamento dinamicamente
+            $relationshipCode = $this->generateRelationshipCode($this->relationship);
+            // Adicionar o código do relacionamento ao array de substituições
+            $replace['{{relations}}'] = $relationshipCode;
+        } else {
+            // Caso o relacionamento não tenha sido especificado, deixe o marcador de posição vazio
+            $replace['{{relations}}'] = '';
+        }
 
         $modelTemplate = str_replace(
             array_keys($replace),
@@ -345,5 +368,24 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $this->files->put($webPath, $newWebContent);
 
         $this->components->info('Rotas adicionadas com sucesso.');
+    }
+
+    private function getSpace($no = 1)
+    {
+        $tabs = '';
+        for ($i = 0; $i < $no; $i++) {
+            $tabs .= "\t";
+        }
+        return $tabs;
+    }
+
+    // Método para gerar o código do relacionamento
+    protected function generateRelationshipCode($relatedTable)
+    {
+        $relatedModel = Str::studly(Str::singular($relatedTable));
+        $relationshipCode = "public function {$relatedTable}() {\n";
+        $relationshipCode .=  $this->getSpace(1) . "\treturn \$this->belongsTo({$relatedModel}::class);\n";
+        $relationshipCode .= "\t}\n";
+        return $relationshipCode;
     }
 }

@@ -1,0 +1,9 @@
+/**
+    * {{relatedTablePlural}}
+    *
+    * @return void
+*/
+public function {{relatedTablePlural}}()
+{
+    return $this->belongsTo({{relatedTable}}::class);
+}

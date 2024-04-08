@@ -48,6 +48,7 @@ abstract class GeneratorCommand extends Command
     protected $table = null;
     protected $stack = 'heron';
     protected $template = null;
+    protected $relationship = null;
 
     /**
      * Formatted Class name from Table.
@@ -472,7 +473,7 @@ abstract class GeneratorCommand extends Command
 
             // Add quotes to the unwanted columns for fillable
             array_walk($filterColumns, function (&$value) {
-                $value = "'" . $value . "'";
+                $value = "\n\t\t'" . $value . "'";
             });
 
             // CSV format
@@ -491,6 +492,7 @@ abstract class GeneratorCommand extends Command
             '{{properties}}' => $properties,
             '{{softDeletesNamespace}}' => $softDeletesNamespace,
             '{{softDeletes}}' => $softDeletes,
+            '{{relations}}' => $relations,
         ];
     }
 
@@ -555,7 +557,7 @@ abstract class GeneratorCommand extends Command
      *
      * @return array
      */
-    protected function getAllTableNames()
+    protected function getAllTableNames($nomeTabela = null)
     {
         $tableNames = [];
 
@@ -564,6 +566,12 @@ abstract class GeneratorCommand extends Command
 
         foreach ($tablesInfo as $tableInfo) {
             $tableName = reset($tableInfo);
+
+            // Se $nomeTabela for diferente de null, verifica se o nome da tabela é diferente de $nomeTabela
+            if ($nomeTabela !== null && $tableName === $nomeTabela) {
+                continue; // Ignora a tabela se o nome for igual a $nomeTabela
+            }
+
             $tableNames[] = $tableName;
         }
 
