@@ -21,6 +21,11 @@ php artisan getic:install
 - Será solicitado o nome da tabela.
 - Escolha o template.
 
+## Atualizações
+
+- Adicionado suporte para múltiplas tabelas.
+- Melhorias na documentação.
+
 ## License
 
 [MIT](https://choosealicense.com/licenses/mit/)
