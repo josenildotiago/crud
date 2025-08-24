@@ -64,9 +64,10 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         // Generate API if requested
         if ($this->option('api')) {
-            $this->buildApiController();
-            $this->buildApiRoutes();
-            $this->buildApiResources();
+            $this->buildApiController()
+                ->buildApiRoutes()
+                ->buildApiResources()
+                ->buildFormRequest();
         }
 
         info('✅ CRUD criado com sucesso!');
@@ -322,6 +323,10 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      */
     protected function buildApiRoutes(): self
     {
+        if (!$this->option('api')) {
+            return $this;
+        }
+
         info('Criando rotas de API...');
 
         $apiPath = base_path('routes/api.php');
@@ -526,5 +531,53 @@ JSX;
     {
         // Implementation for Vue components...
         return $this;
+    }
+
+    /**
+     * Build API Resource (required by GeneratorCommand).
+     */
+    protected function buildApiResource(): self
+    {
+        return $this->buildApiResources();
+    }
+
+    /**
+     * Build Form Request (required by GeneratorCommand).
+     */
+    protected function buildFormRequest(): self
+    {
+        if (!$this->option('api')) {
+            return $this;
+        }
+
+        info('Criando Form Request...');
+
+        $requestPath = $this->_getFormRequestPath($this->name);
+
+        if ($this->files->exists($requestPath) && !confirm(
+            label: 'Este Form Request já existe. Você quer sobrescrever?',
+            default: false
+        )) {
+            return $this;
+        }
+
+        $replace = $this->buildReplacements();
+        $requestTemplate = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('FormRequest')
+        );
+
+        $this->write($requestPath, $requestTemplate);
+
+        return $this;
+    }
+
+    /**
+     * Get Form Request path.
+     */
+    protected function _getFormRequestPath(string $name): string
+    {
+        return $this->makeDirectory(app_path("Http/Requests/{$name}Request.php"));
     }
 }
