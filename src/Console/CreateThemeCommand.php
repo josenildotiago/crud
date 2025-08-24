@@ -3,6 +3,7 @@
 namespace Crud\Console;
 
 use Illuminate\Console\Command;
+use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
@@ -11,12 +12,12 @@ use function Laravel\Prompts\select;
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\info;
 
-class CreateThemeCommand extends Command
+class CreateThemeCommand extends Command implements PromptsForMissingInput
 {
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'themes:create {name : Theme name}
+    protected $signature = 'crud:create-theme {name? : Theme name}
                             {--base-color= : Base color in OKLCH format}
                             {--auto-generate : Auto-generate color variations}';
 
@@ -40,6 +41,26 @@ class CreateThemeCommand extends Command
     }
 
     /**
+     * Prompt for missing input arguments using the returned questions.
+     */
+    protected function promptForMissingArgumentsUsing(): array
+    {
+        return [
+            'name' => fn() => text(
+                label: 'What is the theme name?',
+                placeholder: 'My Theme',
+                required: true,
+                validate: function ($value) {
+                    if (!preg_match('/^[a-zA-Z0-9\s\-_]+$/', $value)) {
+                        return 'Theme name must contain only letters, numbers, spaces, and hyphens.';
+                    }
+                    return null;
+                }
+            )
+        ];
+    }
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -51,7 +72,7 @@ class CreateThemeCommand extends Command
 
         // Check if theme system is installed
         if (!$this->isThemeSystemInstalled()) {
-            $this->components->error('Sistema de temas não instalado. Execute: php artisan themes:install');
+            $this->components->error('Sistema de temas não instalado. Execute: php artisan crud:install-theme-system');
             return self::FAILURE;
         }
 

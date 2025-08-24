@@ -15,7 +15,7 @@ class InstallThemeSystemCommand extends Command
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'themes:install
+    protected $signature = 'crud:install-theme-system
                             {--force : Force overwrite existing files}';
 
     /**
