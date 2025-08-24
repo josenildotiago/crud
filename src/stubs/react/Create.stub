@@ -1,13 +1,13 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 {{themeImports}}
 
 export default function Create({ auth }: PageProps) {
     const { data, setData, post, processing, errors } = useForm({
-{{#each columns}}
+{{#each fillableColumns}}
         {{name}}: '',
 {{/each}}
     });
@@ -17,9 +17,21 @@ export default function Create({ auth }: PageProps) {
         post(route('{{modelRoute}}.store'));
     };
 
+    const breadcrumbs = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: 'Criar {{modelTitle}}',
+            href: '/{{modelRoutePlural}}/create',
+        },
+    ];
+
     return (
-        <AuthenticatedLayout
+        <AppLayout
             user={auth.user}
+            breadcrumbs={breadcrumbs}
             header={
                 <div className="flex justify-between items-center">
                     <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -71,6 +83,6 @@ export default function Create({ auth }: PageProps) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

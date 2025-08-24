@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import AppLayout from '@/Layouts/AppLayout';
 import { PageProps } from '@/types';
 {{themeImports}}
 
@@ -11,7 +11,7 @@ interface EditProps extends PageProps {
 
 export default function Edit({ auth, {{modelCamel}} }: EditProps) {
     const { data, setData, put, processing, errors } = useForm({
-{{#each columns}}
+{{#each fillableColumns}}
         {{name}}: {{modelCamel}}.{{name}} || '',
 {{/each}}
     });
@@ -21,9 +21,25 @@ export default function Edit({ auth, {{modelCamel}} }: EditProps) {
         put(route('{{modelRoute}}.update', {{modelCamel}}.id));
     };
 
+    const breadcrumbs = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: '{{modelTitlePlural}}',
+            href: '/{{modelRoutePlural}}',
+        },
+        {
+            title: 'Editar {{modelTitle}}',
+            href: `/{{modelRoutePlural}}/${{'{'}}{{{{modelCamel}}.id}{{'}'}}/edit`,
+        },
+    ];
+
     return (
-        <AuthenticatedLayout
+        <AppLayout
             user={auth.user}
+            breadcrumbs={breadcrumbs}
             header={
                 <div className="flex justify-between items-center">
                     <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
@@ -75,6 +91,6 @@ export default function Edit({ auth, {{modelCamel}} }: EditProps) {
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }

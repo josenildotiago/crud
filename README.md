@@ -1,4 +1,4 @@
-# Laravel CRUD Generator v3.0.0
+# Laravel CRUD Generator v3.0.6
 
 A modern Laravel package for generating complete CRUD operations with React.js frontend integration and dynamic theme system.
 
@@ -7,6 +7,10 @@ A modern Laravel package for generating complete CRUD operations with React.js f
 ### ✨ Laravel 12 Compatibility
 
 - **Modern Architecture**: Fully updated for Laravel 12+ with PHP 8.2+ support
+- **AppLayout Integration**: Uses AppLayout (instead of deprecated AuthenticatedLayout)
+- **Breadcrumbs System**: Comprehensive navigation with breadcrumb trails
+- **Smart Form Fields**: Automatic fillable field detection for React useForm
+- **Route Organization**: Separate route files per model with proper middleware
 - **Multi-Database Support**: Compatible with MySQL, PostgreSQL, SQLite, and SQL Server
 - **RESTful Design**: Generate clean, RESTful controllers and routes
 - **Service Layer**: Built-in service pattern with dependency injection
@@ -22,7 +26,8 @@ A modern Laravel package for generating complete CRUD operations with React.js f
 
 - **Inertia.js Support**: Seamless SSR with Laravel backend
 - **TypeScript Ready**: Full TypeScript support for type safety
-- **Modern Components**: shadcn/ui component integration
+- **Modern Components**: AppLayout with breadcrumb navigation
+- **Enhanced Form Handling**: Smart fillableColumns integration with useForm
 - **Responsive Design**: Mobile-first design patterns
 
 ### 🛠️ Advanced CRUD Features

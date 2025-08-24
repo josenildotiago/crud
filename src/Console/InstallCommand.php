@@ -77,7 +77,8 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             "Controller: app/Http/Controllers/{$this->name}Controller.php",
             "Model: app/Models/{$this->name}.php",
             "React Components: resources/js/Pages/{$this->name}/",
-            "Routes: Adicionadas ao web.php"
+            "Routes: routes/" . Str::lower($this->name) . ".php",
+            "Web.php: Require adicionado"
         ]);
 
         return self::SUCCESS;
@@ -300,21 +301,33 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     {
         info('Criando rotas...');
 
-        $webPath = base_path('routes/web.php');
-        $webContent = $this->files->get($webPath);
+        // Create separate route file for this model
+        $routeFileName = Str::lower($this->name) . '.php';
+        $routePath = base_path("routes/{$routeFileName}");
 
-        // Generate RESTful routes
-        $routeStub = $this->template === 'react' ? 'InertiaRoutes' : 'Routes';
-        $stubContent = $this->getStub($routeStub);
-
+        // Generate model-specific routes
+        $stubContent = $this->getStub('ModelRoutes');
         $replacements = $this->buildReplacements();
         $stubContent = str_replace(array_keys($replacements), array_values($replacements), $stubContent);
 
-        // Add routes to web.php
-        $newWebContent = $webContent . "\n" . $stubContent;
-        $this->files->put($webPath, $newWebContent);
+        // Write the route file
+        $this->write($routePath, $stubContent);
 
-        info('Rotas adicionadas com sucesso.');
+        // Add require to web.php
+        $webPath = base_path('routes/web.php');
+        $webContent = $this->files->get($webPath);
+
+        $requireStatement = "require __DIR__ . '/{$routeFileName}';";
+
+        // Check if require statement already exists
+        if (strpos($webContent, $requireStatement) === false) {
+            $newWebContent = $webContent . "\n" . $requireStatement;
+            $this->files->put($webPath, $newWebContent);
+        }
+
+        info("Rotas criadas em: routes/{$routeFileName}");
+        info("Require adicionado ao web.php");
+
         return $this;
     }
 
@@ -574,10 +587,65 @@ JSX;
     }
 
     /**
+     * Build enhanced replacements for React components.
+     */
+    protected function buildReplacements()
+    {
+        $baseReplacements = parent::buildReplacements();
+
+        // Add enhanced replacements for Laravel 12 + React
+        $enhancedReplacements = [
+            '{{fillableColumns}}' => $this->getJavaScriptFormFields(),
+            '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
+            '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
+            '{{modelCamel}}' => Str::camel($this->name),
+            '{{tableName}}' => $this->table,
+        ];
+
+        return array_merge($baseReplacements, $enhancedReplacements);
+    }
+
+    /**
      * Get Form Request path.
      */
     protected function _getFormRequestPath(string $name): string
     {
         return $this->makeDirectory(app_path("Http/Requests/{$name}Request.php"));
+    }
+
+    /**
+     * Get filtered columns for React useForm (fillable fields only).
+     */
+    protected function getFilteredColumns(): array
+    {
+        $fillableFields = [];
+
+        foreach ($this->getColumns() as $column) {
+            $field = explode(':', $column);
+            $name = $field[0];
+
+            // Skip timestamps, id, and other non-fillable fields
+            if (!in_array($name, ['id', 'created_at', 'updated_at', 'deleted_at', 'email_verified_at'])) {
+                $fillableFields[] = $name;
+            }
+        }
+
+        return $fillableFields;
+    }
+
+    /**
+     * Get filtered columns formatted for JavaScript useForm.
+     */
+    protected function getJavaScriptFormFields(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+
+        // Convert to JavaScript object format for useForm
+        $jsFields = [];
+        foreach ($fillableFields as $field) {
+            $jsFields[] = "            {$field}: ''";
+        }
+
+        return implode(",\n", $jsFields);
     }
 }

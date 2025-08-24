@@ -1,0 +1,25 @@
+<?php
+
+use App\Http\Controllers\{{modelName}}Controller;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{modelTitle}} Routes
+|--------------------------------------------------------------------------
+|
+| Here are the routes for {{modelTitle}} management. These routes are
+| protected by auth and verified middleware.
+|
+*/
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // {{modelTitle}} CRUD routes
+    Route::get('/{{modelRoute}}/index', [{{modelName}}Controller::class, 'index'])->name('{{modelRoute}}.index');
+    Route::get('/{{modelRoute}}/create', [{{modelName}}Controller::class, 'create'])->name('{{modelRoute}}.create');
+    Route::post('/{{modelRoute}}', [{{modelName}}Controller::class, 'store'])->name('{{modelRoute}}.store');
+    Route::get('/{{modelRoute}}/{{{modelCamel}}}', [{{modelName}}Controller::class, 'show'])->name('{{modelRoute}}.show');
+    Route::get('/{{modelRoute}}/{{{modelCamel}}}/edit', [{{modelName}}Controller::class, 'edit'])->name('{{modelRoute}}.edit');
+    Route::put('/{{modelRoute}}/{{{modelCamel}}}', [{{modelName}}Controller::class, 'update'])->name('{{modelRoute}}.update');
+    Route::delete('/{{modelRoute}}/{{{modelCamel}}}', [{{modelName}}Controller::class, 'destroy'])->name('{{modelRoute}}.destroy');
+});

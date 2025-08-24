@@ -1,7 +1,17 @@
 import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
-import { PlusIcon, MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { Head, Link, router } from '@inertiajs/reac    return (
+        <AppLayout
+            user={auth.user}
+            breadcrumbs={breadcrumbs}
+            header={
+                <div className="flex justify-between items-center">
+                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                        {{modelTitlePlural}}
+                    </h2>
+                    {{themeComponents}}
+                </div>
+            }{ PlusIcon, MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline';
+import AppLayout from '@/Layouts/AppLayout';
 import Pagination from '@/Components/Pagination';
 import { PageProps } from '@/types';
 {{themeImports}}
@@ -28,6 +38,17 @@ interface Props extends PageProps {
 
 export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: Props) {
     const [search, setSearch] = React.useState(filters.search || '');
+    
+    const breadcrumbs = [
+        {
+            title: 'Dashboard',
+            href: '/dashboard',
+        },
+        {
+            title: '{{modelTitlePlural}}',
+            href: '/{{modelRoutePlural}}',
+        },
+    ];
     const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
 
     const handleSearch = (e: React.FormEvent) => {
@@ -204,6 +225,6 @@ export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: P
                     </div>
                 </div>
             </div>
-        </AuthenticatedLayout>
+        </AppLayout>
     );
 }
