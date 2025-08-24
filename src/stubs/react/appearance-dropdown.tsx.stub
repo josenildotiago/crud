@@ -1,0 +1,85 @@
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Moon, Sun, Monitor, Palette } from 'lucide-react';
+import { useAppearance } from '@/hooks/use-appearance';
+import { themes } from '@/lib/themes';
+
+export default function AppearanceToggleDropdown() {
+    const { appearance, themeId, updateAppearance, updateTheme } = useAppearance();
+
+    const getThemePreviewColor = (theme: typeof themes[0]) => {
+        const primaryColor = theme.variables.light['--primary'];
+        return primaryColor;
+    };
+
+    const appearanceIcons = {
+        light: Sun,
+        dark: Moon,
+        system: Monitor,
+    };
+
+    const CurrentIcon = appearanceIcons[appearance];
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <CurrentIcon className="h-4 w-4" />
+                    <span className="sr-only">Alternar aparência</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => updateAppearance('light')}>
+                    <Sun className="mr-2 h-4 w-4" />
+                    <span>Claro</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateAppearance('dark')}>
+                    <Moon className="mr-2 h-4 w-4" />
+                    <span>Escuro</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateAppearance('system')}>
+                    <Monitor className="mr-2 h-4 w-4" />
+                    <span>Sistema</span>
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                        <Palette className="mr-2 h-4 w-4" />
+                        <span>Tema</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-48">
+                        {themes.map((theme) => (
+                            <DropdownMenuItem
+                                key={theme.id}
+                                onClick={() => updateTheme(theme.id)}
+                                className={`flex items-center gap-2 ${
+                                    themeId === theme.id ? 'bg-accent' : ''
+                                }`}
+                            >
+                                <div
+                                    className="w-4 h-4 rounded-full border border-border"
+                                    style={{
+                                        backgroundColor: `color-mix(in oklch, ${getThemePreviewColor(theme)}, transparent 20%)`,
+                                    }}
+                                />
+                                <span>{theme.name}</span>
+                            </DropdownMenuItem>
+                        ))}
+                    </DropdownMenuSubContent>
+                </DropdownMenuSub>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}

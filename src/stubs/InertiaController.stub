@@ -1,0 +1,122 @@
+<?php
+
+namespace {{controllerNamespace}};
+
+use {{modelNamespace}}\{{modelName}};
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\Validation\Rule;
+use Inertia\Inertia;
+use Inertia\Response as InertiaResponse;
+
+class {{modelName}}Controller extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): InertiaResponse
+    {
+        ${{modelNamePluralLowerCase}} = {{modelName}}::query()
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->paginate(10)
+            ->withQueryString()
+            ->through(fn (${{modelNameLowerCase}}) => [
+                'id' => ${{modelNameLowerCase}}->id,
+{{#each columns}}
+                '{{name}}' => ${{../modelNameLowerCase}}->{{name}},
+{{/each}}
+                'created_at' => ${{modelNameLowerCase}}->created_at?->format('d/m/Y H:i'),
+                'updated_at' => ${{modelNameLowerCase}}->updated_at?->format('d/m/Y H:i'),
+            ]);
+
+        return Inertia::render('{{modelName}}/Index', [
+            '{{modelNamePluralLowerCase}}' => ${{modelNamePluralLowerCase}},
+            'filters' => $request->only(['search']),
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create(): InertiaResponse
+    {
+        return Inertia::render('{{modelName}}/Create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $validated = $request->validate({{modelName}}::$rules);
+
+        {{modelName}}::create($validated);
+
+        return Redirect::route('{{modelRoute}}.index')
+            ->with('success', '{{modelTitle}} criado com sucesso.');
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show({{modelName}} ${{modelNameLowerCase}}): InertiaResponse
+    {
+        return Inertia::render('{{modelName}}/Show', [
+            '{{modelNameLowerCase}}' => ${{modelNameLowerCase}},
+        ]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit({{modelName}} ${{modelNameLowerCase}}): InertiaResponse
+    {
+        return Inertia::render('{{modelName}}/Edit', [
+            '{{modelNameLowerCase}}' => ${{modelNameLowerCase}},
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, {{modelName}} ${{modelNameLowerCase}}): RedirectResponse
+    {
+        $validated = $request->validate({{modelName}}::$rules);
+
+        ${{modelNameLowerCase}}->update($validated);
+
+        return Redirect::route('{{modelRoute}}.index')
+            ->with('success', '{{modelTitle}} atualizado com sucesso.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy({{modelName}} ${{modelNameLowerCase}}): RedirectResponse
+    {
+        ${{modelNameLowerCase}}->delete();
+
+        return Redirect::route('{{modelRoute}}.index')
+            ->with('success', '{{modelTitle}} deletado com sucesso.');
+    }
+
+    /**
+     * Bulk delete selected resources.
+     */
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:{{modelTable}},id',
+        ]);
+
+        {{modelName}}::whereIn('id', $request->ids)->delete();
+
+        return Redirect::route('{{modelRoute}}.index')
+            ->with('success', count($request->ids) . ' registros deletados com sucesso.');
+    }
+}

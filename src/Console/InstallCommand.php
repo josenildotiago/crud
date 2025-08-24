@@ -5,104 +5,98 @@ namespace Crud\Console;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Filesystem\Filesystem;
-use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use RuntimeException;
-use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Process\PhpExecutableFinder;
-use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
+use function Laravel\Prompts\info;
 
-#[AsCommand(name: 'getic:install')]
 class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 {
     /**
      * The name and signature of the console command.
-     *
-     * @var string
      */
     protected $signature = 'getic:install {name : Table name}
-                                            {--stack : name da stack}
+                                            {--stack=react : Frontend stack (react, vue, blade)}
                                             {--route= : Custom route name}
-                                            {--relationship : Specify if you want to establish a relationship}';
+                                            {--relationship : Specify if you want to establish a relationship}
+                                            {--api : Generate API endpoints}
+                                            {--theme : Include theme-aware components}';
 
     /**
      * The console command description.
-     *
-     * @var string
      */
-    protected $description = 'Cria um simples template com base no banco de dados';
+    protected $description = 'Cria um CRUD moderno com React.js e sistema de temas';
 
     /**
      * Execute the console command.
-     *
-     * @return int|null
      */
-    public function handle()
+    public function handle(): int
     {
         $this->table = $this->getNameInput();
-        $this->stack = $this->template;
+        $this->stack = $this->template ?? 'react';
         $this->nameTable = $this->table;
-        $this->nameStack = $this->stack;
 
-        // If table not exist in DB return
+        // Check if table exists
         if (!$this->tableExists()) {
-            $this->components->error("Esta tabela `{$this->table}` nao existe");
+            $this->components->error("Esta tabela `{$this->table}` não existe");
+            return self::FAILURE;
+        }
 
-            return false;
+        // Check Laravel version
+        if (!$this->isLaravel12OrHigher()) {
+            $this->components->error('Este pacote requer Laravel 12 ou superior');
+            return self::FAILURE;
         }
 
         $this->name = $this->_buildClassName();
 
-        $this->components->info('Gerador de Crud da GETIC em execução');
+        info('🚀 Gerador de CRUD Laravel 12 + React.js em execução...');
+
+        // Generate components
         $this->buildOptions()
             ->buildController()
             ->buildModel()
             ->buildViews()
             ->buildRouter();
-        $this->components->info('Criado com sucesso');
-        return 1;
+
+        // Generate API if requested
+        if ($this->option('api')) {
+            $this->buildApiController();
+            $this->buildApiRoutes();
+            $this->buildApiResources();
+        }
+
+        info('✅ CRUD criado com sucesso!');
+
+        $this->components->info('Arquivos gerados:');
+        $this->components->bulletList([
+            "Controller: app/Http/Controllers/{$this->name}Controller.php",
+            "Model: app/Models/{$this->name}.php",
+            "React Components: resources/js/Pages/{$this->name}/",
+            "Routes: Adicionadas ao web.php"
+        ]);
+
+        return self::SUCCESS;
     }
 
     /**
-     * Run the given commands.
-     *
-     * @param  array  $commands
-     * @return void
+     * Check if Laravel 12 or higher.
      */
-    protected function runCommands($commands)
+    protected function isLaravel12OrHigher(): bool
     {
-        $process = Process::fromShellCommandline(implode(' && ', $commands), null, null, null, null);
-
-        if ('\\' !== DIRECTORY_SEPARATOR && file_exists('/dev/tty') && is_readable('/dev/tty')) {
-            try {
-                $process->setTty(true);
-            } catch (RuntimeException $e) {
-                $this->output->writeln('  <bg=yellow;fg=black> WARN </> ' . $e->getMessage() . PHP_EOL);
-            }
-        }
-
-        $process->run(function ($type, $line) {
-            $this->output->write('    ' . $line);
-        });
+        return version_compare(app()->version(), '12.0', '>=');
     }
 
     /**
      * Prompt for missing input arguments using the returned questions.
-     *
-     * @return array
      */
-    protected function promptForMissingArgumentsUsing()
+    protected function promptForMissingArgumentsUsing(): array
     {
         return [
-            'name' => fn () => select(
+            'name' => fn() => select(
                 label: 'Qual tabela você deseja?',
                 options: $this->getAllTableNames(),
             )
@@ -111,66 +105,72 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
     /**
      * Interact further with the user if they were prompted for missing arguments.
-     *
-     * @param  \Symfony\Component\Console\Input\InputInterface  $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface  $output
-     * @return void
      */
-    protected function afterPromptingForMissingArguments(InputInterface $input, OutputInterface $output)
+    protected function afterPromptingForMissingArguments($input, $output): void
     {
-        $input = select(
-            label: 'Deseja algum Template?',
+        // Frontend stack selection
+        $this->template = select(
+            label: 'Qual stack frontend deseja usar?',
             options: [
-                'heron' => "Padrão GETIC",
-                'blade-bootstrap' => 'Blade com bootstrap',
-                'blade-tailwind' => 'Blade com tailwind',
-                'vue-bootstrap' => 'Vue com bootstrap',
-                'vue-tailwind' => 'Vue com tailwind',
+                'react' => 'React.js com Inertia.js (Recomendado)',
+                'vue' => 'Vue.js com Inertia.js',
+                'blade' => 'Blade tradicional',
             ],
-            default: 'heron',
-            hint: 'GETIC é um bootstrap modificado por Heronildes'
+            default: 'react',
+            hint: 'React.js é o padrão para Laravel 12'
         );
-        $this->template = $input;
 
-        // Lógica para relacionamento
-        if ($input = confirm('Deseja estabelecer um relacionamento?')) {
+        // Theme integration
+        if ($this->template === 'react' && confirm('Deseja incluir sistema de temas dinâmicos?')) {
+            $this->options['theme'] = true;
+
+            if (!app('crud')->isThemeSystemInstalled()) {
+                if (confirm('Sistema de temas não detectado. Instalar agora?')) {
+                    $this->call('themes:install');
+                }
+            }
+        }
+
+        // API generation
+        if (confirm('Deseja gerar endpoints de API RESTful?')) {
+            $this->options['api'] = true;
+        }
+
+        // Relationship logic
+        if (confirm('Deseja estabelecer um relacionamento?')) {
             $relatedTable = select(
                 label: 'Com qual tabela você deseja estabelecer o relacionamento?',
                 options: $this->getAllTableNames($this->getNameInput()),
                 hint: "Estabelecer relação da tabela {$this->getNameInput()}?",
             );
-            // Aqui você pode manipular a tabela relacionada $relatedTable
             $this->relationship = $relatedTable;
         }
     }
 
     /**
      * Build the Controller Class and save in app/Http/Controllers.
-     *
-     * @return $this
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     *
      */
-    protected function buildController()
+    protected function buildController(): self
     {
         $controllerPath = $this->_getControllerPath($this->name);
 
         if ($this->files->exists($controllerPath) && !confirm(
-            label: 'Este Controlador já existe. Você quer sobrescrever?',
+            label: 'Este Controller já existe. Você quer sobrescrever?',
             default: false,
             hint: 'Mesmo que opte por não sobrescrever, o fluxo seguirá normalmente'
         )) {
             return $this;
         }
 
-        $this->components->info('Criando Controller ...');
+        info('Criando Controller...');
 
         $replace = $this->buildReplacements();
+        $stubName = $this->template === 'react' ? 'InertiaController' : 'Controller';
 
         $controllerTemplate = str_replace(
             array_keys($replace),
             array_values($replace),
-            $this->getStub('Controller')
+            $this->getStub($stubName)
         );
 
         $this->write($controllerPath, $controllerTemplate);
@@ -179,13 +179,39 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     }
 
     /**
-     * @return $this
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     *
+     * Build API Controller.
      */
-    protected function buildModel()
+    protected function buildApiController(): self
     {
-        //descobre onde é a pasta Models
+        $controllerPath = $this->_getApiControllerPath($this->name);
+
+        if ($this->files->exists($controllerPath) && !confirm(
+            label: 'Este API Controller já existe. Você quer sobrescrever?',
+            default: false
+        )) {
+            return $this;
+        }
+
+        info('Criando API Controller...');
+
+        $replace = $this->buildReplacements();
+
+        $controllerTemplate = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('ApiController')
+        );
+
+        $this->write($controllerPath, $controllerTemplate);
+
+        return $this;
+    }
+
+    /**
+     * Build Model.
+     */
+    protected function buildModel(): self
+    {
         $modelPath = $this->_getModelPath($this->name);
 
         if ($this->files->exists($modelPath) && !confirm(
@@ -196,21 +222,14 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             return $this;
         }
 
-        $this->components->info('Criando Model ...');
-        $relatedTablePlural = Str::camel($this->relationship);
-        $relatedTable = Str::studly(Str::singular($relatedTablePlural));
-        $relacao = $this->getRelations($relatedTablePlural, $relatedTable, 'relations');
-        // Make the models attributes and replacement
-        $replace = array_merge($this->buildReplacements(), $this->modelReplacements());
+        info('Criando Model...');
 
-        // Verificar se o relacionamento foi especificado pelo usuário
-        if ($this->relationship) {
-            // Adicionar o código do relacionamento do stub
-            $replace['{{relations}}'] = $relacao;
-        } else {
-            // Caso o relacionamento não tenha sido especificado, deixe o marcador de posição vazio
-            $replace['{{relations}}'] = '';
-        }
+        $relatedTablePlural = $this->relationship ? Str::camel($this->relationship) : '';
+        $relatedTable = $this->relationship ? Str::studly(Str::singular($this->relationship)) : '';
+        $relacao = $this->relationship ? $this->getRelations($relatedTablePlural, $relatedTable, 'relations') : '';
+
+        $replace = array_merge($this->buildReplacements(), $this->modelReplacements());
+        $replace['{{relations}}'] = $relacao;
 
         $modelTemplate = str_replace(
             array_keys($replace),
@@ -224,150 +243,288 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     }
 
     /**
-     * @return $this
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     *
-     * @throws \Exception
+     * Build Views/React Components.
      */
-    protected function buildViews()
+    protected function buildViews(): self
     {
-        $this->components->info("Criando Views $this->nameStack...");
+        info("Criando componentes {$this->template}...");
 
-        $tableHead = "\n";
-        $tableBody = "\n";
-        $viewRows = "\n";
-        $form = "\n";
-
-        foreach ($this->getFilteredColumns() as $column) {
-            $title = Str::title(str_replace('_', ' ', $column));
-
-            $tableHead .= $this->getHead($title);
-            $tableBody .= $this->getBody($column);
-            $viewRows .= $this->getField($title, $column, 'view-field');
-            $form .= $this->getField($title, $column, 'form-field');
+        if ($this->template === 'react') {
+            return $this->buildReactComponents();
+        } elseif ($this->template === 'vue') {
+            return $this->buildVueComponents();
+        } else {
+            return $this->buildBladeViews();
         }
+    }
+
+    /**
+     * Build React Components.
+     */
+    protected function buildReactComponents(): self
+    {
+        $tableHead = $this->generateTableHeaders();
+        $formFields = $this->generateFormFields();
+        $showFields = $this->generateShowFields();
 
         $replace = array_merge($this->buildReplacements(), [
-            '{{tableHeader}}' => $tableHead,
-            '{{tableBody}}' => $tableBody,
-            '{{viewRows}}' => $viewRows,
-            '{{form}}' => $form,
+            '{{tableHeaders}}' => $tableHead,
+            '{{formFields}}' => $formFields,
+            '{{showFields}}' => $showFields,
+            '{{themeImports}}' => $this->option('theme') ? $this->getThemeImports() : '',
+            '{{themeComponents}}' => $this->option('theme') ? $this->getThemeComponents() : '',
         ]);
 
-        // $this->buildLayout();
-        switch ($this->nameStack) {
-            case 'heron':
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/heron/{$view}")
-                    );
+        $components = ['Index', 'Create', 'Edit', 'Show', 'Form'];
 
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
-            case 'vue-tailwind':
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/vue-tailwind/{$view}")
-                    );
+        foreach ($components as $component) {
+            $componentPath = $this->_getReactComponentPath($component);
 
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
-            case 'vue-bootstrap':
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/vue-bootstrap/{$view}")
-                    );
+            $componentTemplate = str_replace(
+                array_keys($replace),
+                array_values($replace),
+                $this->getStub("react/{$component}")
+            );
 
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
-            case 'blade-bootstrap':
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/blade-bootstrap/{$view}")
-                    );
-
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
-            case 'blade-tailwind':
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/blade-tailwind/{$view}")
-                    );
-
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
-            default:
-                foreach (['index', 'create', 'edit', 'form', 'show'] as $view) {
-                    $viewTemplate = str_replace(
-                        array_keys($replace),
-                        array_values($replace),
-                        $this->getStub("views/{$view}")
-                    );
-
-                    $this->write($this->_getViewPath($view), $viewTemplate);
-                }
-                break;
+            $this->write($componentPath, $componentTemplate);
         }
-        $this->components->info('View adicionadas com sucesso.');
+
         return $this;
     }
 
     /**
-     * Make the class name from table name.
-     *
-     * @return string
+     * Build Router.
      */
-    private function _buildClassName()
+    public function buildRouter(): self
+    {
+        info('Criando rotas...');
+
+        $webPath = base_path('routes/web.php');
+        $webContent = $this->files->get($webPath);
+
+        // Generate RESTful routes
+        $routeStub = $this->template === 'react' ? 'InertiaRoutes' : 'Routes';
+        $stubContent = $this->getStub($routeStub);
+
+        $replacements = $this->buildReplacements();
+        $stubContent = str_replace(array_keys($replacements), array_values($replacements), $stubContent);
+
+        // Add routes to web.php
+        $newWebContent = $webContent . "\n" . $stubContent;
+        $this->files->put($webPath, $newWebContent);
+
+        info('Rotas adicionadas com sucesso.');
+        return $this;
+    }
+
+    /**
+     * Build API Routes.
+     */
+    protected function buildApiRoutes(): self
+    {
+        info('Criando rotas de API...');
+
+        $apiPath = base_path('routes/api.php');
+
+        if (!$this->files->exists($apiPath)) {
+            $this->files->put($apiPath, "<?php\n\nuse Illuminate\Http\Request;\nuse Illuminate\Support\Facades\Route;\n\n");
+        }
+
+        $apiContent = $this->files->get($apiPath);
+        $stubContent = $this->getStub('ApiRoutes');
+
+        $replacements = $this->buildReplacements();
+        $stubContent = str_replace(array_keys($replacements), array_values($replacements), $stubContent);
+
+        $newApiContent = $apiContent . "\n" . $stubContent;
+        $this->files->put($apiPath, $newApiContent);
+
+        return $this;
+    }
+
+    /**
+     * Build API Resources.
+     */
+    protected function buildApiResources(): self
+    {
+        info('Criando API Resources...');
+
+        $resourcePath = $this->_getApiResourcePath($this->name);
+        $collectionPath = $this->_getApiResourceCollectionPath($this->name);
+
+        // Generate Resource
+        $replace = $this->buildReplacements();
+        $resourceTemplate = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('ApiResource')
+        );
+        $this->write($resourcePath, $resourceTemplate);
+
+        // Generate Resource Collection
+        $collectionTemplate = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('ApiResourceCollection')
+        );
+        $this->write($collectionPath, $collectionTemplate);
+
+        return $this;
+    }
+
+    /**
+     * Generate table headers for React components.
+     */
+    protected function generateTableHeaders(): string
+    {
+        $headers = [];
+        foreach ($this->getFilteredColumns() as $column) {
+            $title = Str::title(str_replace('_', ' ', $column));
+            $headers[] = "        <th className=\"px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider\">\n            {$title}\n        </th>";
+        }
+        return implode("\n", $headers);
+    }
+
+    /**
+     * Generate form fields for React components.
+     */
+    protected function generateFormFields(): string
+    {
+        $fields = [];
+        foreach ($this->getFilteredColumns() as $column) {
+            $title = Str::title(str_replace('_', ' ', $column));
+            $fields[] = $this->getReactFormField($title, $column);
+        }
+        return implode("\n", $fields);
+    }
+
+    /**
+     * Generate show fields for React components.
+     */
+    protected function generateShowFields(): string
+    {
+        $fields = [];
+        foreach ($this->getFilteredColumns() as $column) {
+            $title = Str::title(str_replace('_', ' ', $column));
+            $fields[] = $this->getReactShowField($title, $column);
+        }
+        return implode("\n", $fields);
+    }
+
+    /**
+     * Get React form field.
+     */
+    protected function getReactFormField(string $title, string $column): string
+    {
+        return <<<JSX
+        <div className="mb-4">
+            <label htmlFor="{$column}" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {$title}
+            </label>
+            <input
+                type="text"
+                id="{$column}"
+                name="{$column}"
+                value={data.{$column} || ''}
+                onChange={(e) => setData('{$column}', e.target.value)}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            {errors.{$column} && <p className="mt-1 text-sm text-red-600">{errors.{$column}}</p>}
+        </div>
+JSX;
+    }
+
+    /**
+     * Get React show field.
+     */
+    protected function getReactShowField(string $title, string $column): string
+    {
+        return <<<JSX
+        <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-4">
+            <div className="px-4 py-5 sm:p-6">
+                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{$title}</dt>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{{{{modelNameLowerCase}}.{$column}}}</dd>
+            </div>
+        </div>
+JSX;
+    }
+
+    /**
+     * Get theme imports for React components.
+     */
+    protected function getThemeImports(): string
+    {
+        return "import { useAppearance } from '@/hooks/use-appearance';\nimport ThemeSelector from '@/components/theme-selector';";
+    }
+
+    /**
+     * Get theme components for React.
+     */
+    protected function getThemeComponents(): string
+    {
+        return <<<JSX
+            <div className="mb-4 flex justify-end">
+                <ThemeSelector />
+            </div>
+JSX;
+    }
+
+    /**
+     * Get React component path.
+     */
+    protected function _getReactComponentPath(string $component): string
+    {
+        $name = Str::studly($this->name);
+        return $this->makeDirectory(resource_path("js/Pages/{$name}/{$component}.tsx"));
+    }
+
+    /**
+     * Get API controller path.
+     */
+    protected function _getApiControllerPath(string $name): string
+    {
+        return $this->makeDirectory(app_path("Http/Controllers/Api/{$name}Controller.php"));
+    }
+
+    /**
+     * Get API resource path.
+     */
+    protected function _getApiResourcePath(string $name): string
+    {
+        return $this->makeDirectory(app_path("Http/Resources/{$name}Resource.php"));
+    }
+
+    /**
+     * Get API resource collection path.
+     */
+    protected function _getApiResourceCollectionPath(string $name): string
+    {
+        return $this->makeDirectory(app_path("Http/Resources/{$name}Collection.php"));
+    }
+
+    /**
+     * Make the class name from table name.
+     */
+    private function _buildClassName(): string
     {
         return Str::studly(Str::singular($this->table));
     }
 
     /**
-     * Build router.
-     *
-     * @return $this
-     * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException
-     *
+     * Build Blade views (fallback).
      */
-    public function buildRouter()
+    protected function buildBladeViews(): self
     {
-        $this->components->info('Criando rotas ...');
-        $webPath = base_path('routes/web.php');
+        // Implementation for Blade views...
+        return $this;
+    }
 
-        // Caminho para o stub de rotas
-        $stubPath = $this->getStub('routes', false); // Supondo que você tenha um método getStub que retorna o caminho do stub
-
-        // Lê o conteúdo do arquivo web.php
-        $webContent = $this->files->get($webPath);
-
-        // Lê o conteúdo do stub de rotas
-        $stubContent = $this->files->get($stubPath);
-
-        // Substitui placeholders no stub de rotas com valores reais
-        $replacements = $this->buildReplacements(); // Supondo que você tenha um método buildReplacements que retorna um array de substituições
-        $stubContent = str_replace(array_keys($replacements), array_values($replacements), $stubContent);
-
-        // Adiciona o conteúdo do stub de rotas ao final do conteúdo do arquivo web.php
-        $newWebContent = $webContent . "\n" . $stubContent;
-
-        // Escreve o novo conteúdo de volta ao arquivo web.php
-        $this->files->put($webPath, $newWebContent);
-
-        $this->components->info('Rotas adicionadas com sucesso.');
+    /**
+     * Build Vue components (future implementation).
+     */
+    protected function buildVueComponents(): self
+    {
+        // Implementation for Vue components...
+        return $this;
     }
 }

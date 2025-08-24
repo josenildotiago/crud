@@ -2,48 +2,59 @@
 
 namespace Crud;
 
+use Crud\Console\InstallCommand;
+use Crud\Console\CreateThemeCommand;
+use Crud\Console\InstallThemeSystemCommand;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Contracts\Support\DeferrableProvider;
 
-class CrudServiceProvider extends ServiceProvider implements DeferrableProvider
+class CrudServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
-     *
-     * @return void
      */
-    public function register()
+    public function register(): void
     {
-        //
+        $this->mergeConfigFrom(__DIR__ . '/config/crud.php', 'crud');
+        $this->mergeConfigFrom(__DIR__ . '/config/themes.php', 'themes');
+
+        $this->app->singleton('crud', function ($app) {
+            return new \Crud\CrudManager($app);
+        });
     }
 
     /**
      * Bootstrap any application services.
-     *
-     * @return void
      */
-    public function boot()
+    public function boot(): void
     {
-        if (!$this->app->runningInConsole()) {
-            return;
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                InstallCommand::class,
+                CreateThemeCommand::class,
+                InstallThemeSystemCommand::class,
+            ]);
+
+            $this->publishes([
+                __DIR__ . '/config/crud.php' => config_path('crud.php'),
+                __DIR__ . '/config/themes.php' => config_path('themes.php'),
+            ], 'crud-config');
+
+            $this->publishes([
+                __DIR__ . '/stubs/js' => resource_path('js/crud'),
+                __DIR__ . '/stubs/css' => resource_path('css/crud'),
+            ], 'crud-assets');
+
+            $this->publishes([
+                __DIR__ . '/stubs/react' => resource_path('js'),
+            ], 'theme-system');
         }
-
-        $this->commands([
-            Console\InstallCommand::class,
-        ]);
-
-        $this->publishes([
-            __DIR__ . '/config/crud.php' => base_path('config/crud.php'),
-        ], 'config');
     }
 
     /**
      * Get the services provided by the provider.
-     *
-     * @return array
      */
-    public function provides()
+    public function provides(): array
     {
-        return [Console\InstallCommand::class];
+        return ['crud'];
     }
 }

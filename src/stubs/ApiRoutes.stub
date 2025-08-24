@@ -1,0 +1,174 @@
+<?php
+
+use App\Http\Controllers\{{modelName}}ApiController;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| {{modelTitle}} API Routes
+|--------------------------------------------------------------------------
+|
+| Here are the API routes for {{modelTitle}} management. These routes are
+| prefixed with /api and include middleware for authentication and
+| rate limiting.
+|
+*/
+
+Route::prefix('{{apiPrefix}}')->middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+    // Standard CRUD operations
+    Route::apiResource('{{modelRoutePlural}}', {{modelName}}ApiController::class);
+    
+    // Additional API endpoints
+    Route::prefix('{{modelRoutePlural}}')->controller({{modelName}}ApiController::class)->group(function () {
+        // Bulk operations
+        Route::delete('bulk-destroy', 'bulkDestroy')->name('{{modelRoute}}.bulk.destroy');
+        Route::patch('bulk-update', 'bulkUpdate')->name('{{modelRoute}}.bulk.update');
+        
+        // Data export
+        Route::get('export', 'export')->name('{{modelRoute}}.export');
+        
+        // Statistics
+        Route::get('stats', 'stats')->name('{{modelRoute}}.stats');
+        
+        // Advanced search
+        Route::post('search', 'search')->name('{{modelRoute}}.search');
+    });
+});
+
+// Public API endpoints (if needed)
+Route::prefix('public/{{apiPrefix}}')->middleware(['throttle:public-api'])->group(function () {
+    // Public read-only endpoints
+    Route::get('{{modelRoutePlural}}', [{{modelName}}ApiController::class, 'index'])->name('public.{{modelRoute}}.index');
+    Route::get('{{modelRoutePlural}}/{{{modelCamel}}}', [{{modelName}}ApiController::class, 'show'])->name('public.{{modelRoute}}.show');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Route Model Binding
+|--------------------------------------------------------------------------
+|
+| Customize route model binding for {{modelName}} if needed.
+|
+*/
+
+Route::bind('{{modelCamel}}', function (string $value) {
+    return \App\Models\{{modelName}}::where('id', $value)
+        ->with([{{#each relations}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}])
+        ->firstOrFail();
+});
+
+/*
+|--------------------------------------------------------------------------
+| API Documentation Routes
+|--------------------------------------------------------------------------
+|
+| Routes for API documentation and testing (development only).
+|
+*/
+
+if (app()->environment(['local', 'testing'])) {
+    Route::prefix('docs/{{modelRoute}}')->group(function () {
+        Route::get('/', function () {
+            return view('crud::api-docs.{{modelKebab}}');
+        })->name('{{modelRoute}}.docs');
+        
+        Route::get('postman', function () {
+            return response()->json([
+                'info' => [
+                    'name' => '{{modelTitle}} API',
+                    'description' => 'API endpoints for {{modelTitle}} management',
+                    'version' => '1.0.0',
+                ],
+                'item' => [
+                    [
+                        'name' => 'List {{modelTitlePlural}}',
+                        'request' => [
+                            'method' => 'GET',
+                            'header' => [],
+                            'url' => [
+                                'raw' => '{{baseUrl}}/api/{{apiPrefix}}/{{modelRoutePlural}}',
+                                'host' => ['{{baseUrl}}'],
+                                'path' => ['api', '{{apiPrefix}}', '{{modelRoutePlural}}'],
+                                'query' => [
+                                    ['key' => 'page', 'value' => '1'],
+                                    ['key' => 'per_page', 'value' => '15'],
+                                    ['key' => 'search', 'value' => ''],
+                                    ['key' => 'sort_by', 'value' => 'id'],
+                                    ['key' => 'sort_direction', 'value' => 'desc'],
+                                ]
+                            ]
+                        ]
+                    ],
+                    [
+                        'name' => 'Create {{modelTitle}}',
+                        'request' => [
+                            'method' => 'POST',
+                            'header' => [
+                                ['key' => 'Content-Type', 'value' => 'application/json'],
+                            ],
+                            'body' => [
+                                'mode' => 'raw',
+                                'raw' => json_encode([
+{{#each columns}}
+                                    '{{name}}' => '{{#if (eq type 'string')}}Sample {{label}}{{else if (eq type 'integer')}}1{{else if (eq type 'boolean')}}true{{else if (eq type 'date')}}2024-01-01{{else if (eq type 'datetime')}}2024-01-01 12:00:00{{else if (eq type 'email')}}user@example.com{{else if (eq type 'url')}}https://example.com{{else}}Sample value{{/if}}',
+{{/each}}
+                                ], JSON_PRETTY_PRINT)
+                            ],
+                            'url' => [
+                                'raw' => '{{baseUrl}}/api/{{apiPrefix}}/{{modelRoutePlural}}',
+                                'host' => ['{{baseUrl}}'],
+                                'path' => ['api', '{{apiPrefix}}', '{{modelRoutePlural}}']
+                            ]
+                        ]
+                    ],
+                    [
+                        'name' => 'Show {{modelTitle}}',
+                        'request' => [
+                            'method' => 'GET',
+                            'header' => [],
+                            'url' => [
+                                'raw' => '{{baseUrl}}/api/{{apiPrefix}}/{{modelRoutePlural}}/1',
+                                'host' => ['{{baseUrl}}'],
+                                'path' => ['api', '{{apiPrefix}}', '{{modelRoutePlural}}', '1']
+                            ]
+                        ]
+                    ],
+                    [
+                        'name' => 'Update {{modelTitle}}',
+                        'request' => [
+                            'method' => 'PUT',
+                            'header' => [
+                                ['key' => 'Content-Type', 'value' => 'application/json'],
+                            ],
+                            'body' => [
+                                'mode' => 'raw',
+                                'raw' => json_encode([
+{{#each columns}}
+                                    '{{name}}' => '{{#if (eq type 'string')}}Updated {{label}}{{else if (eq type 'integer')}}2{{else if (eq type 'boolean')}}false{{else if (eq type 'date')}}2024-12-31{{else if (eq type 'datetime')}}2024-12-31 23:59:59{{else if (eq type 'email')}}updated@example.com{{else if (eq type 'url')}}https://updated.com{{else}}Updated value{{/if}}',
+{{/each}}
+                                ], JSON_PRETTY_PRINT)
+                            ],
+                            'url' => [
+                                'raw' => '{{baseUrl}}/api/{{apiPrefix}}/{{modelRoutePlural}}/1',
+                                'host' => ['{{baseUrl}}'],
+                                'path' => ['api', '{{apiPrefix}}', '{{modelRoutePlural}}', '1']
+                            ]
+                        ]
+                    ],
+                    [
+                        'name' => 'Delete {{modelTitle}}',
+                        'request' => [
+                            'method' => 'DELETE',
+                            'header' => [],
+                            'url' => [
+                                'raw' => '{{baseUrl}}/api/{{apiPrefix}}/{{modelRoutePlural}}/1',
+                                'host' => ['{{baseUrl}}'],
+                                'path' => ['api', '{{apiPrefix}}', '{{modelRoutePlural}}', '1']
+                            ]
+                        ]
+                    ]
+                ]
+            ]);
+        })->name('{{modelRoute}}.postman');
+    });
+}

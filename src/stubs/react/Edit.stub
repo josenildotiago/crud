@@ -1,0 +1,80 @@
+import React from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { PageProps } from '@/types';
+{{themeImports}}
+
+interface EditProps extends PageProps {
+    {{modelCamel}}: {{modelName}};
+}
+
+export default function Edit({ auth, {{modelCamel}} }: EditProps) {
+    const { data, setData, put, processing, errors } = useForm({
+{{#each columns}}
+        {{name}}: {{modelCamel}}.{{name}} || '',
+{{/each}}
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        put(route('{{modelRoute}}.update', {{modelCamel}}.id));
+    };
+
+    return (
+        <AuthenticatedLayout
+            user={auth.user}
+            header={
+                <div className="flex justify-between items-center">
+                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+                        Editar {{modelTitle}}
+                    </h2>
+                    {{themeComponents}}
+                </div>
+            }
+        >
+            <Head title="Editar {{modelTitle}}" />
+
+            <div className="py-12">
+                <div className="max-w-2xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6">
+                            <div className="flex items-center gap-4 mb-6">
+                                <Link
+                                    href={route('{{modelRoute}}.index')}
+                                    className="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                >
+                                    <ArrowLeftIcon className="w-4 h-4 mr-2" />
+                                    Voltar
+                                </Link>
+                                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                                    Editar {{modelTitle}} #{{'{'}}{{{{modelCamel}}.id}{{'}}'}}
+                                </h3>
+                            </div>
+
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                {{formFields}}
+                                
+                                <div className="flex items-center justify-end space-x-4">
+                                    <Link
+                                        href={route('{{modelRoute}}.index')}
+                                        className="inline-flex items-center px-4 py-2 bg-gray-300 dark:bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-gray-700 dark:text-gray-300 uppercase tracking-widest hover:bg-gray-400 dark:hover:bg-gray-500 active:bg-gray-500 dark:active:bg-gray-400 focus:outline-none focus:border-gray-500 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                    >
+                                        Cancelar
+                                    </Link>
+                                    <button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                    >
+                                        {processing ? 'Salvando...' : 'Salvar Alterações'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </AuthenticatedLayout>
+    );
+}

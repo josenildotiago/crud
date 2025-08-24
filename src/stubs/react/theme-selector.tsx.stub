@@ -1,0 +1,56 @@
+import * as React from 'react';
+import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Palette } from 'lucide-react';
+import { useAppearance } from '@/hooks/use-appearance';
+import { themes } from '@/lib/themes';
+
+export default function ThemeSelector() {
+    const { themeId, updateTheme } = useAppearance();
+
+    const getThemePreviewColor = (theme: typeof themes[0]) => {
+        // Extract primary color from light mode variables
+        const primaryColor = theme.variables.light['--primary'];
+        return primaryColor;
+    };
+
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                    <Palette className="h-4 w-4 mr-2" />
+                    Tema
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+                {themes.map((theme) => (
+                    <DropdownMenuItem
+                        key={theme.id}
+                        onClick={() => updateTheme(theme.id)}
+                        className={`flex items-center gap-2 ${
+                            themeId === theme.id ? 'bg-accent' : ''
+                        }`}
+                    >
+                        <div
+                            className="w-4 h-4 rounded-full border border-border"
+                            style={{
+                                backgroundColor: `color-mix(in oklch, ${getThemePreviewColor(theme)}, transparent 20%)`,
+                            }}
+                        />
+                        <span>{theme.name}</span>
+                        {theme.description && (
+                            <span className="text-xs text-muted-foreground ml-auto">
+                                {theme.description}
+                            </span>
+                        )}
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+}

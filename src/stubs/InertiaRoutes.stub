@@ -1,0 +1,5 @@
+// {{modelName}} RESTful Routes
+Route::resource('{{modelRoute}}', {{modelName}}Controller::class);
+
+// Bulk operations
+Route::delete('{{modelRoute}}/bulk', [{{modelName}}Controller::class, 'bulkDestroy'])->name('{{modelRoute}}.bulk-destroy');

@@ -1,6 +1,6 @@
 {
     "name": "josenildotiago/crud",
-    "description": "Simple CRUD creation package in Laravel",
+    "description": "Modern CRUD generator with dynamic themes for Laravel 12 + React.js",
     "license": "MIT",
     "authors": [
         {
@@ -15,20 +15,24 @@
     },
     "autoload-dev": {
         "psr-4": {
-            
+            "Crud\\Tests\\": "tests/"
         }
     },
     "require": {
-        "php": ">=8.0.0",
-        "illuminate/console": "^10.0",
-        "illuminate/filesystem": "^10.0|^11.0",
-        "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
-        "illuminate/validation": "^10.0",
-        "symfony/console": "^6.0|^7.0",
-        "laravel/prompts": "^0.1.17"
+        "php": ">=8.2.0",
+        "illuminate/console": "^12.0",
+        "illuminate/filesystem": "^12.0",
+        "illuminate/support": "^12.0",
+        "illuminate/validation": "^12.0",
+        "illuminate/database": "^12.0",
+        "symfony/console": "^7.0",
+        "laravel/prompts": "^0.3.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^7.7|^8.0"
+        "orchestra/testbench": "^10.0",
+        "phpunit/phpunit": "^11.0",
+        "pestphp/pest": "^3.0",
+        "pestphp/pest-plugin-laravel": "^3.0"
     },
     "extra": {
         "laravel": {
@@ -36,9 +40,11 @@
                 "Crud\\CrudServiceProvider"
             ],
             "aliases": {
-                "crud": "Crud\\Facades\\Crud"
+                "Crud": "Crud\\Facades\\Crud"
             }
         }
     },
-    "version": "2.1.3"
+    "version": "3.0.0",
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }

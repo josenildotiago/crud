@@ -1,0 +1,170 @@
+export interface ThemeConfig {
+    id: string;
+    name: string;
+    description?: string;
+    variables: {
+        light: Record<string, string>;
+        dark: Record<string, string>;
+    };
+}
+
+export const themes: ThemeConfig[] = [
+    {
+        id: 'default',
+        name: 'Padrão',
+        description: 'Tema padrão preto e branco',
+        variables: {
+            light: {
+                '--background': 'oklch(1 0 0)',
+                '--foreground': 'oklch(0.15 0 0)',
+                '--card': 'oklch(1 0 0)',
+                '--card-foreground': 'oklch(0.15 0 0)',
+                '--popover': 'oklch(1 0 0)',
+                '--popover-foreground': 'oklch(0.15 0 0)',
+                '--primary': 'oklch(0.4891 0 0)',
+                '--primary-foreground': 'oklch(0.98 0 0)',
+                '--secondary': 'oklch(0.9067 0 0)',
+                '--secondary-foreground': 'oklch(0.15 0 0)',
+                '--muted': 'oklch(0.9587 0 0)',
+                '--muted-foreground': 'oklch(0.45 0 0)',
+                '--accent': 'oklch(0.9587 0 0)',
+                '--accent-foreground': 'oklch(0.15 0 0)',
+                '--destructive': 'oklch(0.6214 0.2016 29.2336)',
+                '--destructive-foreground': 'oklch(0.98 0 0)',
+                '--border': 'oklch(0.9213 0 0)',
+                '--input': 'oklch(0.9213 0 0)',
+                '--ring': 'oklch(0.4891 0 0)',
+                '--chart-1': 'oklch(0.6906 0.1618 196.5037)',
+                '--chart-2': 'oklch(0.7088 0.1618 251.8065)',
+                '--chart-3': 'oklch(0.6531 0.1618 308.2316)',
+                '--chart-4': 'oklch(0.7951 0.1618 68.6827)',
+                '--chart-5': 'oklch(0.8471 0.1618 22.1304)',
+                '--sidebar': 'oklch(0.98 0 0)',
+                '--sidebar-foreground': 'oklch(0.45 0 0)',
+                '--sidebar-primary': 'oklch(0.4891 0 0)',
+                '--sidebar-primary-foreground': 'oklch(0.98 0 0)',
+                '--sidebar-accent': 'oklch(0.9587 0 0)',
+                '--sidebar-accent-foreground': 'oklch(0.15 0 0)',
+                '--sidebar-border': 'oklch(0.9213 0 0)',
+                '--sidebar-ring': 'oklch(0.4891 0 0)'
+            },
+            dark: {
+                '--background': 'oklch(0.05 0 0)',
+                '--foreground': 'oklch(0.98 0 0)',
+                '--card': 'oklch(0.05 0 0)',
+                '--card-foreground': 'oklch(0.98 0 0)',
+                '--popover': 'oklch(0.05 0 0)',
+                '--popover-foreground': 'oklch(0.98 0 0)',
+                '--primary': 'oklch(0.7058 0 0)',
+                '--primary-foreground': 'oklch(0.15 0 0)',
+                '--secondary': 'oklch(0.3092 0 0)',
+                '--secondary-foreground': 'oklch(0.98 0 0)',
+                '--muted': 'oklch(0.2092 0 0)',
+                '--muted-foreground': 'oklch(0.65 0 0)',
+                '--accent': 'oklch(0.2092 0 0)',
+                '--accent-foreground': 'oklch(0.98 0 0)',
+                '--destructive': 'oklch(0.7176 0.2016 29.2336)',
+                '--destructive-foreground': 'oklch(0.98 0 0)',
+                '--border': 'oklch(0.2092 0 0)',
+                '--input': 'oklch(0.2092 0 0)',
+                '--ring': 'oklch(0.7058 0 0)',
+                '--chart-1': 'oklch(0.6906 0.1618 196.5037)',
+                '--chart-2': 'oklch(0.7088 0.1618 251.8065)',
+                '--chart-3': 'oklch(0.6531 0.1618 308.2316)',
+                '--chart-4': 'oklch(0.7951 0.1618 68.6827)',
+                '--chart-5': 'oklch(0.8471 0.1618 22.1304)',
+                '--sidebar': 'oklch(0.1 0 0)',
+                '--sidebar-foreground': 'oklch(0.65 0 0)',
+                '--sidebar-primary': 'oklch(0.7058 0 0)',
+                '--sidebar-primary-foreground': 'oklch(0.15 0 0)',
+                '--sidebar-accent': 'oklch(0.2092 0 0)',
+                '--sidebar-accent-foreground': 'oklch(0.98 0 0)',
+                '--sidebar-border': 'oklch(0.2092 0 0)',
+                '--sidebar-ring': 'oklch(0.7058 0 0)'
+            }
+        }
+    },
+    {
+        id: 'blue',
+        name: 'Azul',
+        description: 'Tema com tons de azul',
+        variables: {
+            light: {
+                '--background': 'oklch(1 0 0)',
+                '--foreground': 'oklch(0.15 0 0)',
+                '--card': 'oklch(1 0 0)',
+                '--card-foreground': 'oklch(0.15 0 0)',
+                '--popover': 'oklch(1 0 0)',
+                '--popover-foreground': 'oklch(0.15 0 0)',
+                '--primary': 'oklch(0.55 0.2 240)',
+                '--primary-foreground': 'oklch(0.98 0 0)',
+                '--secondary': 'oklch(0.92 0.05 240)',
+                '--secondary-foreground': 'oklch(0.15 0 0)',
+                '--muted': 'oklch(0.95 0.03 240)',
+                '--muted-foreground': 'oklch(0.45 0 0)',
+                '--accent': 'oklch(0.88 0.08 240)',
+                '--accent-foreground': 'oklch(0.15 0 0)',
+                '--destructive': 'oklch(0.6 0.2 20)',
+                '--destructive-foreground': 'oklch(0.98 0 0)',
+                '--border': 'oklch(0.9 0.04 240)',
+                '--input': 'oklch(0.9 0.04 240)',
+                '--ring': 'oklch(0.55 0.2 240)',
+                '--chart-1': 'oklch(0.55 0.2 240)',
+                '--chart-2': 'oklch(0.55 0.2 300)',
+                '--chart-3': 'oklch(0.55 0.2 0)',
+                '--chart-4': 'oklch(0.55 0.2 60)',
+                '--chart-5': 'oklch(0.55 0.2 120)',
+                '--sidebar': 'oklch(0.98 0 0)',
+                '--sidebar-foreground': 'oklch(0.45 0 0)',
+                '--sidebar-primary': 'oklch(0.55 0.2 240)',
+                '--sidebar-primary-foreground': 'oklch(0.98 0 0)',
+                '--sidebar-accent': 'oklch(0.88 0.08 240)',
+                '--sidebar-accent-foreground': 'oklch(0.15 0 0)',
+                '--sidebar-border': 'oklch(0.9 0.04 240)',
+                '--sidebar-ring': 'oklch(0.55 0.2 240)'
+            },
+            dark: {
+                '--background': 'oklch(0.05 0 0)',
+                '--foreground': 'oklch(0.98 0 0)',
+                '--card': 'oklch(0.05 0 0)',
+                '--card-foreground': 'oklch(0.98 0 0)',
+                '--popover': 'oklch(0.05 0 0)',
+                '--popover-foreground': 'oklch(0.98 0 0)',
+                '--primary': 'oklch(0.7 0.15 240)',
+                '--primary-foreground': 'oklch(0.15 0 0)',
+                '--secondary': 'oklch(0.3 0.06 240)',
+                '--secondary-foreground': 'oklch(0.98 0 0)',
+                '--muted': 'oklch(0.2 0.04 240)',
+                '--muted-foreground': 'oklch(0.65 0 0)',
+                '--accent': 'oklch(0.3 0.08 240)',
+                '--accent-foreground': 'oklch(0.98 0 0)',
+                '--destructive': 'oklch(0.7 0.25 20)',
+                '--destructive-foreground': 'oklch(0.98 0 0)',
+                '--border': 'oklch(0.2 0.04 240)',
+                '--input': 'oklch(0.2 0.04 240)',
+                '--ring': 'oklch(0.7 0.15 240)',
+                '--chart-1': 'oklch(0.7 0.15 240)',
+                '--chart-2': 'oklch(0.7 0.15 300)',
+                '--chart-3': 'oklch(0.7 0.15 0)',
+                '--chart-4': 'oklch(0.7 0.15 60)',
+                '--chart-5': 'oklch(0.7 0.15 120)',
+                '--sidebar': 'oklch(0.1 0 0)',
+                '--sidebar-foreground': 'oklch(0.65 0 0)',
+                '--sidebar-primary': 'oklch(0.7 0.15 240)',
+                '--sidebar-primary-foreground': 'oklch(0.15 0 0)',
+                '--sidebar-accent': 'oklch(0.3 0.08 240)',
+                '--sidebar-accent-foreground': 'oklch(0.98 0 0)',
+                '--sidebar-border': 'oklch(0.2 0.04 240)',
+                '--sidebar-ring': 'oklch(0.7 0.15 240)'
+            }
+        }
+    }
+];
+
+export function getTheme(themeId: string): ThemeConfig | undefined {
+    return themes.find(theme => theme.id === themeId);
+}
+
+export function getThemeNames(): Array<{ id: string; name: string }> {
+    return themes.map(theme => ({ id: theme.id, name: theme.name }));
+}

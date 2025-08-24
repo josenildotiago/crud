@@ -1,0 +1,264 @@
+<?php
+
+namespace {{namespace}};
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\{{modelName}}Request;
+use App\Http\Resources\{{modelName}}Resource;
+use App\Models\{{modelName}};
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+class {{modelName}}ApiController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request): AnonymousResourceCollection
+    {
+        $query = {{modelName}}::query();
+
+        // Apply filters
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+{{#each searchableColumns}}
+                $q->orWhere('{{name}}', 'like', "%{$search}%");
+{{/each}}
+            });
+        }
+
+        // Apply sorting
+        $sortBy = $request->get('sort_by', 'id');
+        $sortDirection = $request->get('sort_direction', 'desc');
+        
+        if (in_array($sortBy, ['{{#each sortableColumns}}{{name}}{{#unless @last}}, {{/unless}}{{/each}}'])) {
+            $query->orderBy($sortBy, $sortDirection);
+        }
+
+        // Apply filters for specific columns
+{{#each filterableColumns}}
+        if ($request->has('{{name}}')) {
+            {{#if (eq type 'boolean')}}
+            $query->where('{{name}}', $request->boolean('{{name}}'));
+            {{else if (eq type 'date' 'datetime')}}
+            if ($request->has('{{name}}_from')) {
+                $query->whereDate('{{name}}', '>=', $request->get('{{name}}_from'));
+            }
+            if ($request->has('{{name}}_to')) {
+                $query->whereDate('{{name}}', '<=', $request->get('{{name}}_to'));
+            }
+            {{else}}
+            $query->where('{{name}}', $request->get('{{name}}'));
+            {{/if}}
+        }
+{{/each}}
+
+        // Load relationships
+        $query->with([{{#each relations}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        $perPage = $request->get('per_page', 15);
+        ${{modelPluralCamel}} = $query->paginate($perPage);
+
+        return {{modelName}}Resource::collection(${{modelPluralCamel}});
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store({{modelName}}Request $request): JsonResponse
+    {
+        ${{modelCamel}} = {{modelName}}::create($request->validated());
+
+        // Load relationships for response
+        ${{modelCamel}}->load([{{#each relations}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        return response()->json([
+            'message' => '{{modelTitle}} criado com sucesso.',
+            'data' => new {{modelName}}Resource(${{modelCamel}})
+        ], 201);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show({{modelName}} ${{modelCamel}}): JsonResponse
+    {
+        // Load relationships
+        ${{modelCamel}}->load([{{#each relations}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        return response()->json([
+            'data' => new {{modelName}}Resource(${{modelCamel}})
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update({{modelName}}Request $request, {{modelName}} ${{modelCamel}}): JsonResponse
+    {
+        ${{modelCamel}}->update($request->validated());
+
+        // Load relationships for response
+        ${{modelCamel}}->load([{{#each relations}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}]);
+
+        return response()->json([
+            'message' => '{{modelTitle}} atualizado com sucesso.',
+            'data' => new {{modelName}}Resource(${{modelCamel}})
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy({{modelName}} ${{modelCamel}}): JsonResponse
+    {
+        ${{modelCamel}}->delete();
+
+        return response()->json([
+            'message' => '{{modelTitle}} excluído com sucesso.'
+        ]);
+    }
+
+    /**
+     * Bulk delete multiple resources.
+     */
+    public function bulkDestroy(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:{{tableName}},id'
+        ]);
+
+        $deletedCount = {{modelName}}::whereIn('id', $request->ids)->delete();
+
+        return response()->json([
+            'message' => "{$deletedCount} {{modelTitlePlural}} excluídos com sucesso."
+        ]);
+    }
+
+    /**
+     * Bulk update multiple resources.
+     */
+    public function bulkUpdate(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:{{tableName}},id',
+            'data' => 'required|array'
+        ]);
+
+        // Only allow certain fields to be bulk updated
+        $allowedFields = [{{#each bulkUpdateableColumns}}'{{name}}'{{#unless @last}}, {{/unless}}{{/each}}];
+        $updateData = array_intersect_key($request->data, array_flip($allowedFields));
+
+        if (empty($updateData)) {
+            return response()->json([
+                'message' => 'Nenhum campo válido fornecido para atualização.'
+            ], 422);
+        }
+
+        $updatedCount = {{modelName}}::whereIn('id', $request->ids)->update($updateData);
+
+        return response()->json([
+            'message' => "{$updatedCount} {{modelTitlePlural}} atualizados com sucesso."
+        ]);
+    }
+
+    /**
+     * Export resources to CSV.
+     */
+    public function export(Request $request): JsonResponse
+    {
+        $query = {{modelName}}::query();
+
+        // Apply same filters as index
+        if ($request->has('search')) {
+            $search = $request->get('search');
+            $query->where(function ($q) use ($search) {
+{{#each searchableColumns}}
+                $q->orWhere('{{name}}', 'like', "%{$search}%");
+{{/each}}
+            });
+        }
+
+        // Apply column filters
+{{#each filterableColumns}}
+        if ($request->has('{{name}}')) {
+            {{#if (eq type 'boolean')}}
+            $query->where('{{name}}', $request->boolean('{{name}}'));
+            {{else if (eq type 'date' 'datetime')}}
+            if ($request->has('{{name}}_from')) {
+                $query->whereDate('{{name}}', '>=', $request->get('{{name}}_from'));
+            }
+            if ($request->has('{{name}}_to')) {
+                $query->whereDate('{{name}}', '<=', $request->get('{{name}}_to'));
+            }
+            {{else}}
+            $query->where('{{name}}', $request->get('{{name}}'));
+            {{/if}}
+        }
+{{/each}}
+
+        ${{modelPluralCamel}} = $query->get();
+        
+        $filename = '{{modelKebab}}-' . now()->format('Y-m-d-H-i-s') . '.csv';
+        $filePath = storage_path('app/exports/' . $filename);
+
+        // Ensure directory exists
+        if (!file_exists(dirname($filePath))) {
+            mkdir(dirname($filePath), 0755, true);
+        }
+
+        $file = fopen($filePath, 'w');
+        
+        // CSV Headers
+        $headers = [{{#each columns}}'{{label}}'{{#unless @last}}, {{/unless}}{{/each}}];
+        fputcsv($file, $headers);
+
+        // CSV Data
+        foreach (${{modelPluralCamel}} as ${{modelCamel}}) {
+            $row = [
+{{#each columns}}
+                ${{../modelCamel}}->{{name}},
+{{/each}}
+            ];
+            fputcsv($file, $row);
+        }
+
+        fclose($file);
+
+        return response()->json([
+            'message' => 'Exportação concluída com sucesso.',
+            'download_url' => url('storage/exports/' . $filename)
+        ]);
+    }
+
+    /**
+     * Get statistics for the resource.
+     */
+    public function stats(): JsonResponse
+    {
+        $stats = [
+            'total' => {{modelName}}::count(),
+            'recent' => {{modelName}}::where('created_at', '>=', now()->subDays(7))->count(),
+            'this_month' => {{modelName}}::whereMonth('created_at', now()->month)->count(),
+        ];
+
+        // Add custom stats based on model fields
+{{#each statsColumns}}
+        {{#if (eq type 'boolean')}}
+        $stats['{{name}}_true'] = {{../modelName}}::where('{{name}}', true)->count();
+        $stats['{{name}}_false'] = {{../modelName}}::where('{{name}}', false)->count();
+        {{else if (eq type 'enum')}}
+        $stats['{{name}}_by_value'] = {{../modelName}}::selectRaw('{{name}}, COUNT(*) as count')
+            ->groupBy('{{name}}')
+            ->pluck('count', '{{name}}')
+            ->toArray();
+        {{/if}}
+{{/each}}
+
+        return response()->json(['data' => $stats]);
+    }
+}

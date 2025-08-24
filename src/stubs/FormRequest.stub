@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class {{modelName}}Request extends FormRequest
+{
+    /**
+     * Determine if the user is authorized to make this request.
+     */
+    public function authorize(): bool
+    {
+        return true; // Adjust based on your authorization logic
+    }
+
+    /**
+     * Get the validation rules that apply to the request.
+     *
+     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     */
+    public function rules(): array
+    {
+        $rules = [
+{{#each columns}}
+            '{{name}}' => [
+                {{#if required}}'required'{{else}}'nullable'{{/if}},
+                {{#if (eq type 'string')}}'string'{{#if maxLength}}, 'max:{{maxLength}}'{{/if}}{{/if}}
+                {{#if (eq type 'text')}}'string'{{/if}}
+                {{#if (eq type 'integer')}}'integer'{{#if min}}, 'min:{{min}}'{{/if}}{{#if max}}, 'max:{{max}}'{{/if}}{{/if}}
+                {{#if (eq type 'decimal' 'float' 'double')}}'numeric'{{#if min}}, 'min:{{min}}'{{/if}}{{#if max}}, 'max:{{max}}'{{/if}}{{/if}}
+                {{#if (eq type 'boolean')}}'boolean'{{/if}}
+                {{#if (eq type 'date')}}'date'{{/if}}
+                {{#if (eq type 'datetime')}}'date'{{/if}}
+                {{#if (eq type 'time')}}'date_format:H:i:s'{{/if}}
+                {{#if (eq type 'email')}}'email'{{/if}}
+                {{#if (eq type 'url')}}'url'{{/if}}
+                {{#if (eq type 'file')}}'file'{{#if fileTypes}}, 'mimes:{{join fileTypes ","}}'{{/if}}{{#if maxFileSize}}, 'max:{{maxFileSize}}'{{/if}}{{/if}}
+                {{#if (eq type 'image')}}'image'{{#if imageTypes}}, 'mimes:{{join imageTypes ","}}'{{/if}}{{#if maxImageSize}}, 'max:{{maxImageSize}}'{{/if}}{{/if}}
+                {{#if (eq type 'enum')}}'in:{{join enumValues ","}}'{{/if}}
+                {{#if unique}}, Rule::unique('{{../tableName}}', '{{name}}'){{#if ../isUpdate}}->ignore($this->route('{{../modelCamel}}')){{/if}}{{/if}}
+                {{#if foreignKey}}, 'exists:{{foreignTable}},{{foreignColumn}}'{{/if}}
+            ],
+{{/each}}
+        ];
+
+        // Add conditional rules for update requests
+        if ($this->isMethod('PUT') || $this->isMethod('PATCH')) {
+{{#each conditionalUpdateRules}}
+            $rules['{{field}}'][] = {{rule}};
+{{/each}}
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Get custom attributes for validator errors.
+     *
+     * @return array<string, string>
+     */
+    public function attributes(): array
+    {
+        return [
+{{#each columns}}
+            '{{name}}' => '{{label}}',
+{{/each}}
+        ];
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            // Custom error messages
+{{#each customValidationMessages}}
+            '{{field}}.{{rule}}' => '{{message}}',
+{{/each}}
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Clean and prepare data before validation
+{{#each dataPreperation}}
+        if ($this->has('{{field}}')) {
+            $this->merge([
+                '{{field}}' => {{transformation}}
+            ]);
+        }
+{{/each}}
+    }
+
+    /**
+     * Configure the validator instance.
+     */
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+            // Custom validation logic
+{{#each customValidationLogic}}
+            {{logic}}
+{{/each}}
+        });
+    }
+}
