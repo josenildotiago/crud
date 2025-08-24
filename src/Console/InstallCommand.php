@@ -127,7 +127,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
             if (!app('crud')->isThemeSystemInstalled()) {
                 if (confirm('Sistema de temas não detectado. Instalar agora?')) {
-                    $this->call('themes:install');
+                    $this->call('crud:install-theme-system');
                 }
             }
         }
@@ -276,7 +276,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             '{{themeComponents}}' => $this->option('theme') ? $this->getThemeComponents() : '',
         ]);
 
-        $components = ['Index', 'Create', 'Edit', 'Show', 'Form'];
+        $components = ['Index', 'Create', 'Edit', 'Show', 'FormField'];
 
         foreach ($components as $component) {
             $componentPath = $this->_getReactComponentPath($component);

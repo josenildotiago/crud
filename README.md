@@ -44,7 +44,7 @@ A modern Laravel package for generating complete CRUD operations with React.js f
 ## 📦 Installation
 
 ```bash
-composer require sp1d3r/laravel-crud
+composer require josenildotiago/crud
 ```
 
 ## 🎯 Quick Start
