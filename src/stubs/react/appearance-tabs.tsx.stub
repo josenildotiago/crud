@@ -1,3 +1,4 @@
+import ThemeDemo from '@/components/theme-demo';
 import { Appearance, useAppearance } from '@/hooks/use-appearance';
 import { themes } from '@/lib/themes';
 import { cn } from '@/lib/utils';
@@ -85,6 +86,9 @@ export default function AppearanceToggleTab({ className = '', ...props }: HTMLAt
                         ))}
                     </div>
                 )}
+            </div>
+            <div className="border-t pt-6">
+                <ThemeDemo />
             </div>
         </div>
     );
