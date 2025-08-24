@@ -1,135 +1,73 @@
-import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { useAppearance } from '@/hooks/use-appearance';
 import { themes } from '@/lib/themes';
 
 export default function ThemeDemo() {
-    const { themeId, updateTheme } = useAppearance();
-    const currentTheme = themes.find(t => t.id === themeId);
+    const { appearance, themeId, updateAppearance, updateTheme } = useAppearance();
+    const currentTheme = themes.find((t) => t.id === themeId);
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Demonstração de Temas</CardTitle>
-                    <CardDescription>
-                        Veja como os diferentes temas afetam a aparência dos componentes.
-                        Tema atual: <Badge variant="secondary">{currentTheme?.name}</Badge>
-                    </CardDescription>
+                    <CardTitle>Sistema de Temas</CardTitle>
+                    <CardDescription>Demonstração do sistema de temas dinâmicos</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    {/* Theme Selector */}
+                <CardContent className="space-y-4">
                     <div>
-                        <Label className="text-sm font-medium mb-3 block">Escolher Tema:</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <h3 className="mb-2 text-sm font-medium">Tema Atual: {currentTheme?.name}</h3>
+                        <p className="mb-4 text-sm text-muted-foreground">
+                            Modo: {appearance === 'system' ? 'Sistema' : appearance === 'dark' ? 'Escuro' : 'Claro'}
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 className="mb-2 text-sm font-medium">Alterar Modo:</h4>
+                        <div className="flex gap-2">
+                            <Button variant={appearance === 'light' ? 'default' : 'outline'} size="sm" onClick={() => updateAppearance('light')}>
+                                Claro
+                            </Button>
+                            <Button variant={appearance === 'dark' ? 'default' : 'outline'} size="sm" onClick={() => updateAppearance('dark')}>
+                                Escuro
+                            </Button>
+                            <Button variant={appearance === 'system' ? 'default' : 'outline'} size="sm" onClick={() => updateAppearance('system')}>
+                                Sistema
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 className="mb-2 text-sm font-medium">Alterar Tema:</h4>
+                        <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                             {themes.map((theme) => (
                                 <Button
                                     key={theme.id}
-                                    variant={themeId === theme.id ? "default" : "outline"}
+                                    variant={themeId === theme.id ? 'default' : 'outline'}
                                     size="sm"
                                     onClick={() => updateTheme(theme.id)}
-                                    className="justify-start gap-2"
+                                    className="justify-start"
                                 >
-                                    <div
-                                        className="w-3 h-3 rounded-full border border-border"
-                                        style={{
-                                            backgroundColor: `color-mix(in oklch, ${theme.variables.light['--primary']}, transparent 20%)`,
-                                        }}
-                                    />
-                                    {theme.name}
+                                    <div className="flex items-center gap-2">
+                                        <div
+                                            className="h-3 w-3 rounded-full border"
+                                            style={{ backgroundColor: theme.variables.light['--primary'] }}
+                                        />
+                                        {theme.name}
+                                    </div>
                                 </Button>
                             ))}
                         </div>
                     </div>
 
-                    <Separator />
-
-                    {/* Component Showcase */}
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Componentes</h3>
-                        
-                        <div className="grid gap-4 md:grid-cols-2">
-                            {/* Buttons */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Botões</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div className="flex gap-2 flex-wrap">
-                                        <Button>Primary</Button>
-                                        <Button variant="secondary">Secondary</Button>
-                                        <Button variant="outline">Outline</Button>
-                                        <Button variant="ghost">Ghost</Button>
-                                    </div>
-                                    <div className="flex gap-2 flex-wrap">
-                                        <Button variant="destructive">Destructive</Button>
-                                        <Button variant="link">Link</Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Inputs */}
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-base">Formulários</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-3">
-                                    <div>
-                                        <Label htmlFor="demo-input">Nome</Label>
-                                        <Input id="demo-input" placeholder="Digite seu nome" />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="demo-email">Email</Label>
-                                        <Input id="demo-email" type="email" placeholder="seu@email.com" />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                    <div className="border-t pt-4">
+                        <h4 className="mb-2 text-sm font-medium">Preview de Componentes:</h4>
+                        <div className="flex flex-wrap gap-2">
+                            <Button variant="default">Primário</Button>
+                            <Button variant="secondary">Secundário</Button>
+                            <Button variant="outline">Contorno</Button>
+                            <Button variant="destructive">Destrutivo</Button>
                         </div>
-
-                        {/* Color Palette */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Paleta de Cores</CardTitle>
-                                <CardDescription>
-                                    Visualização das cores do tema atual
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                                    {currentTheme && Object.entries(currentTheme.variables.light).map(([key, value]) => (
-                                        <div key={key} className="text-center">
-                                            <div
-                                                className="w-full h-12 rounded-md border border-border mb-1"
-                                                style={{ backgroundColor: value }}
-                                            />
-                                            <div className="text-xs font-mono text-muted-foreground">
-                                                {key.replace('--', '')}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Badges */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-base">Badges e Estados</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex gap-2 flex-wrap">
-                                    <Badge>Default</Badge>
-                                    <Badge variant="secondary">Secondary</Badge>
-                                    <Badge variant="outline">Outline</Badge>
-                                    <Badge variant="destructive">Destructive</Badge>
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
                 </CardContent>
             </Card>

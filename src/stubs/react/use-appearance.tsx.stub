@@ -1,117 +1,115 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getTheme } from '@/lib/themes';
+import { getDefaultTheme, getTheme, type ThemeConfig } from '@/lib/themes';
+import { useCallback, useEffect, useState } from 'react';
 
-type Appearance = 'light' | 'dark' | 'system';
+export type Appearance = 'light' | 'dark' | 'system';
 
-interface UseAppearanceReturn {
-    appearance: Appearance;
-    themeId: string;
-    updateAppearance: (newAppearance: Appearance) => void;
-    updateTheme: (newThemeId: string) => void;
-}
+const prefersDark = () => {
+    if (typeof window === 'undefined') {
+        return false;
+    }
 
-// Helper functions
-const getSystemTheme = (): 'light' | 'dark' => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
 };
 
-const getCookie = (name: string): string | null => {
-    if (typeof document === 'undefined') return null;
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-    return null;
+const setCookie = (name: string, value: string, days = 365) => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const maxAge = days * 24 * 60 * 60;
+    document.cookie = `${name}=${value};path=/;max-age=${maxAge};SameSite=Lax`;
 };
 
-const setCookie = (name: string, value: string, days: number = 365): void => {
-    if (typeof document === 'undefined') return;
-    const expires = new Date(Date.now() + days * 864e5).toUTCString();
-    document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Lax`;
-};
-
-const applyThemeVariables = (themeId: string, isDark: boolean): void => {
-    const theme = getTheme(themeId);
-    if (!theme) return;
-
+const applyThemeVariables = (theme: ThemeConfig, isDark: boolean) => {
     const variables = isDark ? theme.variables.dark : theme.variables.light;
     const root = document.documentElement;
-    
+
     Object.entries(variables).forEach(([property, value]) => {
         root.style.setProperty(property, value);
     });
 };
 
-const applyTheme = (appearance: Appearance, themeId: string): void => {
-    if (typeof document === 'undefined') return;
+const applyTheme = (appearance: Appearance, themeId?: string) => {
+    const isDark = appearance === 'dark' || (appearance === 'system' && prefersDark());
 
-    const isDark = appearance === 'dark' || (appearance === 'system' && getSystemTheme() === 'dark');
-    
-    // Apply dark class
-    if (isDark) {
-        document.documentElement.classList.add('dark');
-    } else {
-        document.documentElement.classList.remove('dark');
+    document.documentElement.classList.toggle('dark', isDark);
+
+    // Aplicar variáveis do tema
+    const theme = themeId ? getTheme(themeId) : getDefaultTheme();
+    if (theme) {
+        applyThemeVariables(theme, isDark);
     }
-    
-    // Apply theme variables
-    applyThemeVariables(themeId, isDark);
 };
 
-export const initializeTheme = (): void => {
-    if (typeof window === 'undefined') return;
+const mediaQuery = () => {
+    if (typeof window === 'undefined') {
+        return null;
+    }
 
-    const savedAppearance = (localStorage.getItem('appearance') || getCookie('appearance') || 'system') as Appearance;
-    const savedThemeId = localStorage.getItem('themeId') || getCookie('themeId') || 'default';
-    
-    applyTheme(savedAppearance, savedThemeId);
+    return window.matchMedia('(prefers-color-scheme: dark)');
 };
 
-export function useAppearance(): UseAppearanceReturn {
-    const [appearance, setAppearance] = useState<Appearance>(() => {
-        if (typeof window === 'undefined') return 'system';
-        return (localStorage.getItem('appearance') || getCookie('appearance') || 'system') as Appearance;
-    });
+const handleSystemThemeChange = () => {
+    const currentAppearance = localStorage.getItem('appearance') as Appearance;
+    const currentThemeId = localStorage.getItem('themeId');
+    applyTheme(currentAppearance || 'system', currentThemeId || undefined);
+};
 
-    const [themeId, setThemeId] = useState<string>(() => {
-        if (typeof window === 'undefined') return 'default';
-        return localStorage.getItem('themeId') || getCookie('themeId') || 'default';
-    });
+export function initializeTheme() {
+    const savedAppearance = (localStorage.getItem('appearance') as Appearance) || 'system';
+    const savedThemeId = localStorage.getItem('themeId');
 
-    const updateAppearance = useCallback((newAppearance: Appearance) => {
-        setAppearance(newAppearance);
-        localStorage.setItem('appearance', newAppearance);
-        setCookie('appearance', newAppearance);
-        applyTheme(newAppearance, themeId);
-    }, [themeId]);
+    applyTheme(savedAppearance, savedThemeId || undefined);
 
-    const updateTheme = useCallback((newThemeId: string) => {
-        setThemeId(newThemeId);
-        localStorage.setItem('themeId', newThemeId);
-        setCookie('themeId', newThemeId);
-        applyTheme(appearance, newThemeId);
-    }, [appearance]);
+    // Add the event listener for system theme changes...
+    mediaQuery()?.addEventListener('change', handleSystemThemeChange);
+}
+
+export function useAppearance() {
+    const [appearance, setAppearance] = useState<Appearance>('system');
+    const [themeId, setThemeId] = useState<string>('default');
+
+    const updateAppearance = useCallback(
+        (mode: Appearance) => {
+            setAppearance(mode);
+
+            // Store in localStorage for client-side persistence...
+            localStorage.setItem('appearance', mode);
+
+            // Store in cookie for SSR...
+            setCookie('appearance', mode);
+
+            applyTheme(mode, themeId);
+        },
+        [themeId],
+    );
+
+    const updateTheme = useCallback(
+        (newThemeId: string) => {
+            setThemeId(newThemeId);
+
+            // Store in localStorage for client-side persistence...
+            localStorage.setItem('themeId', newThemeId);
+
+            // Store in cookie for SSR...
+            setCookie('themeId', newThemeId);
+
+            applyTheme(appearance, newThemeId);
+        },
+        [appearance],
+    );
 
     useEffect(() => {
-        applyTheme(appearance, themeId);
-    }, [appearance, themeId]);
+        const savedAppearance = localStorage.getItem('appearance') as Appearance | null;
+        const savedThemeId = localStorage.getItem('themeId') || 'default';
 
-    useEffect(() => {
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            if (appearance === 'system') {
-                applyTheme(appearance, themeId);
-            }
-        };
+        setAppearance(savedAppearance || 'system');
+        setThemeId(savedThemeId);
 
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, [appearance, themeId]);
+        applyTheme(savedAppearance || 'system', savedThemeId);
 
-    return {
-        appearance,
-        themeId,
-        updateAppearance,
-        updateTheme,
-    };
+        return () => mediaQuery()?.removeEventListener('change', handleSystemThemeChange);
+    }, []);
+
+    return { appearance, themeId, updateAppearance, updateTheme } as const;
 }
