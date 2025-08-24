@@ -614,26 +614,6 @@ JSX;
     }
 
     /**
-     * Get filtered columns for React useForm (fillable fields only).
-     */
-    protected function getFilteredColumns(): array
-    {
-        $fillableFields = [];
-
-        foreach ($this->getColumns() as $column) {
-            $field = explode(':', $column);
-            $name = $field[0];
-
-            // Skip timestamps, id, and other non-fillable fields
-            if (!in_array($name, ['id', 'created_at', 'updated_at', 'deleted_at', 'email_verified_at'])) {
-                $fillableFields[] = $name;
-            }
-        }
-
-        return $fillableFields;
-    }
-
-    /**
      * Get filtered columns formatted for JavaScript useForm.
      */
     protected function getJavaScriptFormFields(): string

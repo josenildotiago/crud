@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.0.7] - Critical Bug Fix
+
+### 🐛 Bug Fixes
+
+- **Fixed getFilteredColumns() Error**: Resolved TypeError when processing database columns
+- **Database Column Processing**: Fixed explode() error on stdClass objects
+- **Command Compatibility**: Now uses parent class getFilteredColumns() method correctly
+
+---
+
 ## [3.0.6] - Laravel 12 Modernization Complete
 
 ### 🎉 Major Laravel 12 Compatibility Update
