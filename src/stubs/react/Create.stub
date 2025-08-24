@@ -1,15 +1,12 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import AppLayout from '@/Layouts/AppLayout';
-import { PageProps } from '@/types';
+import { ArrowLeftIcon } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
 {{themeImports}}
 
-export default function Create({ auth }: PageProps) {
+export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
-{{#each fillableColumns}}
-        {{name}}: '',
-{{/each}}
+{{fillableColumns}}
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -29,18 +26,7 @@ export default function Create({ auth }: PageProps) {
     ];
 
     return (
-        <AppLayout
-            user={auth.user}
-            breadcrumbs={breadcrumbs}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        Criar {{modelTitle}}
-                    </h2>
-                    {{themeComponents}}
-                </div>
-            }
-        >
+        <AppLayout breadcrumbs={breadcrumbs} >
             <Head title="Criar {{modelTitle}}" />
 
             <div className="py-12">

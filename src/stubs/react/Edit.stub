@@ -11,9 +11,7 @@ interface EditProps extends PageProps {
 
 export default function Edit({ auth, {{modelCamel}} }: EditProps) {
     const { data, setData, put, processing, errors } = useForm({
-{{#each fillableColumns}}
-        {{name}}: {{modelCamel}}.{{name}} || '',
-{{/each}}
+{{editFillableColumns}}
     });
 
     const handleSubmit = (e: React.FormEvent) => {

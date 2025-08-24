@@ -1,5 +1,32 @@
 # Changelog
 
+## [3.0.8] - React Stub Syntax Fix
+
+### 🛠️ Major Template Fixes
+
+- **Fixed Handlebars Syntax**: Replaced {{#each}} with proper PHP str_replace() syntax
+- **Dynamic Field Generation**: All React stubs now use correct variable replacement
+- **TypeScript Support**: Added proper interface field generation
+- **Table Components**: Fixed table cell generation for Index component
+- **Show Fields**: Simplified and fixed Show component field display
+
+### 🔧 Enhanced Replacement Variables
+
+- `{{fillableColumns}}` - JavaScript object fields for Create forms
+- `{{editFillableColumns}}` - JavaScript object fields for Edit forms with model data
+- `{{typeScriptColumns}}` - TypeScript interface field definitions
+- `{{tableCells}}` - Table cell generation for Index component
+- `{{showFieldsReact}}` - Display fields for Show component
+
+### 📂 Updated React Stubs
+
+- **Create.stub**: Fixed useForm field generation
+- **Edit.stub**: Fixed useForm with model data population
+- **Index.stub**: Fixed TypeScript interface and table cells
+- **Show.stub**: Simplified field display, removed complex relations
+
+---
+
 ## [3.0.7] - Critical Bug Fix
 
 ### 🐛 Bug Fixes

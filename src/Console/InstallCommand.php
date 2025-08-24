@@ -596,6 +596,10 @@ JSX;
         // Add enhanced replacements for Laravel 12 + React
         $enhancedReplacements = [
             '{{fillableColumns}}' => $this->getJavaScriptFormFields(),
+            '{{editFillableColumns}}' => $this->getJavaScriptEditFormFields(),
+            '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
+            '{{tableCells}}' => $this->getTableCells(),
+            '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
             '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
             '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
             '{{modelCamel}}' => Str::camel($this->name),
@@ -604,7 +608,6 @@ JSX;
 
         return array_merge($baseReplacements, $enhancedReplacements);
     }
-
     /**
      * Get Form Request path.
      */
@@ -616,16 +619,77 @@ JSX;
     /**
      * Get filtered columns formatted for JavaScript useForm.
      */
-    protected function getJavaScriptFormFields(): string
+    protected function getJavaScriptFormFields(bool $isEdit = false): string
     {
         $fillableFields = $this->getFilteredColumns();
 
         // Convert to JavaScript object format for useForm
         $jsFields = [];
         foreach ($fillableFields as $field) {
-            $jsFields[] = "            {$field}: ''";
+            if ($isEdit) {
+                $jsFields[] = "            {$field}: {{modelCamel}}.{$field} || ''";
+            } else {
+                $jsFields[] = "            {$field}: ''";
+            }
         }
 
         return implode(",\n", $jsFields);
+    }
+
+    /**
+     * Get JavaScript form fields for edit forms.
+     */
+    protected function getJavaScriptEditFormFields(): string
+    {
+        return $this->getJavaScriptFormFields(true);
+    }
+
+    /**
+     * Get TypeScript interface fields.
+     */
+    protected function getTypeScriptInterfaceFields(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+
+        // Convert to TypeScript interface format
+        $tsFields = [];
+        foreach ($fillableFields as $field) {
+            $tsFields[] = "    {$field}: string;";
+        }
+
+        return implode("\n", $tsFields);
+    }
+
+    /**
+     * Get table cells for React components.
+     */
+    protected function getTableCells(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+
+        // Convert to table cells format
+        $cells = [];
+        foreach ($fillableFields as $field) {
+            $cells[] = "                                                <td className=\"px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100\">\n                                                    {{{modelNameLowerCase}}.{$field}}\n                                                </td>";
+        }
+
+        return implode("\n", $cells);
+    }
+
+    /**
+     * Get show fields for React components.
+     */
+    protected function getShowFieldsForReact(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+
+        // Convert to show fields format
+        $fields = [];
+        foreach ($fillableFields as $field) {
+            $label = Str::title(str_replace('_', ' ', $field));
+            $fields[] = "                                    <div>\n                                        <dt className=\"text-sm font-medium text-gray-500 dark:text-gray-400\">\n                                            {$label}\n                                        </dt>\n                                        <dd className=\"mt-1 text-sm text-gray-900 dark:text-gray-100\">\n                                            {{{modelCamel}}.{$field} || '-'}\n                                        </dd>\n                                    </div>";
+        }
+
+        return implode("\n", $fields);
     }
 }
