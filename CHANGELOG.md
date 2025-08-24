@@ -1,5 +1,34 @@
 # Changelog
 
+## [3.0.12] - Controller Variable Resolution Fix
+
+### 🐛 Critical Fix
+
+- **Fixed Variable Substitution in Controller Fields**: Created `getControllerFieldsWithModel()` method
+- **Resolved Model Name Issue**: Now correctly generates `$tombo->field` instead of `${{modelNameLowerCase}}->field`
+- **Proper Field Generation**: Controller fields now use actual resolved model variable names
+
+### 🔧 Technical Implementation
+
+- Added `getControllerFieldsWithModel()` method that resolves model names at generation time
+- Uses `Str::camel($this->name)` to get the correct model variable name
+- Ensures controller fields are generated with proper PHP syntax
+
+### ✅ Expected Output
+
+```php
+// Now generates correctly:
+'uuid' => $tombo->uuid,
+'email' => $tombo->email,
+'allocation_id' => $tombo->allocation_id,
+// Instead of:
+'uuid' => ${{modelNameLowerCase}}->uuid,
+```
+
+---
+
+## [3.0.10] - Controller Field Variable Fixhangelog
+
 ## [3.0.11] - Controller Field Variable Fix
 
 ### 🐛 Bug Fixes

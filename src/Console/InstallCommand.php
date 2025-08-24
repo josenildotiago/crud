@@ -600,7 +600,7 @@ JSX;
             '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
             '{{tableCells}}' => $this->getTableCells(),
             '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
-            '{{controllerFields}}' => $this->getControllerFields(),
+            '{{controllerFields}}' => $this->getControllerFieldsWithModel(),
             '{{modelTable}}' => $this->table, // Fix: use table name instead of class name
             '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
             '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
@@ -704,6 +704,23 @@ JSX;
         $modelVarName = '{{modelNameLowerCase}}';
 
         // Convert to controller field mappings
+        $fields = [];
+        foreach ($fillableFields as $field) {
+            $fields[] = "                '{$field}' => \${$modelVarName}->{$field},";
+        }
+
+        return implode("\n", $fields);
+    }
+
+    /**
+     * Get controller field mappings with resolved model name.
+     */
+    protected function getControllerFieldsWithModel(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+        $modelVarName = Str::camel($this->name);
+
+        // Convert to controller field mappings with resolved model name
         $fields = [];
         foreach ($fillableFields as $field) {
             $fields[] = "                '{$field}' => \${$modelVarName}->{$field},";
