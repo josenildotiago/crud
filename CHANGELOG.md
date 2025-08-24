@@ -1,5 +1,22 @@
 # Changelog
 
+## [3.0.9] - Controller Template Fix
+
+### 🐛 Bug Fixes
+
+- **Fixed InertiaController.stub**: Replaced {{#each columns}} with {{controllerFields}}
+- **Controller Field Mapping**: Added proper dynamic field generation for controller index method
+- **Database Table Reference**: Fixed {{modelTable}} to use actual table name instead of class name
+- **Enhanced Field Processing**: Controllers now generate proper field mappings for all data types
+
+### 🔧 New Controller Features
+
+- `{{controllerFields}}` - Dynamic field mappings for index method
+- Proper database table name resolution
+- Enhanced field processing for Inertia responses
+
+---
+
 ## [3.0.8] - React Stub Syntax Fix
 
 ### 🛠️ Major Template Fixes

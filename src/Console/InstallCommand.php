@@ -600,6 +600,8 @@ JSX;
             '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
             '{{tableCells}}' => $this->getTableCells(),
             '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
+            '{{controllerFields}}' => $this->getControllerFields(),
+            '{{modelTable}}' => $this->table, // Fix: use table name instead of class name
             '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
             '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
             '{{modelCamel}}' => Str::camel($this->name),
@@ -688,6 +690,22 @@ JSX;
         foreach ($fillableFields as $field) {
             $label = Str::title(str_replace('_', ' ', $field));
             $fields[] = "                                    <div>\n                                        <dt className=\"text-sm font-medium text-gray-500 dark:text-gray-400\">\n                                            {$label}\n                                        </dt>\n                                        <dd className=\"mt-1 text-sm text-gray-900 dark:text-gray-100\">\n                                            {{{modelCamel}}.{$field} || '-'}\n                                        </dd>\n                                    </div>";
+        }
+
+        return implode("\n", $fields);
+    }
+
+    /**
+     * Get controller field mappings for index method.
+     */
+    protected function getControllerFields(): string
+    {
+        $fillableFields = $this->getFilteredColumns();
+
+        // Convert to controller field mappings
+        $fields = [];
+        foreach ($fillableFields as $field) {
+            $fields[] = "                '{$field}' => \${{modelNameLowerCase}}->{$field},";
         }
 
         return implode("\n", $fields);
