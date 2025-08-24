@@ -1,7 +1,7 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import AppLayout from '@/Layouts/AppLayout';
+import { ArrowLeftIcon } from 'lucide-react';
+import AppLayout from '@/layouts/app-layout';
 import { PageProps } from '@/types';
 {{themeImports}}
 
@@ -30,23 +30,12 @@ export default function Edit({ auth, {{modelCamel}} }: EditProps) {
         },
         {
             title: 'Editar {{modelTitle}}',
-            href: `/{{modelRoutePlural}}/${{'{'}}{{{{modelCamel}}.id}{{'}'}}/edit`,
+            href: `/{{modelRoutePlural}}/{{modelCamel}}.id/edit`,
         },
     ];
 
     return (
-        <AppLayout
-            user={auth.user}
-            breadcrumbs={breadcrumbs}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        Editar {{modelTitle}}
-                    </h2>
-                    {{themeComponents}}
-                </div>
-            }
-        >
+        <AppLayout breadcrumbs={breadcrumbs} >
             <Head title="Editar {{modelTitle}}" />
 
             <div className="py-12">
