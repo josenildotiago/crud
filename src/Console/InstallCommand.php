@@ -701,11 +701,12 @@ JSX;
     protected function getControllerFields(): string
     {
         $fillableFields = $this->getFilteredColumns();
+        $modelVarName = '{{modelNameLowerCase}}';
 
         // Convert to controller field mappings
         $fields = [];
         foreach ($fillableFields as $field) {
-            $fields[] = "                '{$field}' => \${{modelNameLowerCase}}->{$field},";
+            $fields[] = "                '{$field}' => \${$modelVarName}->{$field},";
         }
 
         return implode("\n", $fields);

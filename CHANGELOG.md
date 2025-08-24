@@ -1,5 +1,21 @@
 # Changelog
 
+## [3.0.11] - Controller Field Variable Fix
+
+### 🐛 Bug Fixes
+
+- **Fixed {{controllerFields}} Variable Substitution**: Corrected template variable replacement in controller fields
+- **Removed Unnecessary Null Safety**: Removed `?` from `created_at` and `updated_at` formatting
+- **Enhanced Field Generation**: Controller fields now properly use {{modelNameLowerCase}} variable
+
+### 🔧 Technical Improvements
+
+- Template variable substitution now works correctly in controller field mappings
+- Cleaner date formatting without unnecessary null safety operators
+- Proper variable scope handling in field generation methods
+
+---
+
 ## [3.0.9] - Controller Template Fix
 
 ### 🐛 Bug Fixes

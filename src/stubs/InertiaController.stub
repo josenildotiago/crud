@@ -27,8 +27,8 @@ class {{modelName}}Controller extends Controller
             ->through(fn (${{modelNameLowerCase}}) => [
                 'id' => ${{modelNameLowerCase}}->id,
 {{controllerFields}}
-                'created_at' => ${{modelNameLowerCase}}->created_at?->format('d/m/Y H:i'),
-                'updated_at' => ${{modelNameLowerCase}}->updated_at?->format('d/m/Y H:i'),
+                'created_at' => ${{modelNameLowerCase}}->created_at->format('d/m/Y H:i'),
+                'updated_at' => ${{modelNameLowerCase}}->updated_at->format('d/m/Y H:i'),
             ]);
 
         return Inertia::render('{{modelName}}/Index', [
