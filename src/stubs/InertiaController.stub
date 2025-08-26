@@ -18,22 +18,28 @@ class {{modelName}}Controller extends Controller
      */
     public function index(Request $request): InertiaResponse
     {
+        $search = $request->input('search');
         ${{modelNamePluralLowerCase}} = {{modelName}}::query()
-            ->when($request->search, function ($query, $search) {
-                $query->where('name', 'like', "%{$search}%");
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+{{searchableFields}}
+                });
             })
+            ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString()
             ->through(fn (${{modelNameLowerCase}}) => [
                 'id' => ${{modelNameLowerCase}}->id,
-{{controllerFields}}
+                {{controllerFields}}
                 'created_at' => ${{modelNameLowerCase}}->created_at->format('d/m/Y H:i'),
                 'updated_at' => ${{modelNameLowerCase}}->updated_at->format('d/m/Y H:i'),
             ]);
 
         return Inertia::render('{{modelName}}/Index', [
             '{{modelNamePluralLowerCase}}' => ${{modelNamePluralLowerCase}},
-            'filters' => $request->only(['search']),
+            'filters' => [
+                'search' => $search,
+            ],
         ]);
     }
 

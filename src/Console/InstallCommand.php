@@ -268,6 +268,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $tableHead = $this->generateTableHeaders();
         $formFields = $this->generateFormFields();
         $showFields = $this->generateShowFields();
+        $this->buildListComponent();
 
         $replace = array_merge($this->buildReplacements(), [
             '{{tableHeaders}}' => $tableHead,
@@ -647,6 +648,205 @@ JSX;
     }
 
     /**
+     * Gera campos de busca dinâmicos para o controller
+     */
+    protected function getSearchableFields(): string
+    {
+        $columns = $this->getFilteredColumns();
+        $searchFields = [];
+
+        foreach ($columns as $column) {
+            $columnName = is_object($column) ? $column->Field : $column['name'];
+            $type = is_object($column) ? $column->Type : $column['type'];
+
+            // Apenas incluir campos de texto na busca
+            if (
+                str_contains(strtolower($type), 'varchar') ||
+                str_contains(strtolower($type), 'text') ||
+                str_contains(strtolower($type), 'char')
+            ) {
+                $searchFields[] = $columnName;
+            }
+        }
+
+        // Limitar a 3 campos principais para não sobrecarregar
+        $searchFields = array_slice($searchFields, 0, 3);
+
+        if (empty($searchFields)) {
+            return '                    $q->where("id", "like", "%{$search}%");';
+        }
+
+        $searchCode = [];
+        foreach ($searchFields as $index => $field) {
+            if ($index === 0) {
+                $searchCode[] = "                    \$q->where('$field', 'like', \"%{\$search}%\")";
+            } else {
+                $searchCode[] = "                      ->orWhere('$field', 'like', \"%{\$search}%\")";
+            }
+        }
+
+        return implode("\n", $searchCode) . ';';
+    }
+
+    /**
+     * Gera placeholder para busca
+     */
+    protected function getSearchPlaceholder(): string
+    {
+        $columns = $this->getFilteredColumns();
+        $searchFields = [];
+
+        foreach ($columns as $column) {
+            $columnName = is_object($column) ? $column->Field : $column['name'];
+            $type = is_object($column) ? $column->Type : $column['type'];
+
+            // Apenas incluir campos de texto na busca
+            if (
+                str_contains(strtolower($type), 'varchar') ||
+                str_contains(strtolower($type), 'text') ||
+                str_contains(strtolower($type), 'char')
+            ) {
+                $searchFields[] = $this->formatFieldName($columnName);
+            }
+        }
+
+        // Limitar a 3 campos principais
+        $searchFields = array_slice($searchFields, 0, 3);
+
+        if (empty($searchFields)) {
+            return "Buscar...";
+        }
+
+        return "Buscar por " . implode(" ou ", $searchFields) . "...";
+    }
+
+    /**
+     * Formata nome do campo para exibição
+     */
+    protected function formatFieldName(string $fieldName): string
+    {
+        // Converter snake_case para formato legível
+        return str_replace('_', ' ', strtolower($fieldName));
+    }
+
+    /**
+     * Gera cabeçalhos de tabela para o componente de listagem
+     */
+    protected function getTableHeadersForList(): string
+    {
+        $columns = $this->getFilteredColumns();
+        $headers = [];
+
+        foreach ($columns as $column) {
+            $columnName = is_object($column) ? $column->Field : $column['name'];
+            $label = ucfirst(str_replace('_', ' ', $columnName));
+            $headers[] = "                            <TableHead>$label</TableHead>";
+        }
+
+        return implode("\n", $headers);
+    }
+
+    /**
+     * Gera células de tabela para o componente de listagem
+     */
+    protected function getTableCellsForList(): string
+    {
+        $columns = $this->getFilteredColumns();
+        $cells = [];
+
+        foreach ($columns as $column) {
+            $columnName = is_object($column) ? $column->Field : $column['name'];
+            // Remover {{nameStack}} e usar diretamente o nome da variável
+            $cells[] = "                                    <TableCell>{{{$this->name}}LowerCase}}.{$columnName}}</TableCell>";
+        }
+
+        return implode("\n", $cells);
+    }
+
+    protected function buildTypeScriptTypes(): self
+    {
+        $typesPath = resource_path('js/types/index.d.ts');
+
+        if (!$this->files->exists(dirname($typesPath))) {
+            $this->files->makeDirectory(dirname($typesPath), 0755, true);
+        }
+
+        $replace = $this->buildReplacements();
+        $typesContent = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('react/Types')
+        );
+
+        // Append or create types file
+        if ($this->files->exists($typesPath)) {
+            $existingContent = $this->files->get($typesPath);
+            if (strpos($existingContent, "interface {$this->name}") === false) {
+                $this->files->append($typesPath, "\n" . $typesContent);
+            }
+        } else {
+            $this->write($typesPath, $typesContent);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Calcula colspan para tabela vazia
+     */
+    protected function getColSpan(): int
+    {
+        $columns = $this->getFilteredColumns();
+        return count($columns) + 2; // +1 para ID, +1 para Ações
+    }
+
+    protected function _getListComponentPath(string $name): string
+    {
+        $componentsPath = resource_path('js/components');
+
+        if (!$this->files->exists($componentsPath)) {
+            $this->files->makeDirectory($componentsPath, 0755, true);
+        }
+
+        return "{$componentsPath}/{$name}List.tsx";
+    }
+
+    /**
+     * Constrói o componente de listagem
+     */
+    protected function buildListComponent(): self
+    {
+        $listPath = $this->_getReactComponentPath($this->name . 'List');
+        $listPath = $this->_getListComponentPath($this->name);
+
+        if ($this->files->exists($listPath) && !confirm(
+            "O componente {$this->name}List já existe. Deseja sobrescrevê-lo?",
+            default: false
+        )) {
+            return $this;
+        }
+
+        info("Criando componente de listagem {$this->name}List...");
+
+        $replace = array_merge($this->buildReplacements(), [
+            '{{searchPlaceholder}}' => $this->getSearchPlaceholder(),
+            '{{tableHeaders}}' => $this->getTableHeadersForList(),
+            '{{tableCells}}' => $this->getTableCellsForList(),
+            '{{colSpan}}' => $this->getColSpan(),
+        ]);
+
+        $content = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStub('react/ModelList')
+        );
+
+        $this->write($listPath, $content);
+
+        return $this;
+    }
+
+    /**
      * Build enhanced replacements for React components.
      */
     protected function buildReplacements()
@@ -660,6 +860,7 @@ JSX;
             '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
             '{{tableCells}}' => $this->getTableCells(),
             '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
+            '{{searchableFields}}' => $this->getSearchableFields(),
             '{{controllerFields}}' => $this->getControllerFieldsWithModel(),
             '{{modelTable}}' => $this->table, // Fix: use table name instead of class name
             '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),

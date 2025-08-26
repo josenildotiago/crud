@@ -1,0 +1,177 @@
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Paginated{{modelName}}List } from '@/types';
+import { router } from '@inertiajs/react';
+import { Pencil, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
+type Props = {
+    {{modelNamePluralLowerCase}}: Paginated{{modelName}}List;
+    edit?: boolean;
+    canDelete?: boolean;
+    filters?: { search: string };
+};
+
+export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelete, filters }: Props) {
+    const [searchTerm, setSearchTerm] = useState(filters?.search || '');
+    const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+
+    // Debounce da busca
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearchTerm(searchTerm);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
+
+    // Atualizar quando o termo mudar
+    useEffect(() => {
+        if (debouncedSearchTerm !== (filters?.search || '')) {
+            router.get(
+                window.location.pathname,
+                { search: debouncedSearchTerm },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                    replace: true,
+                },
+            );
+        }
+    }, [debouncedSearchTerm, filters?.search]);
+
+    const clearSearch = () => {
+        setSearchTerm('');
+        router.get(
+            window.location.pathname,
+            {},
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    };
+
+    return (
+        <div className="space-y-4">
+            {/* Campo de busca */}
+            <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <Input
+                    type="text"
+                    placeholder="{{searchPlaceholder}}"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pr-10 pl-10"
+                />
+                {searchTerm && (
+                    <button onClick={clearSearch} className="absolute inset-y-0 right-0 flex items-center pr-3">
+                        <X className="h-4 w-4 text-gray-400 hover:text-gray-600" />
+                    </button>
+                )}
+            </div>
+
+            {/* Mostrar termo de busca ativo */}
+            {filters?.search && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <span>Buscando por:</span>
+                    <span className="rounded-md bg-blue-100 px-2 py-1 font-medium text-blue-800">"{filters.search}"</span>
+                    <button onClick={clearSearch} className="text-blue-600 underline hover:text-blue-800">
+                        Limpar busca
+                    </button>
+                </div>
+            )}
+
+            {/* Tabela */}
+            <div className="w-full overflow-x-auto rounded-md border shadow-sm">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>ID</TableHead>
+{{tableHeaders}}
+                            {(edit || canDelete) && <TableHead>Ações</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {{{modelNamePluralLowerCase}}.data.length ? (
+                            {{modelNamePluralLowerCase}}.data.map(({{modelNameLowerCase}}) => (
+                                <TableRow key={{{modelNameLowerCase}}.id}>
+                                    <TableCell>{{{modelNameLowerCase}}.id}</TableCell>
+{{tableCells}}
+                                    {(edit || canDelete) && (
+                                        <TableCell className="flex gap-2">
+                                            {edit && (
+                                                <Button
+                                                    variant="outline-warning"
+                                                    size="icon"
+                                                    onClick={() => router.visit(route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id))}
+                                                >
+                                                    <Pencil className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                            {canDelete && (
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="icon"
+                                                    onClick={() => {
+                                                        if (confirm('Tem certeza que deseja excluir este {{modelNameLowerCase}}?')) {
+                                                            router.delete(route('{{modelRoute}}.destroy', {{modelNameLowerCase}}.id));
+                                                        }
+                                                    }}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </TableCell>
+                                    )}
+                                </TableRow>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell colSpan={{colSpan}} className="py-4 text-center">
+                                    Nenhum {{modelNameLowerCase}} encontrado.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+
+                {/* Paginação */}
+                {{{modelNamePluralLowerCase}}.total > {{modelNamePluralLowerCase}}.per_page && (
+                    <Pagination className="mt-4">
+                        <PaginationContent>
+                            {{{modelNamePluralLowerCase}}.links.map((link, i) => (
+                                <PaginationItem key={i}>
+                                    {link.url ? (
+                                        <PaginationLink
+                                            isActive={link.active}
+                                            onClick={() => {
+                                                const url = new URL(link.url!);
+                                                if (filters?.search) {
+                                                    url.searchParams.set('search', filters.search);
+                                                }
+                                                router.visit(url.toString());
+                                            }}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    ) : (
+                                        <span className="px-3 text-muted-foreground" dangerouslySetInnerHTML={{ __html: link.label }} />
+                                    )}
+                                </PaginationItem>
+                            ))}
+                        </PaginationContent>
+                    </Pagination>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default {{modelName}}List;
