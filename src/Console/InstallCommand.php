@@ -271,7 +271,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $tableHead = $this->generateTableHeaders();
         $formFields = $this->generateFormFields();
         $showFields = $this->generateShowFields();
-        $this->buildListComponent();
+        $this->buildListComponent()->buildTypeScriptTypes();
 
         $replace = array_merge($this->buildReplacements(), [
             '{{tableHeaders}}' => $tableHead,
@@ -824,6 +824,8 @@ JSX;
 
     protected function buildTypeScriptTypes(): self
     {
+        info('Criando tipos TypeScript...');
+
         $typesPath = resource_path('js/types/index.d.ts');
 
         if (!$this->files->exists(dirname($typesPath))) {
@@ -842,9 +844,13 @@ JSX;
             $existingContent = $this->files->get($typesPath);
             if (strpos($existingContent, "interface {$this->name}") === false) {
                 $this->files->append($typesPath, "\n" . $typesContent);
+                info("Tipos TypeScript adicionados ao arquivo existente: {$this->name}");
+            } else {
+                info("Interface {$this->name} já existe no arquivo de tipos.");
             }
         } else {
             $this->write($typesPath, $typesContent);
+            info("Arquivo de tipos TypeScript criado: resources/js/types/index.d.ts");
         }
 
         return $this;

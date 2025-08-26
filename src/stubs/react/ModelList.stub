@@ -109,7 +109,6 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                                         <TableCell className="flex gap-2">
                                             {edit && (
                                                 <Button
-                                                    variant="outline-warning"
                                                     size="icon"
                                                     onClick={() => router.visit(route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id))}
                                                 >
@@ -118,7 +117,6 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                                             )}
                                             {canDelete && (
                                                 <Button
-                                                    variant="outline-danger"
                                                     size="icon"
                                                     onClick={() => {
                                                         if (confirm('Tem certeza que deseja excluir este {{modelNameLowerCase}}?')) {
@@ -135,7 +133,7 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={{colSpan}} className="py-4 text-center">
+                                <TableCell colSpan={13} className="py-4 text-center">
                                     Nenhum {{modelNameLowerCase}} encontrado.
                                 </TableCell>
                             </TableRow>
