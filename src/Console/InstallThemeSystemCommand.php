@@ -226,7 +226,7 @@ class InstallThemeSystemCommand extends Command
     protected function createExampleComponents(): void
     {
         // Create a simple example page if it doesn't exist
-        $examplePagePath = resource_path('js/Pages/ThemeExample.tsx');
+        $examplePagePath = resource_path('js/pages/ThemeExample.tsx');
 
         if (!$this->files->exists($examplePagePath) || $this->option('force')) {
             $this->files->ensureDirectoryExists(dirname($examplePagePath));
@@ -234,7 +234,7 @@ class InstallThemeSystemCommand extends Command
             $exampleContent = $this->files->get(__DIR__ . '/../stubs/react/ThemeExample.tsx.stub');
             $this->files->put($examplePagePath, $exampleContent);
 
-            $this->components->task('Página de exemplo criada: Pages/ThemeExample.tsx');
+            $this->components->task('Página de exemplo criada: pages/ThemeExample.tsx');
         }
     }
 }

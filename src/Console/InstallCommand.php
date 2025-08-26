@@ -76,7 +76,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $this->components->bulletList([
             "Controller: app/Http/Controllers/{$this->name}Controller.php",
             "Model: app/Models/{$this->name}.php",
-            "React Components: resources/js/Pages/{$this->name}/",
+            "React Components: resources/js/pages/{$this->name}/",
             "Routes: routes/" . Str::lower($this->name) . ".php",
             "Web.php: Require adicionado"
         ]);
@@ -540,9 +540,9 @@ JSX;
     protected function _getReactComponentPath(string $component): string
     {
         $name = Str::studly($this->name);
-        $pagesPath = resource_path('js/Pages');
+        $pagesPath = resource_path('js/pages');
 
-        // Ensure the Pages directory exists
+        // Ensure the pages directory exists
         if (!$this->files->exists($pagesPath)) {
             $this->files->makeDirectory($pagesPath, 0755, true);
         }

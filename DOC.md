@@ -322,7 +322,7 @@ protected $signature = 'getic:install {name : Table name}
 
 - **Função:** Gera componentes React
 - **Stubs:** `react/Index.stub`, `react/Create.stub`, etc.
-- **Path:** `resources/js/Pages/{Model}/`
+- **Path:** `resources/js/pages/{Model}/`
 
 ##### `buildRouter(): self`
 
@@ -482,7 +482,7 @@ protected Filesystem $files;
 
 - **Função:** Cria página de exemplo
 - **Stub:** `react/ThemeExample.tsx.stub`
-- **Path:** `resources/js/Pages/ThemeExample.tsx`
+- **Path:** `resources/js/pages/ThemeExample.tsx`
 
 #### Relações
 
@@ -534,7 +534,7 @@ protected Filesystem $files;
 ```php
 'inertia' => [
     'enabled' => true,
-    'components_path' => 'js/Pages',
+    'components_path' => 'js/pages',
     'layout_component' => 'Layouts/AuthenticatedLayout',
 ]
 ```

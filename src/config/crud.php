@@ -58,7 +58,7 @@ return [
     */
     'inertia' => [
         'enabled' => true,
-        'components_path' => 'js/Pages',
+        'components_path' => 'js/pages',
         'layout_component' => 'Layouts/AuthenticatedLayout',
     ],
 
