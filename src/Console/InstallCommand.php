@@ -404,16 +404,63 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     }
 
     /**
-     * Generate form fields for React components.
+     * Generate form fields for React components using shadcn/ui.
      */
     protected function generateFormFields(): string
     {
         $fields = [];
         foreach ($this->getFilteredColumns() as $column) {
-            $title = Str::title(str_replace('_', ' ', $column));
-            $fields[] = $this->getReactFormField($title, $column);
+            $label = Str::title(str_replace('_', ' ', $column));
+            $placeholder = $this->generatePlaceholder($column, $label);
+
+            $fieldTemplate = str_replace(
+                ['{{column}}', '{{label}}', '{{placeholder}}'],
+                [$column, $label, $placeholder],
+                $this->getStub('react/FormFieldReact')
+            );
+
+            $fields[] = $fieldTemplate;
         }
         return implode("\n", $fields);
+    }
+
+    /**
+     * Generate appropriate placeholder text for field.
+     */
+    protected function generatePlaceholder(string $column, string $label): string
+    {
+        // Generate smart placeholders based on field names
+        $placeholders = [
+            'name' => 'Digite o nome',
+            'email' => 'exemplo@email.com',
+            'phone' => '(11) 99999-9999',
+            'description' => 'Digite a descrição',
+            'title' => 'Digite o título',
+            'address' => 'Digite o endereço',
+            'city' => 'Digite a cidade',
+            'state' => 'Digite o estado',
+            'zip' => '00000-000',
+            'website' => 'https://exemplo.com',
+            'price' => '0,00',
+            'quantity' => '0',
+            'code' => 'Digite o código',
+            'number' => 'Digite o número',
+        ];
+
+        // Check for exact matches
+        if (isset($placeholders[$column])) {
+            return $placeholders[$column];
+        }
+
+        // Check for partial matches
+        foreach ($placeholders as $key => $placeholder) {
+            if (strpos($column, $key) !== false) {
+                return $placeholder;
+            }
+        }
+
+        // Default placeholder
+        return "Digite " . strtolower($label);
     }
 
     /**

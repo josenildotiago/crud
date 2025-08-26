@@ -1,29 +1,26 @@
 # Changelog
 
-## [3.0.12] - Controller Variable Resolution Fix
+## [3.0.13] - 2025-08-26
 
-### 🐛 Critical Fix
+### ✨ Adicionado
 
-- **Fixed Variable Substitution in Controller Fields**: Created `getControllerFieldsWithModel()` method
-- **Resolved Model Name Issue**: Now correctly generates `$tombo->field` instead of `${{modelNameLowerCase}}->field`
-- **Proper Field Generation**: Controller fields now use actual resolved model variable names
+- **FormFieldReact.stub**: Novo template específico para React com shadcn/ui
+- **Card Layout**: Create.stub atualizado com layout Card moderno
+- **Smart Placeholders**: Placeholders inteligentes baseados no nome dos campos
+- **shadcn/ui Integration**: Uso completo de Button, Card, Input, Label
 
-### 🔧 Technical Implementation
+### 🔧 Melhorado
 
-- Added `getControllerFieldsWithModel()` method that resolves model names at generation time
-- Uses `Str::camel($this->name)` to get the correct model variable name
-- Ensures controller fields are generated with proper PHP syntax
+- **Create.stub**: Layout moderno com Card, CardHeader, CardContent, CardFooter
+- **Form Fields**: Geração automática de campos com componentes shadcn/ui
+- **Error Handling**: Exibição de erros integrada aos campos
+- **Loading States**: LoaderCircle durante submissão de formulários
 
-### ✅ Expected Output
+### 🎨 Interface
 
-```php
-// Now generates correctly:
-'uuid' => $tombo->uuid,
-'email' => $tombo->email,
-'allocation_id' => $tombo->allocation_id,
-// Instead of:
-'uuid' => ${{modelNameLowerCase}}->uuid,
-```
+- **Design Moderno**: Cards com header, content e footer bem estruturados
+- **Grid Responsivo**: Layout responsivo sm:grid-cols-12
+- **Componentes UI**: Integração completa com @/components/ui
 
 ---
 

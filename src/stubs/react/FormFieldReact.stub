@@ -1,0 +1,12 @@
+<div className="sm:col-span-12">
+    <Label htmlFor="{{column}}">{{label}}:</Label>
+    <Input 
+        id="{{column}}"
+        name="{{column}}"
+        placeholder="Ex: {{placeholder}}" 
+        value={data.{{column}}} 
+        onChange={(e) => setData('{{column}}', e.target.value)} 
+        required 
+    />
+    {errors.{{column}} && <p className="text-sm text-red-500 mt-1">{errors.{{column}}}</p>}
+</div>
