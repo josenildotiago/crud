@@ -62,6 +62,9 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             ->buildViews()
             ->buildRouter();
 
+        // Adicionar temporariamente para debug
+        $this->debugColumns();
+
         // Generate API if requested
         if ($this->option('api')) {
             $this->buildApiController()
@@ -656,8 +659,23 @@ JSX;
         $searchFields = [];
 
         foreach ($columns as $column) {
-            $columnName = is_object($column) ? $column->Field : $column['name'];
-            $type = is_object($column) ? $column->Type : $column['type'];
+            // Verificar se é array ou objeto e extrair o nome corretamente
+            if (is_array($column)) {
+                $columnName = $column['name'] ?? $column['Field'] ?? $column;
+                $type = $column['type'] ?? $column['Type'] ?? 'varchar';
+            } elseif (is_object($column)) {
+                $columnName = $column->Field ?? $column->name ?? (string)$column;
+                $type = $column->Type ?? $column->type ?? 'varchar';
+            } else {
+                // Se for string diretamente
+                $columnName = (string)$column;
+                $type = 'varchar'; // Assumir como texto se não tiver tipo
+            }
+
+            // Pular campos que não queremos na busca
+            if (in_array(strtolower($columnName), ['id', 'created_at', 'updated_at', 'deleted_at', 'password'])) {
+                continue;
+            }
 
             // Apenas incluir campos de texto na busca
             if (
@@ -697,8 +715,23 @@ JSX;
         $searchFields = [];
 
         foreach ($columns as $column) {
-            $columnName = is_object($column) ? $column->Field : $column['name'];
-            $type = is_object($column) ? $column->Type : $column['type'];
+            // Verificar se é array ou objeto e extrair o nome corretamente
+            if (is_array($column)) {
+                $columnName = $column['name'] ?? $column['Field'] ?? $column;
+                $type = $column['type'] ?? $column['Type'] ?? 'varchar';
+            } elseif (is_object($column)) {
+                $columnName = $column->Field ?? $column->name ?? (string)$column;
+                $type = $column->Type ?? $column->type ?? 'varchar';
+            } else {
+                // Se for string diretamente
+                $columnName = (string)$column;
+                $type = 'varchar'; // Assumir como texto se não tiver tipo
+            }
+
+            // Pular campos que não queremos na busca
+            if (in_array(strtolower($columnName), ['id', 'created_at', 'updated_at', 'deleted_at', 'password'])) {
+                continue;
+            }
 
             // Apenas incluir campos de texto na busca
             if (
@@ -738,7 +771,20 @@ JSX;
         $headers = [];
 
         foreach ($columns as $column) {
-            $columnName = is_object($column) ? $column->Field : $column['name'];
+            // Verificar se é array ou objeto e extrair o nome corretamente
+            if (is_array($column)) {
+                $columnName = $column['name'] ?? $column['Field'] ?? $column;
+            } elseif (is_object($column)) {
+                $columnName = $column->Field ?? $column->name ?? (string)$column;
+            } else {
+                $columnName = (string)$column;
+            }
+
+            // Pular campos de sistema
+            if (in_array(strtolower($columnName), ['id', 'created_at', 'updated_at', 'deleted_at', 'password'])) {
+                continue;
+            }
+
             $label = ucfirst(str_replace('_', ' ', $columnName));
             $headers[] = "                            <TableHead>$label</TableHead>";
         }
@@ -755,9 +801,22 @@ JSX;
         $cells = [];
 
         foreach ($columns as $column) {
-            $columnName = is_object($column) ? $column->Field : $column['name'];
-            // Remover {{nameStack}} e usar diretamente o nome da variável
-            $cells[] = "                                    <TableCell>{{{$this->name}}LowerCase}}.{$columnName}}</TableCell>";
+            // Verificar se é array ou objeto e extrair o nome corretamente
+            if (is_array($column)) {
+                $columnName = $column['name'] ?? $column['Field'] ?? $column;
+            } elseif (is_object($column)) {
+                $columnName = $column->Field ?? $column->name ?? (string)$column;
+            } else {
+                $columnName = (string)$column;
+            }
+
+            // Pular campos de sistema
+            if (in_array(strtolower($columnName), ['id', 'created_at', 'updated_at', 'deleted_at', 'password'])) {
+                continue;
+            }
+
+            $modelVar = strtolower($this->name);
+            $cells[] = "                                    <TableCell>{{$modelVar}.{$columnName}}</TableCell>";
         }
 
         return implode("\n", $cells);
@@ -797,7 +856,48 @@ JSX;
     protected function getColSpan(): int
     {
         $columns = $this->getFilteredColumns();
-        return count($columns) + 2; // +1 para ID, +1 para Ações
+        $visibleColumns = 0;
+
+        foreach ($columns as $column) {
+            // Verificar se é array ou objeto e extrair o nome corretamente
+            if (is_array($column)) {
+                $columnName = $column['name'] ?? $column['Field'] ?? $column;
+            } elseif (is_object($column)) {
+                $columnName = $column->Field ?? $column->name ?? (string)$column;
+            } else {
+                $columnName = (string)$column;
+            }
+
+            // Contar apenas colunas visíveis
+            if (!in_array(strtolower($columnName), ['created_at', 'updated_at', 'deleted_at', 'password'])) {
+                $visibleColumns++;
+            }
+        }
+
+        return $visibleColumns + 1; // +1 para coluna de Ações
+    }
+
+    /**
+     * Adicionar método de debug para verificar estrutura dos dados
+     */
+    protected function debugColumns(): void
+    {
+        $columns = $this->getFilteredColumns();
+
+        $this->info("Debugando estrutura das colunas:");
+        foreach ($columns as $index => $column) {
+            $this->info("Coluna $index:");
+            if (is_array($column)) {
+                $this->info("  Tipo: Array");
+                $this->info("  Dados: " . json_encode($column));
+            } elseif (is_object($column)) {
+                $this->info("  Tipo: Object");
+                $this->info("  Propriedades: " . json_encode(get_object_vars($column)));
+            } else {
+                $this->info("  Tipo: " . gettype($column));
+                $this->info("  Valor: $column");
+            }
+        }
     }
 
     protected function _getListComponentPath(string $name): string
