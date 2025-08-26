@@ -540,7 +540,20 @@ JSX;
     protected function _getReactComponentPath(string $component): string
     {
         $name = Str::studly($this->name);
-        return $this->makeDirectory(resource_path("js/Pages/{$name}/{$component}.tsx"));
+        $pagesPath = resource_path('js/Pages');
+
+        // Ensure the Pages directory exists
+        if (!$this->files->exists($pagesPath)) {
+            $this->files->makeDirectory($pagesPath, 0755, true);
+        }
+
+        // Create the model-specific directory
+        $modelPath = "{$pagesPath}/{$name}";
+        if (!$this->files->exists($modelPath)) {
+            $this->files->makeDirectory($modelPath, 0755, true);
+        }
+
+        return "{$modelPath}/{$component}.tsx";
     }
 
     /**

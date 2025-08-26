@@ -169,16 +169,14 @@ abstract class GeneratorCommand extends Command
     abstract protected function buildApiRoutes();
 
     /**
-     * Build the directory if necessary.
-     *
-     * @param string $path
-     *
-     * @return string
+     * Create directory if it doesn't exist and return file path.
      */
-    protected function makeDirectory($path)
+    protected function makeDirectory($path): string
     {
-        if (!$this->files->isDirectory(dirname($path))) {
-            $this->files->makeDirectory(dirname($path), 0777, true, true);
+        $directory = dirname($path);
+
+        if (!$this->files->exists($directory)) {
+            $this->files->makeDirectory($directory, 0755, true);
         }
 
         return $path;
