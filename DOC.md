@@ -1,263 +1,112 @@
-# Documentação Técnica - Laravel CRUD Generator v3.0.6
+# Documentação Técnica - Laravel CRUD Generator v3.0.18
 
 ## Visão Geral
 
-Este documento descreve a arquitetura e funcionamento do pacote Laravel CRUD Generator v3.0.6, um sistema moderno para geração automática de operações CRUD com integração React.js e sistema de temas dinâmicos.
+Este documento descreve a arquitetura e funcionamento do pacote Laravel CRUD Generator v3.0.18, um sistema moderno para geração automática de operações CRUD com integração React.js e sistema de temas dinâmicos.
 
 ---
 
-## 📁 Estrutura de Arquivos Analisados
+## 📁 Estrutura de Arquivos
+
+### Core System
+
+- **CrudServiceProvider.php** - Service Provider principal
+- **CrudManager.php** - Gerenciador central do sistema CRUD
+- **ModelGenerator.php** - Gerador de relacionamentos Eloquent
 
 ### Console Commands
 
-- buildOptions.php - Trait para opções de build
-- CreateThemeCommand.php - Criação de novos temas
-- GeneratorCommand.php - Comando base abstrato
-- InstallCommand.php - Comando principal de instalação
-- InstallThemeSystemCommand.php - Instalação do sistema de temas
+- **buildOptions.php** - Trait para opções de build
+- **CreateThemeCommand.php** - Criação de novos temas dinâmicos
+- **GeneratorCommand.php** - Comando base abstrato
+- **InstallCommand.php** - Comando principal de instalação CRUD
+- **InstallThemeSystemCommand.php** - Instalação do sistema de temas
 
 ### Configurações
 
-- crud.php - Configuração principal do pacote
-- themes.php - Configuração do sistema de temas
+- **config/crud.php** - Configuração principal do pacote
+- **config/themes.php** - Configuração do sistema de temas dinâmicos
 
 ### Facades
 
-- Crud.php - Facade Laravel para o pacote
+- **Facades/Crud.php** - Facade Laravel para o pacote
+
+### Stubs System
+
+- **stubs/** - Templates para geração de código
+  - **InertiaController.stub** - Controller para React/Inertia.js
+  - **Model.stub** - Model Eloquent com relacionamentos
+  - **FormRequest.stub** - Validação de formulários
+  - **ApiController.stub** - Controller API RESTful
+  - **react/** - Componentes React/TypeScript
+    - **Create.stub** - Formulário de criação com shadcn/ui
+    - **Edit.stub** - Formulário de edição
+    - **Index.stub** - Listagem com paginação
+    - **Show.stub** - Visualização de registro
+    - **FormFieldReact.stub** - Campo de formulário React
 
 ---
 
-## 🔧 Console Commands
+## 🏗️ Arquitetura Principal
 
-### 1. buildOptions.php
-
-**Tipo:** Trait  
-**Namespace:** `Crud\Console`
+### CrudServiceProvider
 
 ```php
-trait buildOptions
+class CrudServiceProvider extends ServiceProvider
 {
-    protected function buildOptions()
+    public function register()
     {
-        $route = $this->option('route');
+        $this->app->singleton('crud', function ($app) {
+            return new CrudManager($app['files']);
+        });
+    }
 
-        if (!empty($route)) {
-            $this->options['route'] = $route;
-        }
-
-        return $this;
+    public function boot()
+    {
+        $this->commands([
+            InstallCommand::class,
+            CreateThemeCommand::class,
+            InstallThemeSystemCommand::class,
+        ]);
     }
 }
 ```
 
-#### Descrição
+**Funcionalidades:**
 
-- **Função:** Trait reutilizável para construir opções de comando
-- **Método `buildOptions()`:**
-  - Processa a opção `--route` do comando
-  - Armazena no array `$this->options['route']`
-  - Retorna `$this` para method chaining
+- Registra singleton `CrudManager`
+- Publica configurações
+- Registra comandos Artisan
+- Define Facade `Crud`
 
-#### Relações
+### CrudManager
 
-- Usado por: `GeneratorCommand`, `InstallCommand`
-- Stubs relacionados: Nenhum diretamente
+```php
+class CrudManager
+{
+    public function generateCrud(string $table, array $options = []): array
+    public function installThemeSystem(): bool
+    public function createTheme(string $name, array $config): bool
+    public function getAvailableThemes(): array
+}
+```
+
+**Responsabilidades:**
+
+- Coordena geração de CRUD
+- Gerencia sistema de temas
+- Valida configurações
+- Fornece API unificada
 
 ---
 
-### 2. CreateThemeCommand.php
+## 🔧 Console Commands Detalhados
 
-**Tipo:** Command  
-**Namespace:** `Crud\Console`  
-**Implements:** `PromptsForMissingInput`
+### InstallCommand.php - v3.0.18
 
-#### Propriedades
+**Comando:** `getic:install {name}`
 
-```php
-protected $signature = 'crud:create-theme {name? : Theme name}
-                        {--base-color= : Base color in OKLCH format}
-                        {--auto-generate : Auto-generate color variations}';
-protected $description = 'Create a new theme with color variations';
-protected Filesystem $files;
-```
-
-#### Métodos Principais
-
-##### `handle(): int`
-
-- **Função:** Método principal de execução
-- **Fluxo:**
-  1. Valida nome do tema
-  2. Verifica se sistema de temas está instalado
-  3. Obtém cor base do usuário
-  4. Gera configuração do tema
-  5. Adiciona ao arquivo `themes.ts`
-
-##### `promptForMissingArgumentsUsing(): array`
-
-- **Função:** Define prompts interativos para argumentos faltantes
-- **Retorna:** Array com configuração do prompt para o nome do tema
-
-##### `getBaseColor(): string`
-
-- **Função:** Obtém a cor base do tema
-- **Opções:**
-  - Cor predefinida da paleta
-  - Cor customizada em OKLCH
-  - Conversão de HEX para OKLCH
-
-##### `selectPredefinedColor(): string`
-
-- **Função:** Permite seleção de cores predefinidas
-- **Cores disponíveis:** Blue, Green, Purple, Red, Orange, Yellow, Pink, Gray, Teal, Indigo
-
-##### `generateThemeConfig(string $id, string $name, string $baseColor): array`
-
-- **Função:** Gera configuração completa do tema
-- **Retorna:** Array com variáveis para modo claro e escuro
-
-##### `generateLightVariables(float $l, float $c, float $h): array`
-
-- **Função:** Gera variáveis CSS para modo claro
-- **Parâmetros:** Lightness, Chroma, Hue (OKLCH)
-
-##### `generateDarkVariables(float $l, float $c, float $h): array`
-
-- **Função:** Gera variáveis CSS para modo escuro
-- **Adaptações:** Ajusta lightness e chroma para modo escuro
-
-##### `addThemeToFile(array $themeConfig): void`
-
-- **Função:** Adiciona tema ao arquivo `themes.ts`
-- **Processo:** Usa regex para inserir antes do bracket de fechamento
-
-#### Relações
-
-- **Stubs relacionados:** `react/themes.ts.stub`
-- **Arquivos modificados:** `resources/js/lib/themes.ts`
-- **Dependências:** `InstallThemeSystemCommand` (verificação)
-
----
-
-### 3. GeneratorCommand.php
-
-**Tipo:** Abstract Command  
-**Namespace:** `Crud\Console`
-
-#### Propriedades
-
-```php
-protected $files; // Filesystem instance
-protected $unwantedColumns = ['id', 'password', 'email_verified_at', ...];
-protected $table = null;
-protected $stack = 'heron';
-protected $nameTable = null;
-protected $tableColumns = null;
-protected $modelNamespace = 'App\Models';
-protected $controllerNamespace = 'App\Http\Controllers';
-protected $layout = 'layouts.app';
-protected $options = [];
-```
-
-#### Métodos Abstratos (devem ser implementados pelas subclasses)
-
-```php
-abstract protected function buildController();
-abstract protected function buildRouter();
-abstract protected function buildModel();
-abstract protected function buildViews();
-abstract protected function buildApiController();
-abstract protected function buildApiResource();
-abstract protected function buildFormRequest();
-abstract protected function buildApiRoutes();
-```
-
-#### Métodos Implementados
-
-##### `__construct(Filesystem $files)`
-
-- **Função:** Inicializa comando com filesystem e configurações
-- **Carrega:** Configurações do crud.php
-
-##### `makeDirectory($path): string`
-
-- **Função:** Cria diretório se não existir
-- **Retorna:** Caminho criado
-
-##### `write($path, $content): void`
-
-- **Função:** Escreve conteúdo em arquivo
-- **Uso:** Salvar código gerado
-
-##### `getStub($type, $content = true): string`
-
-- **Função:** Obtém template stub
-- **Parâmetros:** Tipo do stub, se retorna conteúdo ou caminho
-- **Path:** `__DIR__ . '/../stubs/{$type}.stub'`
-
-##### `buildReplacements(): array`
-
-- **Função:** Constrói array de substituições para templates
-- **Retorna:** Array com placeholders e valores
-
-```php
-[
-    '{{layout}}' => $this->layout,
-    '{{modelName}}' => $this->name,
-    '{{modelTable}}' => $this->name,
-    '{{modelTitle}}' => Str::title(Str::snake($this->name, ' ')),
-    // ... mais substituições
-]
-```
-
-##### `getColumns(): array`
-
-- **Função:** Obtém colunas da tabela do banco
-- **SQL:** `SHOW COLUMNS FROM {table}`
-- **Cache:** Armazena em `$this->tableColumns`
-
-##### `getFilteredColumns(): array`
-
-- **Função:** Remove colunas indesejadas (`unwantedColumns`)
-- **Uso:** Gerar campos de formulário
-
-##### `modelReplacements(): array`
-
-- **Função:** Gera substituições específicas do Model
-- **Inclui:**
-  - `{{fillable}}` - Campos fillable
-  - `{{rules}}` - Regras de validação
-  - `{{relations}}` - Relacionamentos Eloquent
-  - `{{properties}}` - Propriedades PHPDoc
-
-##### `getAllTableNames($nomeTabela = null): array`
-
-- **Função:** Lista todas as tabelas do banco
-- **Filtro:** Exclui tabela especificada
-- **SQL:** `SHOW TABLES`
-
-##### `tableExists(): bool`
-
-- **Função:** Verifica se tabela existe
-- **Método:** `Schema::hasTable()`
-
-#### Relações
-
-- **Herda de:** `Command`
-- **Usa trait:** `buildOptions`
-- **Estendido por:** `InstallCommand`
-- **Stubs relacionados:** Todos os stubs do sistema
-
----
-
-### 4. InstallCommand.php
-
-**Tipo:** Command  
-**Namespace:** `Crud\Console`  
-**Extends:** `GeneratorCommand`  
-**Implements:** `PromptsForMissingInput`
-
-#### Propriedades
+#### Propriedades Principais
 
 ```php
 protected $signature = 'getic:install {name : Table name}
@@ -268,506 +117,572 @@ protected $signature = 'getic:install {name : Table name}
                         {--theme : Include theme-aware components}';
 ```
 
-#### Métodos Principais
-
-##### `handle(): int`
-
-- **Função:** Método principal de execução
-- **Fluxo:**
-  1. Valida tabela e versão Laravel
-  2. Gera Controller, Model, Views, Routes
-  3. Opcionalmente gera API
-  4. Exibe resumo dos arquivos criados
-
-##### `promptForMissingArgumentsUsing(): array`
-
-- **Função:** Define prompt para seleção de tabela
-- **UI:** Lista todas as tabelas disponíveis
-
-##### `afterPromptingForMissingArguments(): void`
-
-- **Função:** Prompts adicionais após argumentos obrigatórios
-- **Inclui:**
-  - Seleção de stack frontend
-  - Integração de temas
-  - Geração de API
-  - Relacionamentos
-
-##### `buildController(): self`
-
-- **Função:** Gera arquivo Controller
-- **Stubs:** `InertiaController.stub` ou `Controller.stub`
-- **Path:** `app/Http/Controllers/{Model}Controller.php`
-
-##### `buildApiController(): self`
-
-- **Função:** Gera Controller para API
-- **Stub:** `ApiController.stub`
-- **Path:** `app/Http/Controllers/Api/{Model}Controller.php`
-
-##### `buildModel(): self`
-
-- **Função:** Gera arquivo Model
-- **Stub:** `Model.stub`
-- **Path:** `app/Models/{Model}.php`
-- **Inclui:** Relacionamentos se especificados
-
-##### `buildViews(): self`
-
-- **Função:** Gera components/views baseado no stack
-- **Stacks:** React, Vue, Blade
-- **Método delegado:** `buildReactComponents()`, etc.
-
-##### `buildReactComponents(): self`
-
-- **Função:** Gera componentes React
-- **Stubs:** `react/Index.stub`, `react/Create.stub`, etc.
-- **Path:** `resources/js/pages/{Model}/`
-
-##### `buildRouter(): self`
-
-- **Função:** Gera arquivo de rotas
-- **Stub:** `ModelRoutes.stub`
-- **Path:** `routes/{model}.php`
-- **Ação:** Adiciona require ao `web.php`
-
-##### `buildApiRoutes(): self`
-
-- **Função:** Adiciona rotas de API
-- **Stub:** `ApiRoutes.stub`
-- **Path:** `routes/api.php`
-
-##### `buildApiResources(): self`
-
-- **Função:** Gera API Resources
-- **Stubs:** `ApiResource.stub`, `ApiResourceCollection.stub`
-- **Path:** `app/Http/Resources/`
-
-##### `buildFormRequest(): self`
-
-- **Função:** Gera Form Request para validação
-- **Stub:** `FormRequest.stub`
-- **Path:** `app/Http/Requests/{Model}Request.php`
-
-#### Métodos de Geração de Código
-
-##### `generateTableHeaders(): string`
-
-- **Função:** Gera cabeçalhos de tabela para React
-- **Formato:** HTML com classes Tailwind
+#### Métodos Implementados (Novos/Atualizados)
 
 ##### `generateFormFields(): string`
 
-- **Função:** Gera campos de formulário React com shadcn/ui
-- **Stub:** `react/FormFieldReact.stub`
-
-##### `generatePlaceholder(string $column, string $label): string`
-
-- **Função:** Gera placeholders inteligentes
-- **Lógica:** Baseado no nome da coluna
-
-##### `generateShowFields(): string`
-
-- **Função:** Gera campos de visualização
-- **Formato:** Cards com informações do modelo
-
-#### Métodos de Substituição Avançada
-
-##### `buildReplacements(): array`
-
-- **Função:** Estende substituições do parent
-- **Adiciona:**
-  - `{{fillableColumns}}` - Campos JavaScript para useForm
-  - `{{typeScriptColumns}}` - Interface TypeScript
-  - `{{tableCells}}` - Células de tabela React
-  - `{{controllerFields}}` - Mapeamento de campos no controller
-
-##### `getJavaScriptFormFields(bool $isEdit = false): string`
-
-- **Função:** Gera campos para useForm do Inertia
-- **Formato:** Objeto JavaScript
-
-##### `getTypeScriptInterfaceFields(): string`
-
-- **Função:** Gera interface TypeScript
-- **Formato:** Propriedades tipadas
-
-##### `getTableCells(): string`
-
-- **Função:** Gera células de tabela React
-- **Formato:** `<td>` com dados do modelo
-
-#### Relações
-
-- **Stubs principais:**
-  - `InertiaController.stub` - Controller para React
-  - `Model.stub` - Model Eloquent
-  - `react/Create.stub` - Componente de criação
-  - `react/Edit.stub` - Componente de edição
-  - `react/Index.stub` - Listagem
-  - `react/Show.stub` - Visualização
-  - `FormRequest.stub` - Validação
-  - `ApiController.stub` - API RESTful
-
----
-
-### 5. InstallThemeSystemCommand.php
-
-**Tipo:** Command  
-**Namespace:** `Crud\Console`
-
-#### Propriedades
-
 ```php
-protected $signature = 'crud:install-theme-system {--force : Force overwrite}';
-protected $description = 'Install the dynamic theme system for React.js';
-protected Filesystem $files;
-```
-
-#### Métodos Principais
-
-##### `handle(): int`
-
-- **Função:** Instala sistema completo de temas
-- **Fluxo:**
-  1. Verifica Inertia.js e React
-  2. Instala arquivos de tema
-  3. Atualiza package.json
-  4. Atualiza CSS
-  5. Cria componentes exemplo
-
-##### `checkInertiaInstallation(): bool`
-
-- **Função:** Verifica se Inertia.js está instalado
-- **Método:** Analisa `package.json` por dependências
-
-##### `checkReactConfiguration(): bool`
-
-- **Função:** Verifica se React está configurado
-- **Método:** Procura por `app.tsx` ou `app.jsx`
-
-##### `installThemeFiles(): void`
-
-- **Função:** Instala todos os arquivos de tema
-- **Arquivos:**
-  - `themes.ts` → `js/lib/themes.ts`
-  - `use-appearance.tsx` → `js/hooks/use-appearance.tsx`
-  - `theme-selector.tsx` → `js/components/theme-selector.tsx`
-  - Outros componentes de tema
-
-##### `installStubFile(string $stub, string $destination): void`
-
-- **Função:** Instala arquivo stub específico
-- **Processo:**
-  1. Verifica existência do stub
-  2. Cria diretório se necessário
-  3. Confirma sobrescrita se arquivo existe
-  4. Copia e processa stub
-
-##### `updatePackageJson(): void`
-
-- **Função:** Adiciona dependências necessárias
-- **Dependências:**
-  - `@radix-ui/react-dropdown-menu`
-  - `@radix-ui/react-tabs`
-  - `lucide-react`
-
-##### `updateCssFiles(): void`
-
-- **Função:** Adiciona comentários de tema ao CSS
-- **Arquivo:** `resources/css/app.css`
-- **Ação:** Adiciona comentário sobre variáveis de tema
-
-##### `createExampleComponents(): void`
-
-- **Função:** Cria página de exemplo
-- **Stub:** `react/ThemeExample.tsx.stub`
-- **Path:** `resources/js/pages/ThemeExample.tsx`
-
-#### Relações
-
-- **Stubs relacionados:**
-  - `react/themes.ts.stub`
-  - `react/use-appearance.tsx.stub`
-  - `react/theme-selector.tsx.stub`
-  - `react/appearance-dropdown.tsx.stub`
-  - `react/ThemeExample.tsx.stub`
-
----
-
-## ⚙️ Configurações
-
-### 1. crud.php
-
-**Tipo:** Configuration File  
-**Path:** crud.php
-
-#### Seções de Configuração
-
-##### Stubs Path
-
-```php
-'stub_path' => 'default'
-```
-
-- **Função:** Define caminho customizado para templates
-- **Default:** `__DIR__ . '/../stubs/'`
-
-##### Application Layout
-
-```php
-'layout' => 'layouts.app'
-```
-
-- **Função:** Layout padrão da aplicação
-
-##### Frontend Framework
-
-```php
-'frontend' => 'react'
-```
-
-- **Opções:** `'blade'`, `'react'`, `'vue'`
-
-##### Inertia.js Configuration
-
-```php
-'inertia' => [
-    'enabled' => true,
-    'components_path' => 'js/pages',
-    'layout_component' => 'Layouts/AuthenticatedLayout',
-]
-```
-
-##### API Configuration
-
-```php
-'api' => [
-    'enabled' => true,
-    'prefix' => 'api',
-    'middleware' => ['api'],
-    'generate_resources' => true,
-    'generate_requests' => true,
-]
-```
-
-##### Model Configuration
-
-```php
-'model' => [
-    'namespace' => 'App\Models',
-    'unwantedColumns' => ['id', 'password', ...],
-    'relationships' => [
-        'auto_detect' => true,
-        'generate_pivot_models' => true,
-        'include_polymorphic' => true,
-    ],
-]
-```
-
-##### Controller Configuration
-
-```php
-'controller' => [
-    'namespace' => 'App\Http\Controllers',
-    'additional_methods' => [
-        'bulk_delete' => true,
-        'export' => true,
-        'import' => true,
-    ],
-]
-```
-
-#### Relações
-
-- **Usado por:** `GeneratorCommand`, `InstallCommand`
-- **Influencia:** Geração de todos os stubs
-
----
-
-### 2. themes.php
-
-**Tipo:** Configuration File  
-**Path:** themes.php
-
-#### Configurações Principais
-
-##### Default Theme & Mode
-
-```php
-'default_theme' => 'default',
-'default_mode' => 'system',
-```
-
-##### Persistence Configuration
-
-```php
-'persistence' => [
-    'cookie_name' => 'app_theme',
-    'cookie_days' => 365,
-    'localStorage_key' => 'themeId',
-]
-```
-
-##### CSS Variables
-
-```php
-'css_variables' => [
-    'required' => [
-        'background', 'foreground', 'card', 'primary', ...
-    ],
-    'optional' => [
-        'chart-1', 'sidebar', 'sidebar-foreground', ...
-    ]
-]
-```
-
-##### Theme Assets
-
-```php
-'assets' => [
-    'themes_file' => 'js/lib/themes.ts',
-    'hook_file' => 'js/hooks/use-appearance.tsx',
-    'components_path' => 'js/components',
-]
-```
-
-##### Available Themes
-
-```php
-'available_themes' => [
-    'default' => 'Padrão (Preto/Branco)',
-    'blue' => 'Azul',
-    'green' => 'Verde',
-    // ... outros temas
-]
-```
-
-#### Relações
-
-- **Usado por:** `CreateThemeCommand`, `InstallThemeSystemCommand`
-- **Influencia:** Sistema de temas React
-
----
-
-## 🎭 Facades
-
-### Crud.php
-
-**Tipo:** Facade  
-**Namespace:** `Crud\Facades`
-
-```php
-class Crud extends Facade
+protected function generateFormFields(): string
 {
-    protected static function getFacadeAccessor()
-    {
-        return 'crud';
+    $fields = [];
+    foreach ($this->getFilteredColumns() as $column) {
+        $label = Str::title(str_replace('_', ' ', $column));
+        $placeholder = $this->generatePlaceholder($column, $label);
+
+        $fieldTemplate = str_replace(
+            ['{{column}}', '{{label}}', '{{placeholder}}'],
+            [$column, $label, $placeholder],
+            $this->getStub('react/FormFieldReact')
+        );
+
+        $fields[] = $fieldTemplate;
     }
+    return implode("\n", $fields);
 }
 ```
 
-#### Descrição
+**Função:** Gera campos de formulário React com shadcn/ui
+**Stub usado:** `react/FormFieldReact.stub`
+**Formato de saída:**
 
-- **Função:** Facade Laravel padrão
-- **Acesso:** Permite usar `Crud::` para acessar funcionalidades
-- **Registrado:** Via `CrudServiceProvider`
+```html
+<div className="sm:col-span-12">
+  <label htmlFor="name">Nome:</label>
+  <Input placeholder="Digite o nome" value={data.name} onChange={(e) => setData('name',
+  e.target.value)} required /> {errors.name &&
+  <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+  }
+</div>
+```
+
+##### `generatePlaceholder(string $column, string $label): string`
+
+```php
+protected function generatePlaceholder(string $column, string $label): string
+{
+    $placeholders = [
+        'name' => 'Digite o nome',
+        'email' => 'exemplo@email.com',
+        'phone' => '(11) 99999-9999',
+        'description' => 'Digite a descrição',
+        'title' => 'Digite o título',
+        'address' => 'Digite o endereço',
+        'price' => '0,00',
+        'quantity' => '0',
+        'code' => 'Digite o código',
+    ];
+
+    // Exact match
+    if (isset($placeholders[$column])) {
+        return $placeholders[$column];
+    }
+
+    // Partial match
+    foreach ($placeholders as $key => $placeholder) {
+        if (strpos($column, $key) !== false) {
+            return $placeholder;
+        }
+    }
+
+    return "Digite " . strtolower($label);
+}
+```
+
+**Função:** Gera placeholders inteligentes baseados no nome da coluna
+
+##### `getControllerFieldsWithModel(): string`
+
+```php
+protected function getControllerFieldsWithModel(): string
+{
+    $fields = [];
+    $modelVarName = Str::camel($this->name); // ex: "tombo"
+
+    foreach ($this->getFilteredColumns() as $field) {
+        $fields[] = "'{$field}' => \${$modelVarName}->{$field},";
+    }
+
+    return implode("\n                ", $fields);
+}
+```
+
+**Função:** Gera mapeamento de campos para controller com nome de variável resolvido
+**Exemplo de saída:**
+
+```php
+'nome' => $tombo->nome,
+'email' => $tombo->email,
+'descricao' => $tombo->descricao,
+```
+
+##### `getJavaScriptFormFields(bool $isEdit = false): string`
+
+```php
+protected function getJavaScriptFormFields(bool $isEdit = false): string
+{
+    $fields = [];
+    $modelVarName = Str::camel($this->name);
+
+    foreach ($this->getFilteredColumns() as $field) {
+        if ($isEdit) {
+            $fields[] = "{$field}: {$modelVarName}.{$field} || '',";
+        } else {
+            $fields[] = "{$field}: '',";
+        }
+    }
+
+    return implode("\n        ", $fields);
+}
+```
+
+**Função:** Gera campos JavaScript para useForm
+**Create:** `name: '',`
+**Edit:** `name: tombo.name || '',`
+
+##### `getTypeScriptInterfaceFields(): string`
+
+```php
+protected function getTypeScriptInterfaceFields(): string
+{
+    $fields = [];
+    foreach ($this->getFilteredColumns() as $field) {
+        $fields[] = "{$field}: string;";
+    }
+    return implode("\n    ", $fields);
+}
+```
+
+**Função:** Gera interface TypeScript
+**Exemplo:**
+
+```typescript
+interface Tombo {
+  name: string;
+  email: string;
+  description: string;
+}
+```
+
+##### `buildReplacements(): array` (Estendido)
+
+```php
+protected function buildReplacements(): array
+{
+    $replacements = parent::buildReplacements();
+
+    return array_merge($replacements, [
+        '{{fillableColumns}}' => $this->getJavaScriptFormFields(),
+        '{{editFillableColumns}}' => $this->getJavaScriptFormFields(true),
+        '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
+        '{{tableCells}}' => $this->getTableCells(),
+        '{{controllerFields}}' => $this->getControllerFieldsWithModel(),
+        '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
+        '{{formFields}}' => $this->generateFormFields(),
+        '{{modelRoute}}' => Str::plural(Str::snake($this->name)),
+        '{{modelRoutePlural}}' => Str::plural(Str::snake($this->name)),
+        '{{modelTitle}}' => Str::title(str_replace('_', ' ', $this->name)),
+    ]);
+}
+```
+
+**Função:** Estende substituições do parent com variáveis específicas do React
+
+### CreateThemeCommand.php
+
+**Comando:** `crud:create-theme {name?}`
+
+#### Funcionalidades
+
+- **Cores OKLCH**: Suporte completo ao espaço de cor OKLCH
+- **Paleta Automática**: Gera variações de cor automaticamente
+- **Modos Claro/Escuro**: Configura variáveis para ambos os modos
+- **Integração TypeScript**: Adiciona tema ao arquivo `themes.ts`
+
+#### Cores Predefinidas
+
+```php
+private array $predefinedColors = [
+    'blue' => 'oklch(0.5 0.2 220)',
+    'green' => 'oklch(0.5 0.15 150)',
+    'purple' => 'oklch(0.5 0.18 280)',
+    'red' => 'oklch(0.5 0.2 20)',
+    'orange' => 'oklch(0.6 0.18 50)',
+    'yellow' => 'oklch(0.7 0.15 90)',
+    'pink' => 'oklch(0.65 0.2 330)',
+    'teal' => 'oklch(0.5 0.15 180)',
+];
+```
+
+### InstallThemeSystemCommand.php
+
+**Comando:** `crud:install-theme-system`
+
+#### Arquivos Instalados
+
+```php
+private array $themeFiles = [
+    'themes.ts.stub' => 'js/lib/themes.ts',
+    'use-appearance.tsx.stub' => 'js/hooks/use-appearance.tsx',
+    'theme-selector.tsx.stub' => 'js/components/theme-selector.tsx',
+    'appearance-dropdown.tsx.stub' => 'js/components/appearance-dropdown.tsx',
+    'appearance-tabs.tsx.stub' => 'js/components/appearance-tabs.tsx',
+    'ThemeExample.tsx.stub' => 'js/pages/ThemeExample.tsx',
+];
+```
 
 ---
 
-## 🔄 Fluxo de Execução
+## 📝 Sistema de Stubs Avançado
 
-### 1. Comando Principal: `getic:install`
+### React Components (Atualizados para v3.0.18)
+
+#### Create.stub
+
+```tsx
+// Layout moderno com Card
+<Card className="container mx-auto py-8">
+  <CardHeader>
+    <CardTitle className="uppercase">Cadastrar novo {{ modelNameLowerCase }}</CardTitle>
+    <CardDescription>Cadastre um novo {{ modelNameLowerCase }}</CardDescription>
+  </CardHeader>
+  <CardContent className="container">
+    <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-12">{{ formFields }}</div>
+  </CardContent>
+  <CardFooter className="flex-col gap-2">
+    <Button disabled={processing} className="w-full">
+      {processing && <LoaderCircle className="h-4 w-4 animate-spin" />} Cadastrar
+    </Button>
+  </CardFooter>
+</Card>
+```
+
+**Características:**
+
+- **AppLayout**: Usa AppLayout ao invés de AuthenticatedLayout (Laravel 12)
+- **Breadcrumbs**: Sistema de navegação hierárquica
+- **shadcn/ui**: Componentes Card, Button, Input, Label
+- **Grid Responsivo**: Layout responsivo sm:grid-cols-12
+- **Loading States**: LoaderCircle durante processamento
+
+#### FormFieldReact.stub (Novo)
+
+```html
+<div className="sm:col-span-12">
+  <label htmlFor="{{column}}">{{label}}:</label>
+  <Input id="{{column}}" name="{{column}}" placeholder="{{placeholder}}"
+  value={data.{{column}}} onChange={(e) => setData('{{column}}', e.target.value)} required
+  /> {errors.{{column}} &&
+  <p className="text-sm text-red-500 mt-1">{errors.{{column}}}</p>
+  }
+</div>
+```
+
+**Características:**
+
+- **shadcn/ui**: Label e Input components
+- **Validação**: Exibição de erros integrada
+- **Placeholders**: Inteligentes baseados no campo
+- **Grid**: Responsivo com col-span-12
+
+#### InertiaController.stub
+
+```php
+->through(fn (${{modelNameLowerCase}}) => [
+    'id' => ${{modelNameLowerCase}}->id,
+    {{controllerFields}}
+    'created_at' => ${{modelNameLowerCase}}->created_at->format('d/m/Y H:i'),
+    'updated_at' => ${{modelNameLowerCase}}->updated_at->format('d/m/Y H:i'),
+]);
+```
+
+**Variável `{{controllerFields}}`** agora gera:
+
+```php
+'nome' => $tombo->nome,
+'email' => $tombo->email,
+'descricao' => $tombo->descricao,
+```
+
+---
+
+## 🎨 Sistema de Temas Dinâmicos
+
+### Arquitetura do Sistema
+
+```typescript
+// themes.ts
+export interface Theme {
+  id: string;
+  name: string;
+  description?: string;
+  variables: {
+    light: Record<string, string>;
+    dark: Record<string, string>;
+  };
+}
+
+export const themes: Theme[] = [
+  {
+    id: "default",
+    name: "Padrão",
+    variables: {
+      light: {
+        /* CSS custom properties */
+      },
+      dark: {
+        /* CSS custom properties */
+      },
+    },
+  },
+];
+```
+
+### Hook useAppearance
+
+```typescript
+export function useAppearance() {
+    const [appearance, setAppearance] = useState<'light' | 'dark' | 'system'>('system');
+    const [themeId, setThemeId] = useState<string>('default');
+
+    return {
+        appearance,
+        themeId,
+        updateAppearance: (mode: 'light' | 'dark' | 'system') => void,
+        updateTheme: (id: string) => void,
+        currentTheme: Theme
+    };
+}
+```
+
+---
+
+## 🔄 Fluxo de Execução Completo
+
+### 1. Comando CRUD: `getic:install tombos`
 
 ```mermaid
 graph TD
-    A[getic:install users] --> B[Validar tabela]
+    A[getic:install tombos] --> B[Validar tabela 'tombos']
     B --> C[Prompts interativos]
-    C --> D[buildController]
-    D --> E[buildModel]
-    E --> F[buildViews]
-    F --> G[buildRouter]
-    G --> H{--api?}
-    H -->|Sim| I[buildApiController]
-    H -->|Não| J[Finalizar]
-    I --> K[buildApiRoutes]
-    K --> L[buildApiResources]
-    L --> M[buildFormRequest]
-    M --> J
+    C --> D[Stack: React.js + Inertia.js]
+    D --> E[Temas: Sim]
+    E --> F[API: Sim/Não]
+    F --> G[Relacionamentos: Sim/Não]
+    G --> H[buildController - TomboController]
+    H --> I[buildModel - Tombo.php]
+    I --> J[buildReactComponents]
+    J --> K[Create.tsx, Edit.tsx, Index.tsx, Show.tsx]
+    K --> L[buildRouter - routes/tombo.php]
+    L --> M{API enabled?}
+    M -->|Sim| N[buildApiController, buildApiRoutes]
+    M -->|Não| O[Finalizar]
+    N --> O
 ```
 
-### 2. Sistema de Temas
+### 2. Geração de Componentes React
 
 ```mermaid
 graph TD
-    A[crud:install-theme-system] --> B[Verificar Inertia + React]
-    B --> C[Instalar arquivos tema]
-    C --> D[Atualizar package.json]
-    D --> E[Atualizar CSS]
-    E --> F[Criar componentes exemplo]
-
-    G[crud:create-theme] --> H[Prompt nome/cor]
-    H --> I[Gerar configuração]
-    I --> J[Adicionar a themes.ts]
+    A[buildReactComponents] --> B[getFilteredColumns]
+    B --> C[generateFormFields]
+    C --> D[FormFieldReact.stub]
+    D --> E[Generate placeholders]
+    E --> F[Replace variables in Create.stub]
+    F --> G[Generate Edit with model data]
+    G --> H[Generate Index with table]
+    H --> I[Generate Show with fields]
 ```
 
 ---
 
-## 📝 Relação Stubs → Métodos
+## 📊 Configurações Avançadas
 
-### Controllers
+### crud.php (Atualizado)
 
-- `Controller.stub` ← `buildController()` (Blade)
-- `InertiaController.stub` ← `buildController()` (React)
-- `ApiController.stub` ← `buildApiController()`
+```php
+return [
+    'frontend' => 'react',
+    'inertia' => [
+        'enabled' => true,
+        'components_path' => 'js/pages',
+        'layout_component' => 'Layouts/AppLayout', // Atualizado para Laravel 12
+    ],
+    'api' => [
+        'enabled' => true,
+        'generate_resources' => true,
+        'generate_requests' => true,
+    ],
+    'model' => [
+        'namespace' => 'App\Models',
+        'unwantedColumns' => ['id', 'password', 'email_verified_at', 'created_at', 'updated_at'],
+    ],
+    'theme_integration' => [
+        'enabled' => true,
+        'auto_install' => true,
+        'default_theme' => 'default',
+    ]
+];
+```
 
-### Models
+### themes.php
 
-- `Model.stub` ← `buildModel()`
-- `relations.stub` ← `getRelations()`
-
-### React Components
-
-- `react/Index.stub` ← `buildReactComponents()`
-- `react/Create.stub` ← `buildReactComponents()`
-- `react/Edit.stub` ← `buildReactComponents()`
-- `react/Show.stub` ← `buildReactComponents()`
-- `react/FormFieldReact.stub` ← `generateFormFields()`
-
-### Routes
-
-- `ModelRoutes.stub` ← `buildRouter()`
-- `ApiRoutes.stub` ← `buildApiRoutes()`
-
-### API Resources
-
-- `ApiResource.stub` ← `buildApiResources()`
-- `ApiResourceCollection.stub` ← `buildApiResources()`
-- `FormRequest.stub` ← `buildFormRequest()`
-
-### Theme System
-
-- `react/themes.ts.stub` ← `installThemeFiles()`
-- `react/use-appearance.tsx.stub` ← `installThemeFiles()`
-- `react/theme-selector.tsx.stub` ← `installThemeFiles()`
+```php
+return [
+    'default_theme' => 'default',
+    'default_mode' => 'system',
+    'persistence' => [
+        'cookie_name' => 'app_theme',
+        'localStorage_key' => 'themeId',
+    ],
+    'css_variables' => [
+        'required' => ['background', 'foreground', 'primary', 'secondary'],
+        'optional' => ['accent', 'muted', 'border'],
+    ],
+    'available_themes' => [
+        'default' => 'Padrão (Preto/Branco)',
+        'blue' => 'Azul Profissional',
+        'green' => 'Verde Natureza',
+        'purple' => 'Roxo Moderno',
+    ]
+];
+```
 
 ---
 
-## 🎯 Pontos Fortes da Arquitetura
+## 🎯 Novidades da Versão 3.0.18
 
-1. **Modularidade**: Comandos específicos para diferentes funcionalidades
-2. **Flexibilidade**: Sistema de stubs customizáveis
-3. **Interatividade**: Laravel Prompts para UX melhorada
-4. **Modernidade**: Suporte a React + Inertia.js + TypeScript
-5. **Temas**: Sistema completo de temas dinâmicos
-6. **API First**: Geração automática de APIs RESTful
+### ✨ Melhorias Principais
 
-## 🔧 Configurabilidade
+1. **FormFieldReact.stub**: Campo específico para React com shadcn/ui
+2. **Smart Placeholders**: Placeholders inteligentes baseados no nome
+3. **Layout Modernizado**: Cards com header, content e footer
+4. **Breadcrumbs**: Sistema de navegação hierárquica
+5. **AppLayout**: Migração do AuthenticatedLayout para AppLayout
+6. **Grid Responsivo**: Layout adaptativo sm:grid-cols-12
 
-O pacote oferece alta configurabilidade através de:
+### 🔧 Melhorias Técnicas
 
-- Arquivos de configuração dedicados
-- Stubs customizáveis
-- Opções de comando flexíveis
-- Sistema de temas extensível
-- Suporte a múltiplos frontends
+1. **Variable Resolution**: Correção de substituição de variáveis nos controllers
+2. **Type Safety**: Melhor compatibilidade de tipos PHP
+3. **JavaScript Generation**: Geração correta de objetos useForm
+4. **Error Handling**: Tratamento de erros integrado aos campos
+
+### 📂 Arquivos Importantes
+
+- **src/Console/InstallCommand.php**: Comando principal com todos os métodos atualizados
+- **src/stubs/react/Create.stub**: Componente modernizado com Card layout
+- **src/stubs/react/FormFieldReact.stub**: Novo campo para React
+- **src/stubs/InertiaController.stub**: Controller com mapeamento correto de campos
+
+---
+
+## 🚀 Performance e Otimizações
+
+### Geração de Código
+
+- **Lazy Loading**: Stubs carregados apenas quando necessários
+- **Caching**: Colunas de banco cacheadas durante execução
+- **Batch Operations**: Múltiplos arquivos gerados em uma operação
+
+### Sistema de Temas
+
+- **CSS Custom Properties**: Mudança instantânea sem reload
+- **Persistent Storage**: LocalStorage + Cookies para preferências
+- **OKLCH Color Space**: Cores mais vibrantes e consistentes
+
+---
+
+## 🎭 Casos de Uso Avançados
+
+### 1. CRUD Completo com API
+
+```bash
+php artisan getic:install products --api
+```
+
+Gera:
+
+- Controller Inertia para web
+- Controller API para mobile/SPA
+- Resources para transformação
+- Form Requests para validação
+- Componentes React completos
+
+### 2. Sistema Multi-Tema
+
+```bash
+php artisan crud:install-theme-system
+php artisan crud:create-theme corporate --base-color="oklch(0.5 0.2 220)"
+```
+
+Resulta em:
+
+- Hook useAppearance funcional
+- Componente ThemeSelector
+- Tema corporativo personalizado
+- Persistência de preferências
+
+### 3. Relacionamentos Automáticos
+
+O sistema detecta automaticamente:
+
+- Foreign keys (user_id → belongsTo User)
+- Tabelas pivot (user_roles → belongsToMany)
+- Relacionamentos polimórficos
+
+---
+
+## 📋 Compatibilidade
+
+### Requisitos
+
+- **PHP**: >=8.2.0
+- **Laravel**: ^12.0
+- **Node.js**: >=18.0 (para temas React)
+- **Inertia.js**: ^2.0
+- **React**: ^18.0
+- **TypeScript**: ^5.0
+
+### Bancos Suportados
+
+- MySQL 8.0+
+- PostgreSQL 13+
+- SQLite 3.35+
+- SQL Server 2019+
+
+---
+
+## 🔒 Segurança
+
+### Validação
+
+- **Form Requests**: Validação server-side automática
+- **TypeScript**: Type safety no frontend
+- **CSRF Protection**: Tokens automáticos nos formulários
+- **SQL Injection**: Queries preparadas com Eloquent
+
+### Autorização
+
+- **Middleware**: Suporte automático a auth e verified
+- **Gates**: Integração com políticas Laravel
+- **Role-based**: Suporte a packages de autorização
+
+---
+
+## 🧪 Testes e Qualidade
+
+### Cobertura de Testes
+
+- **Unit Tests**: Commands, Manager, Generator
+- **Integration Tests**: Geração completa de CRUD
+- **Component Tests**: Temas e React components
+
+### Code Quality
+
+- **PSR-12**: Padrão de codificação
+- **PHPStan**: Análise estática nível 8
+- **ESLint**: Linting para TypeScript/React
+
+---
+
+Esta documentação reflete o estado atual do sistema na versão 3.0.18, incluindo todas as melhorias e correções implementadas.

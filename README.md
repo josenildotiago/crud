@@ -1,183 +1,400 @@
-# Laravel CRUD Generator v3.0.6
+# Laravel CRUD Generator v3.0.18
 
-A modern Laravel package for generating complete CRUD operations with React.js frontend integration and dynamic theme system.
+Um pacote moderno para Laravel que gera operações CRUD completas com integração React.js e sistema de temas dinâmicos.
 
-## 🚀 Features
+## 🚀 Características Principais
 
-### ✨ Laravel 12 Compatibility
+### ✨ Compatibilidade Laravel 12
 
-- **Modern Architecture**: Fully updated for Laravel 12+ with PHP 8.2+ support
-- **AppLayout Integration**: Uses AppLayout (instead of deprecated AuthenticatedLayout)
-- **Breadcrumbs System**: Comprehensive navigation with breadcrumb trails
-- **Smart Form Fields**: Automatic fillable field detection for React useForm
-- **Route Organization**: Separate route files per model with proper middleware
-- **Multi-Database Support**: Compatible with MySQL, PostgreSQL, SQLite, and SQL Server
-- **RESTful Design**: Generate clean, RESTful controllers and routes
-- **Service Layer**: Built-in service pattern with dependency injection
+- **Arquitetura Moderna**: Totalmente atualizado para Laravel 12+ com suporte PHP 8.2+
+- **Integração AppLayout**: Usa AppLayout (ao invés do AuthenticatedLayout descontinuado)
+- **Sistema de Breadcrumbs**: Navegação hierárquica abrangente
+- **Campos Inteligentes**: Detecção automática de campos fillable para React useForm
+- **Organização de Rotas**: Arquivos de rota separados por modelo com middleware adequado
+- **Suporte Multi-Database**: Compatível com MySQL, PostgreSQL, SQLite e SQL Server
+- **Design RESTful**: Gera controllers e rotas RESTful limpos
 
-### 🎨 Dynamic Theme System
+### 🎨 Sistema de Temas Dinâmicos
 
-- **OKLCH Color System**: Modern color space support for vibrant, consistent themes
-- **CSS Custom Properties**: Real-time theme switching without page reload
-- **React Integration**: Built-in hooks and components for theme management
-- **Persistent Themes**: User preferences saved across sessions
+- **Sistema de Cores OKLCH**: Suporte ao espaço de cor moderno para temas vibrantes e consistentes
+- **CSS Custom Properties**: Mudança de tema em tempo real sem reload da página
+- **Integração React**: Hooks e componentes integrados para gerenciamento de temas
+- **Temas Persistentes**: Preferências do usuário salvas entre sessões
+- **Criação Automática**: Comando para criar novos temas personalizados
 
-### ⚛️ React.js Integration
+### ⚛️ Integração React.js + shadcn/ui
 
-- **Inertia.js Support**: Seamless SSR with Laravel backend
-- **TypeScript Ready**: Full TypeScript support for type safety
-- **Modern Components**: AppLayout with breadcrumb navigation
-- **Enhanced Form Handling**: Smart fillableColumns integration with useForm
-- **Responsive Design**: Mobile-first design patterns
+- **Suporte Inertia.js**: SSR sem complicações com backend Laravel
+- **TypeScript Pronto**: Suporte completo ao TypeScript para type safety
+- **Componentes Modernos**: AppLayout com navegação breadcrumb
+- **shadcn/ui Integration**: Uso completo de Button, Card, Input, Label
+- **Formulários Inteligentes**: Integração fillableColumns com useForm
+- **Design Responsivo**: Padrões mobile-first
 
-### 🛠️ Advanced CRUD Features
+### 🛠️ Funcionalidades CRUD Avançadas
 
-- **Bulk Operations**: Multi-select actions for efficient data management
-- **Advanced Search**: Real-time search with debouncing
-- **Smart Pagination**: Optimized pagination with state preservation
-- **Form Validation**: Client and server-side validation
-- **File Uploads**: Integrated file handling with preview
-- **Export/Import**: CSV export with customizable columns
+- **Operações em Lote**: Ações multi-select para gerenciamento eficiente de dados
+- **Busca Avançada**: Busca em tempo real com debouncing
+- **Paginação Inteligente**: Paginação otimizada com preservação de estado
+- **Validação de Formulários**: Validação client e server-side
+- **Upload de Arquivos**: Manipulação integrada de arquivos com preview
+- **Export/Import**: Exportação CSV com colunas customizáveis
 
-### 🔧 Developer Experience
-
-- **Artisan Commands**: Intuitive CLI for rapid development
-- **Code Generation**: Automated stub generation with customization
-- **Testing Suite**: Comprehensive test coverage
-- **API First**: RESTful API endpoints with resources
-
-## 📦 Installation
+## 📦 Instalação
 
 ```bash
 composer require josenildotiago/crud
 ```
 
-## 🎯 Quick Start
+## 🎯 Início Rápido
 
-### 1. Install Theme System
+### 1. Instalar Sistema de Temas (Opcional)
 
 ```bash
 php artisan crud:install-theme-system
 ```
 
-This command will:
+Este comando irá:
 
-- Detect your frontend stack (React.js + Inertia.js)
-- Install theme configuration
-- Generate React TypeScript components
-- Set up CSS custom properties
+- Detectar seu stack frontend (React.js + Inertia.js)
+- Instalar configuração de temas
+- Gerar componentes React TypeScript
+- Configurar CSS custom properties
 
-### 2. Create Your First Theme
-
-```bash
-php artisan crud:create-theme
-```
-
-Interactive prompts will guide you through:
-
-- Theme name and identifier
-- Primary and secondary colors (OKLCH format)
-- Light/dark theme selection
-- Automatic color palette generation
-
-### 3. Generate CRUD Resources
+### 2. Criar Seu Primeiro Tema (Opcional)
 
 ```bash
-php artisan crud:generate users --api
+php artisan crud:create-theme meu-tema
 ```
 
-This generates:
+Prompts interativos irão guiá-lo através de:
 
-- **Model**: `app/Models/User.php`
-- **Controller**: `app/Http/Controllers/UserController.php`
-- **API Controller**: `app/Http/Controllers/UserApiController.php`
-- **Form Request**: `app/Http/Requests/UserRequest.php`
-- **API Resource**: `app/Http/Resources/UserResource.php`
-- **React Components**: Complete CRUD interface in TypeScript
-- **Routes**: Web and API routes with proper middleware
+- Nome e identificador do tema
+- Cores primárias e secundárias (formato OKLCH)
+- Seleção de tema claro/escuro
+- Geração automática de paleta de cores
 
-## 🤝 Atualização Completa para Laravel 12
+### 3. Gerar Recursos CRUD
 
-✅ **Pacote modernizado com sucesso!**
+```bash
+php artisan getic:install users
+```
 
-### O que foi implementado:
+Este comando gera:
 
-1. **Laravel 12 Compatibility**
+- **Model**: `app/Models/User.php` com relacionamentos
+- **Controller**: `app/Http/Controllers/UserController.php` otimizado para Inertia.js
+- **Componentes React**: Interface CRUD completa em TypeScript
+  - `Create.tsx` - Formulário de criação com shadcn/ui
+  - `Edit.tsx` - Formulário de edição
+  - `Index.tsx` - Listagem com paginação e busca
+  - `Show.tsx` - Visualização de registro
+- **Routes**: `routes/user.php` com middleware auth e verified
+- **Form Request**: `app/Http/Requests/UserRequest.php` para validação
 
-   - Atualizado composer.json para Laravel 12+
-   - PHP 8.2+ como requisito mínimo
-   - Service Provider refatorado para padrões modernos
+#### Opções Avançadas
 
-2. **Sistema de Temas Dinâmico**
+```bash
+# Com API RESTful
+php artisan getic:install products --api
 
-   - Comando `crud:install-theme-system` implementado
-   - Comando `crud:create-theme` para criar novos temas
-   - Suporte completo ao OKLCH color system
-   - Integração com React.js + Inertia.js
+# Com relacionamentos automáticos
+php artisan getic:install orders --relationship
 
-3. **Componentes React TypeScript**
+# Stack específico
+php artisan getic:install categories --stack=react
 
-   - Hook `useAppearance` para gerenciamento de tema
-   - Componente `ThemeSelector` para seleção de temas
-   - Componentes CRUD completos (Index, Create, Edit, Show)
-   - Formulários dinâmicos com validação
+# Com integração de temas
+php artisan getic:install posts --theme
+```
 
-4. **Suporte Multi-Database**
+## 🎨 Sistema de Temas
 
-   - MySQL, PostgreSQL, SQLite, SQL Server
-   - Detecção automática do driver
-   - Queries otimizadas para cada banco
+### Como Usar no React
 
-5. **API RESTful Completa**
+```tsx
+import { useAppearance } from "@/hooks/use-appearance";
+import { ThemeSelector } from "@/components/theme-selector";
 
-   - Controllers API com bulk operations
-   - Resources para transformação de dados
-   - Form Requests para validação
-   - Endpoints de exportação e estatísticas
+function MyComponent() {
+  const { theme, themeId, updateTheme } = useAppearance();
 
-6. **Sistema de Testes**
-   - Testes unitários para comandos
-   - Validação de componentes React
-   - Cobertura do sistema de temas
+  return (
+    <div>
+      <ThemeSelector />
+      {/* Tema aplicado automaticamente via CSS custom properties */}
+    </div>
+  );
+}
+```
 
-### Comandos Disponíveis:
+### Temas Disponíveis
+
+- **Padrão**: Preto e branco clássico
+- **Azul**: Profissional e confiável
+- **Verde**: Natureza e crescimento
+- **Roxo**: Moderno e criativo
+- **Vermelho**: Energia e ação
+- **+ Personalizados**: Crie quantos quiser!
+
+## 📋 Comandos Disponíveis
 
 ```bash
 # Instalar sistema de temas
 php artisan crud:install-theme-system
 
-# Criar novo tema
-php artisan crud:create-theme
+# Criar novo tema personalizado
+php artisan crud:create-theme {nome}
 
 # Gerar CRUD completo
-php artisan crud:generate {model} --api
+php artisan getic:install {tabela}
 
-# Listar temas disponíveis
-php artisan crud:list-themes
+# Com API RESTful
+php artisan getic:install {tabela} --api
+
+# Com relacionamentos
+php artisan getic:install {tabela} --relationship
+
+# Com temas
+php artisan getic:install {tabela} --theme
 ```
 
-**Resultado**: Pacote completamente modernizado e pronto para Laravel 12 com sistema de temas avançado para React.js! 🎉
+## 🎯 Exemplo de Uso Completo
 
-````
-
-## Uso
-
-Aṕos baixar o pacote, só seguir esse passo a passo
+### 1. Instalação e Configuração
 
 ```bash
-php artisan getic:install
-````
+# Instalar pacote
+composer require josenildotiago/crud
 
-## Passo a passo
+# Instalar sistema de temas
+php artisan crud:install-theme-system
 
-- Será solicitado o nome da tabela.
-- Escolha o template.
+# Criar tema personalizado
+php artisan crud:create-theme corporativo
+```
 
-## Atualizações
+### 2. Gerar CRUD para Produtos
 
-- Adicionado suporte para múltiplas tabelas.
-- Melhorias na documentação.
+```bash
+php artisan getic:install products --api --theme
+```
 
-## License
+### 3. Resultado Gerado
 
-[MIT](https://choosealicense.com/licenses/mit/)
+#### Controller (`app/Http/Controllers/ProductController.php`)
+
+```php
+class ProductController extends Controller
+{
+    public function index(Request $request): InertiaResponse
+    {
+        $products = Product::query()
+            ->when($request->search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString()
+            ->through(fn ($product) => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'price' => $product->price,
+                'created_at' => $product->created_at->format('d/m/Y H:i'),
+                'updated_at' => $product->updated_at->format('d/m/Y H:i'),
+            ]);
+
+        return Inertia::render('Product/Index', [
+            'products' => $products,
+            'filters' => ['search' => $request->search],
+        ]);
+    }
+}
+```
+
+#### Componente React (`resources/js/pages/Product/Create.tsx`)
+
+```tsx
+export default function Create() {
+  const { data, setData, post, processing, errors } = useForm({
+    name: "",
+    description: "",
+    price: "",
+  });
+
+  return (
+    <AppLayout breadcrumbs={breadcrumbs}>
+      <Head title="Criar Produto" />
+      <form onSubmit={handleSubmit}>
+        <Card className="container mx-auto py-8">
+          <CardHeader>
+            <CardTitle className="uppercase">Cadastrar novo produto</CardTitle>
+            <CardDescription>Cadastre um novo produto</CardDescription>
+          </CardHeader>
+          <CardContent className="container">
+            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-12">
+              <div className="sm:col-span-12">
+                <Label htmlFor="name">Nome:</Label>
+                <Input
+                  placeholder="Digite o nome"
+                  value={data.name}
+                  onChange={(e) => setData("name", e.target.value)}
+                  required
+                />
+                {errors.name && (
+                  <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+                )}
+              </div>
+              {/* Outros campos gerados automaticamente */}
+            </div>
+          </CardContent>
+          <CardFooter className="flex-col gap-2">
+            <Button disabled={processing} className="w-full">
+              {processing && <LoaderCircle className="h-4 w-4 animate-spin" />} Cadastrar
+            </Button>
+          </CardFooter>
+        </Card>
+      </form>
+    </AppLayout>
+  );
+}
+```
+
+#### Rotas (`routes/product.php`)
+
+```php
+<?php
+
+use App\Http\Controllers\ProductController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+    Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
+    Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+    Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
+    Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+    Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+    Route::delete('/products/bulk', [ProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
+});
+```
+
+## 🔧 Configuração Avançada
+
+### Arquivo de Configuração
+
+Publique e customize as configurações:
+
+```bash
+php artisan vendor:publish --provider="Crud\CrudServiceProvider" --tag="config"
+```
+
+Arquivo `config/crud.php`:
+
+```php
+return [
+    'frontend' => 'react', // blade, react, vue
+    'inertia' => [
+        'enabled' => true,
+        'components_path' => 'js/pages',
+        'layout_component' => 'Layouts/AppLayout',
+    ],
+    'api' => [
+        'enabled' => true,
+        'generate_resources' => true,
+        'generate_requests' => true,
+    ],
+    'theme_integration' => [
+        'enabled' => true,
+        'auto_install' => true,
+        'default_theme' => 'default',
+    ]
+];
+```
+
+## 📱 Características da Interface
+
+### Componentes shadcn/ui
+
+- **Cards**: Layout moderno com header, content e footer
+- **Buttons**: Com estados de loading e ícones
+- **Inputs**: Com labels e validação integrada
+- **Tables**: Responsivas com paginação
+- **Forms**: Grid responsivo e validação em tempo real
+
+### Design Responsivo
+
+- **Mobile-first**: Otimizado para dispositivos móveis
+- **Grid System**: sm:grid-cols-12 para layout flexível
+- **Breakpoints**: Tailwind CSS responsivo
+- **Touch-friendly**: Interface amigável ao toque
+
+## 🚀 Performance
+
+### Otimizações
+
+- **Lazy Loading**: Componentes carregados sob demanda
+- **Code Splitting**: Divisão automática de código
+- **CSS Optimization**: Custom properties para temas
+- **Database Queries**: Queries otimizadas com Eloquent
+
+### Caching
+
+- **Template Caching**: Stubs em cache durante desenvolvimento
+- **Query Caching**: Colunas de banco em cache
+- **Asset Optimization**: CSS e JS otimizados para produção
+
+## 🧪 Testes
+
+Execute os testes do pacote:
+
+```bash
+vendor/bin/phpunit
+# ou
+vendor/bin/pest
+```
+
+### Cobertura
+
+- **Unit Tests**: Commands, Manager, Generator
+- **Integration Tests**: Geração completa de CRUD
+- **Component Tests**: Temas e componentes React
+
+## 📚 Documentação Adicional
+
+- **[Documentação Técnica](DOC.md)**: Arquitetura detalhada do sistema
+- **[Changelog](CHANGELOG.md)**: Histórico de versões e mudanças
+- **[Contribuição](CONTRIBUTING.md)**: Como contribuir para o projeto
+
+## 🤝 Contribuição
+
+Contribuições são bem-vindas! Por favor, leia o guia de contribuição para detalhes sobre nosso código de conduta e o processo para enviar pull requests.
+
+## 📄 Licença
+
+Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICENSE) para detalhes.
+
+## 🆘 Suporte
+
+Se você encontrar algum problema ou tiver dúvidas:
+
+1. **Issues**: Abra uma issue no GitHub
+2. **Discussões**: Use as discussões do GitHub para perguntas
+3. **Email**: josenildo.tiago.designer@gmail.com
+
+## 🎉 Créditos
+
+Desenvolvido com ❤️ por [Josenildo Tiago](https://github.com/josenildotiago)
+
+### Tecnologias Utilizadas
+
+- **Laravel 12**: Framework PHP moderno
+- **React.js**: Biblioteca JavaScript para UI
+- **Inertia.js**: Stack moderno sem API
+- **TypeScript**: JavaScript tipado
+- **shadcn/ui**: Componentes React modernos
+- **Tailwind CSS**: Framework CSS utility-first
+- **OKLCH**: Espaço de cor moderno
