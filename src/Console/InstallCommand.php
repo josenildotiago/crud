@@ -833,27 +833,82 @@ JSX;
         }
 
         $replace = $this->buildReplacements();
-        $typesContent = str_replace(
-            array_keys($replace),
-            array_values($replace),
-            $this->getStub('react/Types')
-        );
 
-        // Append or create types file
+        // Get the stub content
+        $typesContent = $this->getStub('react/Types');
+
+        // Check if types file exists and handle duplications
         if ($this->files->exists($typesPath)) {
             $existingContent = $this->files->get($typesPath);
-            if (strpos($existingContent, "interface {$this->name}") === false) {
-                $this->files->append($typesPath, "\n" . $typesContent);
-                info("Tipos TypeScript adicionados ao arquivo existente: {$this->name}");
-            } else {
-                info("Interface {$this->name} já existe no arquivo de tipos.");
+
+            // Check if Paginated2 already exists
+            $hasPaginated2 = strpos($existingContent, 'export interface Paginated2<T>') !== false;
+
+            // Check if the model interface already exists
+            $modelName = $this->name;
+            $hasModelInterface = strpos($existingContent, "export interface {$modelName}") !== false;
+
+            // Remove Paginated2 from stub if it already exists
+            if ($hasPaginated2) {
+                $typesContent = $this->removePaginated2FromStub($typesContent);
             }
+
+            // Handle model interface duplication
+            if ($hasModelInterface) {
+                $modelName = $this->getUniqueModelName($existingContent, $modelName);
+                $replace['{{modelName}}'] = $modelName;
+            }
+
+            // Replace placeholders
+            $newTypesContent = str_replace(
+                array_keys($replace),
+                array_values($replace),
+                $typesContent
+            );
+
+            // Append new types to existing file
+            $this->files->put($typesPath, $existingContent . "\n" . $newTypesContent);
+
+            info("Tipos TypeScript adicionados ao arquivo existente: {$modelName}");
         } else {
-            $this->write($typesPath, $typesContent);
-            info("Arquivo de tipos TypeScript criado: resources/js/types/index.d.ts");
+            // Create new types file
+            $newTypesContent = str_replace(
+                array_keys($replace),
+                array_values($replace),
+                $typesContent
+            );
+
+            $this->write($typesPath, $newTypesContent);
+            info("Arquivo de tipos TypeScript criado: {$this->name}");
         }
 
         return $this;
+    }
+
+    /**
+     * Remove Paginated2 interface from stub content.
+     */
+    protected function removePaginated2FromStub(string $content): string
+    {
+        // Remove the Paginated2 interface block
+        $pattern = '/export interface Paginated2<T> \{.*?\}\n\n/s';
+        return preg_replace($pattern, '', $content);
+    }
+
+    /**
+     * Get unique model name if interface already exists.
+     */
+    protected function getUniqueModelName(string $existingContent, string $modelName): string
+    {
+        $counter = 2;
+        $newModelName = $modelName;
+
+        while (strpos($existingContent, "export interface {$newModelName}") !== false) {
+            $newModelName = $modelName . $counter;
+            $counter++;
+        }
+
+        return $newModelName;
     }
 
     /**
