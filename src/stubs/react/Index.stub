@@ -1,19 +1,13 @@
 import React from 'react';
-import { Head, Link, router } from '@inertiajs/reac    return (
-        <AppLayout
-            user={auth.user}
-            breadcrumbs={breadcrumbs}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{modelTitlePlural}}
-                    </h2>
-                    {{themeComponents}}
-                </div>
-            }{ PlusIcon, MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline';
-import AppLayout from '@/Layouts/AppLayout';
-import Pagination from '@/Components/Pagination';
-import { PageProps } from '@/types';
+import { Head, Link, router } from '@inertiajs/react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import AppLayout from '@/layouts/app-layout';
+import { PlusIcon, MagnifyingGlassIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { LoaderCircle } from 'lucide-react';
 {{themeImports}}
 
 interface {{modelName}} {
@@ -23,7 +17,7 @@ interface {{modelName}} {
     updated_at: string;
 }
 
-interface Props extends PageProps {
+interface Props {
     {{modelNamePluralLowerCase}}: {
         data: {{modelName}}[];
         links: any[];
@@ -34,8 +28,10 @@ interface Props extends PageProps {
     };
 }
 
-export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: Props) {
+export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) {
     const [search, setSearch] = React.useState(filters.search || '');
+    const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
+    const [isDeleting, setIsDeleting] = React.useState(false);
     
     const breadcrumbs = [
         {
@@ -47,7 +43,6 @@ export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: P
             href: '/{{modelRoutePlural}}',
         },
     ];
-    const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,14 +52,25 @@ export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: P
         });
     };
 
-    const handleBulkDelete = () => {
+    const handleBulkDelete = async () => {
         if (selectedIds.length === 0) return;
         
         if (confirm(`Tem certeza que deseja deletar ${selectedIds.length} registros?`)) {
+            setIsDeleting(true);
             router.delete(route('{{modelRoute}}.bulk-destroy'), {
                 data: { ids: selectedIds },
-                onSuccess: () => setSelectedIds([]),
+                onSuccess: () => {
+                    setSelectedIds([]);
+                    setIsDeleting(false);
+                },
+                onError: () => setIsDeleting(false),
             });
+        }
+    };
+
+    const handleSingleDelete = (id: number) => {
+        if (confirm('Tem certeza que deseja deletar este registro?')) {
+            router.delete(route('{{modelRoute}}.destroy', id));
         }
     };
 
@@ -85,139 +91,143 @@ export default function Index({ auth, {{modelNamePluralLowerCase}}, filters }: P
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <div className="flex justify-between items-center">
-                    <h2 className="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-                        {{modelTitle}}
-                    </h2>
-                    {{themeComponents}}
-                </div>
-            }
-        >
-            <Head title="{{modelTitle}}" />
-
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900 dark:text-gray-100">
-                            {/* Header */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                                <div className="flex items-center gap-4">
-                                    <Link
-                                        href={route('{{modelRoute}}.create')}
-                                        className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                    >
-                                        <PlusIcon className="w-4 h-4 mr-2" />
+        <AppLayout breadcrumbs={breadcrumbs}>
+            <Head title="{{modelTitlePlural}}" />
+            
+            <div className="container mx-auto py-8">
+                <Card>
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <CardTitle className="uppercase">{{modelTitlePlural}}</CardTitle>
+                            
+                            <div className="flex items-center gap-4">
+                                <Link href={route('{{modelRoute}}.create')}>
+                                    <Button className="flex items-center gap-2">
+                                        <PlusIcon className="w-4 h-4" />
                                         Novo {{modelTitle}}
-                                    </Link>
-                                    
-                                    {selectedIds.length > 0 && (
-                                        <button
-                                            onClick={handleBulkDelete}
-                                            className="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-900 focus:outline-none focus:border-red-900 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            <TrashIcon className="w-4 h-4 mr-2" />
-                                            Deletar ({selectedIds.length})
-                                        </button>
-                                    )}
-                                </div>
-
-                                <form onSubmit={handleSearch} className="flex items-center gap-2">
-                                    <div className="relative">
-                                        <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                        <input
-                                            type="text"
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                            placeholder="Buscar..."
-                                            className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        />
-                                    </div>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                                    </Button>
+                                </Link>
+                                
+                                {selectedIds.length > 0 && (
+                                    <Button
+                                        variant="destructive"
+                                        onClick={handleBulkDelete}
+                                        disabled={isDeleting}
+                                        className="flex items-center gap-2"
                                     >
-                                        Buscar
-                                    </button>
-                                </form>
-                            </div>
-
-                            {/* Table */}
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                    <thead className="bg-gray-50 dark:bg-gray-700">
-                                        <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.length === {{modelNamePluralLowerCase}}.data.length && {{modelNamePluralLowerCase}}.data.length > 0}
-                                                    onChange={toggleAll}
-                                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                />
-                                            </th>
-                                            {{tableHeaders}}
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                                                Ações
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                                        {{{modelNamePluralLowerCase}}.data.map(({{modelNameLowerCase}}) => (
-                                            <tr key={{{modelNameLowerCase}}.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedIds.includes({{modelNameLowerCase}}.id)}
-                                                        onChange={() => toggleSelection({{modelNameLowerCase}}.id)}
-                                                        className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-                                                    />
-                                                </td>
-{{tableCells}}
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                                                    <Link
-                                                        href={route('{{modelRoute}}.show', {{modelNameLowerCase}}.id)}
-                                                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                                    >
-                                                        Ver
-                                                    </Link>
-                                                    <Link
-                                                        href={route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id)}
-                                                        className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
-                                                    >
-                                                        Editar
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => {
-                                                            if (confirm('Tem certeza que deseja deletar este registro?')) {
-                                                                router.delete(route('{{modelRoute}}.destroy', {{modelNameLowerCase}}.id));
-                                                            }
-                                                        }}
-                                                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                                                    >
-                                                        Deletar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-
-                                {{{modelNamePluralLowerCase}}.data.length === 0 && (
-                                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                                        Nenhum registro encontrado.
-                                    </div>
+                                        {isDeleting ? (
+                                            <LoaderCircle className="w-4 h-4 animate-spin" />
+                                        ) : (
+                                            <TrashIcon className="w-4 h-4" />
+                                        )}
+                                        Deletar ({selectedIds.length})
+                                    </Button>
                                 )}
                             </div>
-
-                            {/* Pagination */}
-                            <div className="mt-6">
-                                <Pagination links={{{modelNamePluralLowerCase}}.links} />
-                            </div>
                         </div>
-                    </div>
-                </div>
+                        
+                        {/* Search Form */}
+                        <form onSubmit={handleSearch} className="flex items-center gap-2 mt-4">
+                            <div className="relative flex-1 max-w-sm">
+                                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Buscar {{modelNameLowerCase}}s..."
+                                    className="pl-10"
+                                />
+                            </div>
+                            <Button type="submit" variant="outline">
+                                Buscar
+                            </Button>
+                        </form>
+                    </CardHeader>
+                    
+                    <CardContent>
+                        <div className="rounded-md border">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={selectedIds.length === {{modelNamePluralLowerCase}}.data.length && {{modelNamePluralLowerCase}}.data.length > 0}
+                                                onCheckedChange={toggleAll}
+                                            />
+                                        </TableHead>
+{{tableHeaders}}
+                                        <TableHead>Ações</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {{{modelNamePluralLowerCase}}.data.length > 0 ? (
+                                        {{modelNamePluralLowerCase}}.data.map(({{modelNameLowerCase}}) => (
+                                            <TableRow key={{{modelNameLowerCase}}.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedIds.includes({{modelNameLowerCase}}.id)}
+                                                        onCheckedChange={() => toggleSelection({{modelNameLowerCase}}.id)}
+                                                    />
+                                                </TableCell>
+{{tableCells}}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <Link href={route('{{modelRoute}}.show', {{modelNameLowerCase}}.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                Ver
+                                                            </Button>
+                                                        </Link>
+                                                        <Link href={route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id)}>
+                                                            <Button variant="outline" size="sm">
+                                                                Editar
+                                                            </Button>
+                                                        </Link>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleSingleDelete({{modelNameLowerCase}}.id)}
+                                                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                        >
+                                                            Deletar
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={{{colSpan}}} className="text-center py-8 text-gray-500">
+                                                Nenhum {{modelNameLowerCase}} encontrado.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                        
+                        {/* Pagination */}
+                        {{{modelNamePluralLowerCase}}.links && {{modelNamePluralLowerCase}}.links.length > 3 && (
+                            <div className="mt-6 flex justify-center">
+                                <div className="flex items-center gap-2">
+                                    {{{modelNamePluralLowerCase}}.links.map((link, index) => (
+                                        <Button
+                                            key={index}
+                                            variant={link.active ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => {
+                                                if (link.url) {
+                                                    router.visit(link.url);
+                                                }
+                                            }}
+                                            disabled={!link.url}
+                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </AppLayout>
     );

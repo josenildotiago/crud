@@ -454,6 +454,62 @@ abstract class GeneratorCommand extends Command
     }
 
     /**
+     * Get the DB Table columns that are not nullable.
+     *
+     * @return array
+     */
+    protected function getColumnsNotNullable()
+    {
+        /**
+         *  SELECT COLUMN_NAME, IS_NULLABLE, DATA_TYPE
+         *  FROM INFORMATION_SCHEMA.COLUMNS
+         *  WHERE TABLE_SCHEMA = 'nome_do_banco'
+         *  AND TABLE_NAME = 'nome_tabela'
+         *  AND IS_NULLABLE = 'NO'
+         */
+        return array_filter($this->getColumns(), function ($column) {
+            return $column->Null === 'NO';
+        });
+    }
+
+    /**
+     * Get the DB Table columns that are nullable.
+     *
+     * @return array
+     */
+    protected function getColumnsNullable()
+    {
+        /**
+         *  SELECT COLUMN_NAME, IS_NULLABLE, DATA_TYPE
+         *  FROM INFORMATION_SCHEMA.COLUMNS
+         *  WHERE TABLE_SCHEMA = 'nome_do_banco'
+         *  AND TABLE_NAME = 'nome_tabela'
+         *  AND IS_NULLABLE = 'YES'
+         */
+        return array_filter($this->getColumns(), function ($column) {
+            return $column->Null === 'YES';
+        });
+    }
+
+    /**
+     * Get the DB Table columns data types.
+     *
+     * @return array
+     */
+    protected function getColumnsDataTypes()
+    {
+        /**
+         *  SELECT COLUMN_NAME, DATA_TYPE
+         *  FROM INFORMATION_SCHEMA.COLUMNS
+         *  WHERE TABLE_SCHEMA = 'nome_do_banco'
+         *  AND TABLE_NAME = 'nome_tabela'
+         */
+        return array_map(function ($column) {
+            return $column->Type;
+        }, $this->getColumns());
+    }
+
+    /**
      * @return array
      */
     protected function getFilteredColumns()

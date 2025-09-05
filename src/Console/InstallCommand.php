@@ -953,6 +953,43 @@ JSX;
     }
 
     /**
+     * Get table headers for React components with shadcn/ui Table.
+     */
+    protected function getTableHeadersForIndex(): string
+    {
+        $headers = [];
+        foreach ($this->getFilteredColumns() as $column) {
+            $title = Str::title(str_replace('_', ' ', $column));
+            $headers[] = "                        <TableHead>{$title}</TableHead>";
+        }
+        return implode("\n", $headers);
+    }
+
+    /**
+     * Get table cells for React components with shadcn/ui Table.
+     */
+    protected function getTableCellsForIndex(): string
+    {
+        $cells = [];
+        $modelVarName = Str::camel($this->name);
+
+        foreach ($this->getFilteredColumns() as $field) {
+            $cells[] = "                                <TableCell>{{{$modelVarName}}.{$field}}</TableCell>";
+        }
+
+        return implode("\n", $cells);
+    }
+
+    /**
+     * Get colspan for empty table message.
+     */
+    protected function getTableColSpan(): int
+    {
+        $filteredColumns = $this->getFilteredColumns();
+        return count($filteredColumns) + 2; // +1 for checkbox, +1 for actions
+    }
+
+    /**
      * Build enhanced replacements for React components.
      */
     protected function buildReplacements()
@@ -964,15 +1001,18 @@ JSX;
             '{{fillableColumns}}' => $this->getJavaScriptFormFields(),
             '{{editFillableColumns}}' => $this->getJavaScriptEditFormFields(),
             '{{typeScriptColumns}}' => $this->getTypeScriptInterfaceFields(),
-            '{{tableCells}}' => $this->getTableCells(),
+            '{{tableCells}}' => $this->getTableCellsForIndex(), // Updated for Index
+            '{{tableHeaders}}' => $this->getTableHeadersForIndex(), // Updated for Index
+            '{{colSpan}}' => $this->getTableColSpan(),
             '{{showFieldsReact}}' => $this->getShowFieldsForReact(),
             '{{searchableFields}}' => $this->getSearchableFields(),
             '{{controllerFields}}' => $this->getControllerFieldsWithModel(),
-            '{{modelTable}}' => $this->table, // Fix: use table name instead of class name
+            '{{modelTable}}' => $this->table,
             '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
             '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
             '{{modelCamel}}' => Str::camel($this->name),
             '{{tableName}}' => $this->table,
+            '{{formFields}}' => $this->generateFormFields(), // For Create/Edit forms
         ];
 
         return array_merge($baseReplacements, $enhancedReplacements);
