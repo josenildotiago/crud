@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Services\{{serviceNamespace}};
+
+use App\Models\{{modelClass}};
+
+class {{serviceClass}}
+{
+    /**
+     * create{{modelName}}
+     * Cria um novo {{modelName}}.
+     *
+     * @param  array $data array com os dados do {{modelName}}
+     * @return {{modelClass}}
+     */
+    public function create{{modelName}}(array $data): {{modelClass}}
+    {
+        // Lógica para criar um novo {{modelName}}
+    }
+
+    /**
+     * edit{{modelName}}
+     * Edita um {{modelName}} existente.
+     *
+     * @param  {{modelClass}} ${{modelNameLowerCase}} Instância do {{modelName}} a ser editado
+     * @param  array $data array com os dados atualizados do {{modelName}}
+     * @return {{modelClass}}
+     */
+    public function edit{{modelName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
+    {
+        // Lógica para editar um {{modelName}} existente
+    }
+
+    /**
+     * update{{modelName}}
+     * Atualiza um {{modelName}} existente.
+     *
+     * @param  {{modelClass}} ${{modelNameLowerCase}} Instância do {{modelName}} a ser atualizado
+     * @param  array $data array com os dados atualizados do {{modelName}}
+     * @return {{modelClass}}
+     */
+    public function update{{modelName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
+    {
+        // Lógica para atualizar um {{modelName}} existente
+    }
+
+    /**
+     * delete{{modelName}}
+     * Deleta um {{modelName}} existente.
+     *
+     * @param  {{modelClass}} ${{modelNameLowerCase}} Instância do {{modelName}} a ser deletado
+     * @return bool
+     */
+    public function delete{{modelName}}({{modelClass}} ${{modelNameLowerCase}}): bool
+    {
+        // Lógica para deletar um {{modelName}}
+    }
+}

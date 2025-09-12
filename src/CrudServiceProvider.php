@@ -4,8 +4,9 @@ namespace Crud;
 
 use Crud\Console\InstallCommand;
 use Crud\Console\CreateThemeCommand;
-use Crud\Console\InstallThemeSystemCommand;
 use Illuminate\Support\ServiceProvider;
+use Crud\Console\InstallThemeSystemCommand;
+use Crud\Console\InstallOnlyServicesCommand;
 
 class CrudServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,7 @@ class CrudServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 CreateThemeCommand::class,
                 InstallThemeSystemCommand::class,
+                InstallOnlyServicesCommand::class,
             ]);
 
             $this->publishes([
