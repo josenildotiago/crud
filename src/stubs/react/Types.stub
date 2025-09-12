@@ -6,7 +6,7 @@ export interface {{modelName}} {
     [key: string]: unknown;
 }
 
-export interface Paginated2<T> {
+export interface Paginated<T> {
     current_page: number;
     data: T[];
     first_page_url: string;
@@ -26,4 +26,4 @@ export interface Paginated2<T> {
     total: number;
 }
 
-export type Paginated{{modelName}}List = Paginated2<{{modelName}}>;
+export type Paginated{{modelName}}List = Paginated<{{modelName}}>;

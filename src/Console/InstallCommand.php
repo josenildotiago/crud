@@ -841,16 +841,16 @@ JSX;
         if ($this->files->exists($typesPath)) {
             $existingContent = $this->files->get($typesPath);
 
-            // Check if Paginated2 already exists
-            $hasPaginated2 = strpos($existingContent, 'export interface Paginated2<T>') !== false;
+            // Check if Paginated already exists
+            $hasPaginated = strpos($existingContent, 'export interface Paginated<T>') !== false;
 
             // Check if the model interface already exists
             $modelName = $this->name;
             $hasModelInterface = strpos($existingContent, "export interface {$modelName}") !== false;
 
-            // Remove Paginated2 from stub if it already exists
-            if ($hasPaginated2) {
-                $typesContent = $this->removePaginated2FromStub($typesContent);
+            // Remove Paginated from stub if it already exists
+            if ($hasPaginated) {
+                $typesContent = $this->removePaginatedFromStub($typesContent);
             }
 
             // Handle model interface duplication
@@ -886,12 +886,12 @@ JSX;
     }
 
     /**
-     * Remove Paginated2 interface from stub content.
+     * Remove Paginated interface from stub content.
      */
-    protected function removePaginated2FromStub(string $content): string
+    protected function removePaginatedFromStub(string $content): string
     {
-        // Remove the Paginated2 interface block
-        $pattern = '/export interface Paginated2<T> \{.*?\}\n\n/s';
+        // Remove the Paginated interface block
+        $pattern = '/export interface Paginated<T> \{.*?\}\n\n/s';
         return preg_replace($pattern, '', $content);
     }
 
