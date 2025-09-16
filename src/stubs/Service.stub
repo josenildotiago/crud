@@ -13,7 +13,7 @@ class {{serviceClass}}
      * @param  array $data array com os dados do {{modelName}}
      * @return {{modelClass}}
      */
-    public function create{{modelName}}(array $data): {{modelClass}}
+    public function create{{modelName}}{{folderName}}(array $data): {{modelClass}}
     {
         // Lógica para criar um novo {{modelName}}
     }
@@ -26,7 +26,7 @@ class {{serviceClass}}
      * @param  array $data array com os dados atualizados do {{modelName}}
      * @return {{modelClass}}
      */
-    public function edit{{modelName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
+    public function edit{{modelName}}{{folderName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
     {
         // Lógica para editar um {{modelName}} existente
     }
@@ -39,7 +39,7 @@ class {{serviceClass}}
      * @param  array $data array com os dados atualizados do {{modelName}}
      * @return {{modelClass}}
      */
-    public function update{{modelName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
+    public function update{{modelName}}{{folderName}}({{modelClass}} ${{modelNameLowerCase}}, array $data): {{modelClass}}
     {
         // Lógica para atualizar um {{modelName}} existente
     }
@@ -51,7 +51,7 @@ class {{serviceClass}}
      * @param  {{modelClass}} ${{modelNameLowerCase}} Instância do {{modelName}} a ser deletado
      * @return bool
      */
-    public function delete{{modelName}}({{modelClass}} ${{modelNameLowerCase}}): bool
+    public function delete{{modelName}}{{folderName}}({{modelClass}} ${{modelNameLowerCase}}): bool
     {
         // Lógica para deletar um {{modelName}}
     }

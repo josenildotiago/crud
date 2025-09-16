@@ -103,14 +103,16 @@ class InstallOnlyServicesCommand extends Command
                 '{{serviceClass}}',
                 '{{modelClass}}',
                 '{{modelName}}',
-                '{{modelNameLowerCase}}'
+                '{{modelNameLowerCase}}',
+                '{{folderName}}'
             ],
             [
                 $namespace,
                 $serviceClass,
                 $modelClass,
                 $modelClass,
-                Str::camel($modelClass)
+                Str::camel($modelClass),
+                $folderName ?? Str::camel('teste')
             ],
             $stub
         );
