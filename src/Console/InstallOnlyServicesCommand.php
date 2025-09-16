@@ -66,7 +66,7 @@ class InstallOnlyServicesCommand extends Command
         if ($folderName) {
             // Se escolheu pasta, usar pasta + service baseado na pasta
             $serviceDir = base_path("app/Services/{$folderName}");
-            $serviceClass = "{$folderName}Service";
+            $serviceClass = "{$folderName}Service{$modelClass}";
             $namespace = "App\\Services\\{$folderName}";
         } else {
             // Se não escolheu pasta, usar o nome do model
