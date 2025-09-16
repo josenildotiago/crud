@@ -1,7 +1,7 @@
 {
     "name": "josenildotiago/crud",
     "description": "Modern CRUD generator with dynamic themes for Laravel 12 + React.js",
-    "version": "3.1.0",
+    "version": "3.1.1",
     "license": "MIT",
     "authors": [
         {
