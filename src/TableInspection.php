@@ -32,6 +32,21 @@ final class TableInspection
             $findings[] = ['code' => 'timestamps', 'columns' => []];
         }
 
+        $primaryKey = null;
+
+        foreach ($columns as $column) {
+            if ($column->Key === 'PRI') {
+                $primaryKey = $column->Field;
+                break;
+            }
+        }
+
+        if ($primaryKey === null) {
+            $findings[] = ['code' => 'primary-key-missing', 'columns' => []];
+        } elseif ($primaryKey !== 'id') {
+            $findings[] = ['code' => 'primary-key-not-id', 'columns' => [$primaryKey]];
+        }
+
         return $findings;
     }
 }

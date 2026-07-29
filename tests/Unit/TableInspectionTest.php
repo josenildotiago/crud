@@ -67,4 +67,30 @@ class TableInspectionTest extends TestCase
 
         $this->assertSame(['timestamps'], $this->codes($findings));
     }
+
+    public function test_tabela_sem_chave_primaria_declarada(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('idClientes', 'int'),
+            self::column('nomeCliente'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame(['primary-key-missing'], $this->codes($findings));
+        $this->assertSame([], $findings[0]['columns']);
+    }
+
+    public function test_chave_primaria_com_nome_diferente_de_id(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('idClientes', 'int', 'PRI'),
+            self::column('nomeCliente'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame(['primary-key-not-id'], $this->codes($findings));
+        $this->assertSame(['idClientes'], $findings[0]['columns']);
+    }
 }
