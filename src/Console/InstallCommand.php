@@ -456,6 +456,29 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     }
 
     /**
+     * Opções do `wayfinder:generate` que preservam o formato já usado pelo app.
+     *
+     * O comando reescreve `resources/js/routes` inteiro, não apenas o recurso gerado.
+     * Rodá-lo sem `--with-form` num app que gera com `formVariants: true` — o default
+     * do vite.config.ts dos starter kits — apaga os `x.form = xForm` das rotas do
+     * próprio starter kit, e as páginas de auth/settings dele param de compilar com
+     * `Property 'form' does not exist`. Gerar um CRUD não pode estreitar a saída
+     * existente, então o formato é lido do que está lá.
+     *
+     * @return array<int, string>
+     */
+    protected function wayfinderArguments(): array
+    {
+        $index = resource_path('js/routes/index.ts');
+
+        if ($this->files->exists($index) && preg_match('/^\s*\w+\.form\s*=/m', $this->files->get($index)) === 1) {
+            return ['--with-form'];
+        }
+
+        return [];
+    }
+
+    /**
      * Regenera `resources/js/routes` para que os imports `@/routes/{rota}` existam.
      *
      * O require recém-acrescentado ao web.php não entra no roteador já carregado
@@ -483,7 +506,10 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         $artisan = base_path('artisan');
 
-        $process = new Process([PHP_BINARY, $artisan, 'wayfinder:generate'], base_path());
+        $process = new Process(
+            [PHP_BINARY, $artisan, 'wayfinder:generate', ...$this->wayfinderArguments()],
+            base_path()
+        );
         $process->setTimeout(120);
         $process->run();
 
