@@ -1,12 +1,16 @@
-# Laravel CRUD Generator v3.0.18
+# Laravel CRUD Generator v3.2.0
 
 Um pacote moderno para Laravel que gera operações CRUD completas com integração React.js e sistema de temas dinâmicos.
 
 ## 🚀 Características Principais
 
-### ✨ Compatibilidade Laravel 12
+### ✨ Compatibilidade Laravel 12 e 13
 
-- **Arquitetura Moderna**: Totalmente atualizado para Laravel 12+ com suporte PHP 8.2+
+- **Arquitetura Moderna**: Laravel 12 e 13, com suporte PHP 8.2+
+- **Wayfinder**: em projetos com `laravel/wayfinder`, as rotas viram funções TypeScript
+  importadas de `@/routes/{recurso}` no lugar do helper global `route()`
+- **Link na Sidebar**: o CRUD gerado entra no menu do projeto numa região que o pacote
+  gerencia sozinho
 - **Integração AppLayout**: Usa AppLayout (ao invés do AuthenticatedLayout descontinuado)
 - **Sistema de Breadcrumbs**: Navegação hierárquica abrangente
 - **Campos Inteligentes**: Detecção automática de campos fillable para React useForm
@@ -106,6 +110,31 @@ php artisan getic:install categories --stack=react
 
 # Com integração de temas
 php artisan getic:install posts --theme
+
+# Escolhendo o helper de rotas dos componentes React
+php artisan getic:install clientes --routes=wayfinder
+php artisan getic:install clientes --routes=ziggy
+```
+
+#### Helper de rotas (`--routes=`)
+
+Sem a flag, vale `crud.inertia.route_helper` — que por padrão é `auto` e detecta se o
+`laravel/wayfinder` está instalado no projeto. Em `wayfinder`, os componentes importam
+funções de `@/routes/{recurso}`; em `ziggy`, usam o helper global `route()`.
+
+#### Link na sidebar
+
+Na stack `react`, o pacote acrescenta o CRUD gerado ao menu do projeto
+(`resources/js/components/app-sidebar.tsx`), dentro de uma região delimitada pelos
+comentários `crud:nav:start` / `crud:nav:end` — o resto do seu menu nunca é tocado, e
+regerar a mesma tabela substitui o item em vez de duplicar. Na primeira geração o pacote
+pergunta antes de criar a região. Para desligar:
+
+```php
+// config/crud.php
+'navigation' => [
+    'sidebar' => false,
+],
 ```
 
 ## 🎨 Sistema de Temas
@@ -157,6 +186,9 @@ php artisan getic:install {tabela} --relationship
 
 # Com temas
 php artisan getic:install {tabela} --theme
+
+# Escolhendo o helper de rotas dos componentes React (default: auto)
+php artisan getic:install {tabela} --routes=wayfinder
 ```
 
 ## 🎯 Exemplo de Uso Completo
@@ -289,7 +321,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Publique e customize as configurações:
 
 ```bash
-php artisan vendor:publish --provider="Crud\CrudServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Crud\CrudServiceProvider" --tag="crud-config"
 ```
 
 Arquivo `config/crud.php`:

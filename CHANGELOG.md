@@ -2,6 +2,34 @@
 
 ## [Não lançado]
 
+### ⚠️ Leia antes de atualizar
+
+**`getic:install {tabela}` sem `--stack` mudou de saída.** Até a 3.1.4 esse comando gerava
+um Controller Blade clássico e **nenhuma view**. Agora gera a stack `react` inteira:
+`InertiaController`, os componentes `Index`/`Create`/`Edit`/`Show`, o tipo TypeScript,
+`ui/table.tsx` e `ui/pagination.tsx` se faltarem, e um item no `app-sidebar.tsx`. O
+Controller é o arquivo que mais se edita à mão, então **não regere sobre um Controller
+que você já customizou sem antes conferir o diff** — o pacote pergunta antes de
+sobrescrever, e `--force` pula a pergunta.
+
+Quem quer a saída antiga passa `--stack=blade`, mas note que `buildBladeViews()` ainda é
+vazio: só o Controller sai, sem views.
+
+**Arquivos que o pacote escreve ou edita no seu projeto** (stack `react`):
+
+| Caminho | O que acontece |
+|---|---|
+| `app/Http/Controllers/{Model}Controller.php` | criado (pergunta antes de sobrescrever) |
+| `app/Models/{Model}.php` | criado (pergunta antes de sobrescrever) |
+| `routes/{model}.php` | criado |
+| `routes/web.php` | ganha um `require` idempotente |
+| `resources/js/pages/{Model}/*.tsx` | criados |
+| `resources/js/types/{model}.ts` ou `types/index.d.ts` | criado, conforme o layout do app |
+| `resources/js/types/index.ts` | ganha `export type * from './{model}';` — **editado sem perguntar** |
+| `resources/js/components/ui/table.tsx`, `ui/pagination.tsx` | criados só se faltarem, nunca sobrescritos |
+| `resources/js/components/app-sidebar.tsx` | ganha a região `crud:nav:*` (pergunta na primeira vez) |
+| `resources/js/routes/**` | regerado pelo `wayfinder:generate`, quando há wayfinder |
+
 ### Adicionado
 
 - Suporte a **Laravel 13**, mantendo o Laravel 12. `illuminate/*` passa a aceitar
@@ -10,8 +38,16 @@
   TypeScript importadas de `@/routes/{recurso}`, em vez de chamadas ao helper global
   `route()`. Nova config `crud.inertia.route_helper` (`auto`, `ziggy`, `wayfinder`) e flag
   `--routes=`. Em `auto`, o pacote detecta se o `laravel/wayfinder` está instalado no
-  projeto. **Quem não tem wayfinder recebe exatamente a mesma saída de antes** — verificado
-  por comparação byte a byte dos componentes gerados.
+  projeto. **No eixo wayfinder-vs-ziggy, quem não tem wayfinder recebe a mesma saída do
+  modo ziggy** — verificado por comparação byte a byte dos componentes gerados. Isso não
+  quer dizer "igual à 3.1.4": `Index`, `Create`, `Edit`, `Show`, `FormField`, os tipos e
+  as rotas mudaram nesta release para todo mundo (ver a seção acima e as correções abaixo).
+  O modo wayfinder emite `submit(storeRoute())`, que depende de `useForm().submit()`
+  aceitar um par `{ url, method }`. Verificado com `@inertiajs/react` **3.6.1**, a versão
+  que os starter kits do Laravel 13 instalam sob `^3.0.0`
+  (`UseFormSubmitArguments` aceita `[UrlMethodPair, options?]`). O piso exato dentro da
+  linha 3.x não foi determinado — se você fixou uma 3.x anterior, rode `tsc` antes de
+  subir para produção.
 - A stack `react` passa a instalar os componentes `table` e `pagination` do shadcn/ui
   em `resources/js/components/ui/`, que os stubs importam mas os starter kits do Laravel
   não trazem. Nenhuma dependência npm nova: ambos usam apenas o que o starter kit já tem.
@@ -32,6 +68,16 @@
   que o starter kit do Laravel 13 não exporta. Nenhum dos dois usava o prop `auth` que
   ele fornecia, então a mudança também vale para Laravel 12 — só remove uma dependência
   desnecessária.
+- **A rota de listagem passou de `GET /{recurso}/index` para `GET /{recurso}`**, que é o
+  layout que o próprio Laravel usa em `Route::resource`. O nome continua
+  `{recurso}.index`, então nenhum `route('clientes.index')` nem import do wayfinder muda;
+  o que muda é a URL, e `/clientes/index` deixa de existir. Sem essa rota, o link novo da
+  sidebar dava 404.
+- `symfony/console` passa a aceitar `^8.0` (o Laravel 13 aceita `^7.4|^8.0`, e o pacote
+  preso em `^7.0` bloqueava quem migrasse para o Symfony 8), e `symfony/process` — usado
+  desde esta release para rodar o `wayfinder:generate` — passa a ser declarado em vez de
+  depender de o framework trazê-lo.
+- O campo `version` saiu do `composer.json`: o Packagist deriva a versão da tag do git.
 
 ### Corrigido
 
@@ -57,8 +103,24 @@
   O valor era desestruturado e nunca usado, então o import saiu junto.
 - O `onChange` do upload de arquivo era tipado como arquivo único, mas o componente já
   aceitava `multiple` e devolvia uma lista nesse caso.
+- O item que o pacote escreve na sidebar apontava para uma URL que o arquivo de rotas
+  gerado nunca declarava: clicar no link dava 404.
+- `--route` movia as rotas mas não o link da sidebar nem os breadcrumbs dos componentes
+  `Index`, `Create`, `Edit` e `Show` — sete lugares recalculavam o segmento da URL por
+  conta própria. Agora todos leem a mesma fonte.
+- O import do ícone na sidebar vinha sem apelido. Num projeto que já importava `List` do
+  `lucide-react`, o identificador ficava ligado duas vezes: erro de compilação em
+  TypeScript (`TS2300: Duplicate identifier`) e `SyntaxError` em ES modules. O import
+  agora é `List as CrudNavIcon`.
+- A inserção do import caía dentro das chaves de um import multilinha, deixando o
+  `app-sidebar.tsx` sem compilar. Os starter kits importam `ui/sidebar` exatamente assim.
+- O `wayfinder:generate` disparado pelo pacote rodava sem `--with-form` e reescrevia
+  `resources/js/routes` inteiro, apagando as variantes de form das rotas do próprio
+  projeto — as páginas de auth e settings do starter kit paravam de compilar com
+  `Property 'form' does not exist`. O formato agora é lido da saída existente e
+  preservado.
 
-Com isso, o CRUD gerado passa no `tsc` **sem nenhum erro**.
+Com isso, o CRUD gerado passa no `tsc` **sem nenhum erro** — e o resto do app também.
 
 ## [3.0.19] a [3.1.4] - não documentadas
 
