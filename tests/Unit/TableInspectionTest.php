@@ -133,4 +133,19 @@ class TableInspectionTest extends TestCase
 
         $this->assertSame([], $findings, 'Acento não quebra `$model->endereço` nem o tipo TS.');
     }
+
+    public function test_a_ordem_dos_achados_e_fixa(): void
+    {
+        // `clientes` do banco de teste, reduzida: sem timestamps, sem PRI, e com um nome
+        // inválido acrescentado para exercitar os três de uma vez.
+        $findings = (new TableInspection())->inspect([
+            self::column('idClientes', 'int'),
+            self::column('2fa_secret'),
+        ]);
+
+        $this->assertSame(
+            ['timestamps', 'primary-key-missing', 'column-identifier'],
+            $this->codes($findings)
+        );
+    }
 }
