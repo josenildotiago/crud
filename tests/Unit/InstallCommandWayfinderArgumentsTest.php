@@ -55,6 +55,13 @@ class InstallCommandWayfinderArgumentsTest extends TestCase
         (new Filesystem())->put($this->tmpBasePath . '/resources/js/routes/index.ts', $content);
     }
 
+    private function putNestedRouteFile(string $dir, string $content): void
+    {
+        $files = new Filesystem();
+        $files->makeDirectory($this->tmpBasePath . '/resources/js/routes/' . $dir, 0755, true);
+        $files->put($this->tmpBasePath . '/resources/js/routes/' . $dir . '/index.ts', $content);
+    }
+
     private function command(): WayfinderArgumentsSpyInstallCommand
     {
         return new WayfinderArgumentsSpyInstallCommand(new Filesystem());
@@ -80,6 +87,25 @@ class InstallCommandWayfinderArgumentsTest extends TestCase
         TS);
 
         $this->assertSame([], $this->command()->argumentsForTest());
+    }
+
+    public function test_form_variants_are_found_in_nested_route_files_too(): void
+    {
+        // O wayfinder distribui as rotas em subdiretórios por namespace. Um app cujas
+        // rotas de raiz não tenham variante de form ainda gera variantes nas aninhadas:
+        // olhar só o index.ts da raiz daria falso negativo e apagaria as variantes do
+        // usuário — exatamente o defeito que este método existe para evitar.
+        $this->putRoutesIndex(<<<'TS'
+        export const home = (options?: RouteQueryOptions) => ({ url: '/', method: 'get' });
+        TS);
+
+        $this->putNestedRouteFile('password', <<<'TS'
+        export const confirm = (options?: RouteQueryOptions) => ({ url: '/password/confirm', method: 'get' });
+        const confirmForm = (options?: RouteQueryOptions) => ({ action: '/password/confirm', method: 'get' });
+        confirm.form = confirmForm;
+        TS);
+
+        $this->assertSame(['--with-form'], $this->command()->argumentsForTest());
     }
 
     public function test_absent_output_stays_with_the_plain_generation(): void

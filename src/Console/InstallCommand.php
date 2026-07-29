@@ -465,14 +465,28 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      * `Property 'form' does not exist`. Gerar um CRUD não pode estreitar a saída
      * existente, então o formato é lido do que está lá.
      *
+     * A varredura cobre os subdiretórios: o wayfinder distribui as rotas por namespace,
+     * e olhar só o `index.ts` da raiz daria falso negativo num app cujas rotas de raiz
+     * não tenham variante de form.
+     *
      * @return array<int, string>
      */
     protected function wayfinderArguments(): array
     {
-        $index = resource_path('js/routes/index.ts');
+        $dir = resource_path('js/routes');
 
-        if ($this->files->exists($index) && preg_match('/^\s*\w+\.form\s*=/m', $this->files->get($index)) === 1) {
-            return ['--with-form'];
+        if (!$this->files->isDirectory($dir)) {
+            return [];
+        }
+
+        foreach ($this->files->allFiles($dir) as $file) {
+            if ($file->getExtension() !== 'ts') {
+                continue;
+            }
+
+            if (preg_match('/^\s*\w+\.form\s*=/m', $this->files->get($file->getPathname())) === 1) {
+                return ['--with-form'];
+            }
         }
 
         return [];
@@ -1607,9 +1621,7 @@ JSX;
             $symbols
         );
 
-        $route = $this->options['route'] ?? Str::kebab(Str::plural($this->name));
-
-        return "\nimport { " . implode(', ', $aliased) . " } from '@/routes/{$route}';";
+        return "\nimport { " . implode(', ', $aliased) . " } from '@/routes/{$this->routeSegment()}';";
     }
     /**
      * Get Form Request path.
