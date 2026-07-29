@@ -31,13 +31,27 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     protected $description = 'Cria um CRUD moderno com React.js e sistema de temas';
 
     /**
+     * Stacks frontend aceitas pelo gerador.
+     */
+    protected const STACKS = ['react', 'vue', 'blade'];
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
     {
         $this->table = $this->getNameInput();
-        $this->stack = $this->template ?? 'react';
         $this->nameTable = $this->table;
+
+        // A stack escolhida no prompt interativo tem precedência; fora dele, vale --stack.
+        $this->template ??= $this->option('stack');
+
+        if (!in_array($this->template, self::STACKS, true)) {
+            $this->components->error(
+                "Stack `{$this->template}` inválida. Opções: " . implode(', ', self::STACKS)
+            );
+            return self::FAILURE;
+        }
 
         // Check if table exists
         if (!$this->tableExists()) {
@@ -53,7 +67,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         $this->name = $this->_buildClassName();
 
-        info('🚀 Gerador de CRUD Laravel 12 + React.js em execução...');
+        info("🚀 Gerador de CRUD Laravel 12 ({$this->template}) em execução...");
 
         // Generate components
         $this->buildOptions()
@@ -75,14 +89,20 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         info('✅ CRUD criado com sucesso!');
 
-        $this->components->info('Arquivos gerados:');
-        $this->components->bulletList([
+        $generated = [
             "Controller: app/Http/Controllers/{$this->name}Controller.php",
             "Model: app/Models/{$this->name}.php",
-            "React Components: resources/js/pages/{$this->name}/",
-            "Routes: routes/" . Str::lower($this->name) . ".php",
-            "Web.php: Require adicionado"
-        ]);
+        ];
+
+        if ($this->template === 'react') {
+            $generated[] = "React Components: resources/js/pages/{$this->name}/";
+        }
+
+        $generated[] = "Routes: routes/" . Str::lower($this->name) . ".php";
+        $generated[] = "Web.php: Require adicionado";
+
+        $this->components->info('Arquivos gerados:');
+        $this->components->bulletList($generated);
 
         return self::SUCCESS;
     }
@@ -113,17 +133,21 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      */
     protected function afterPromptingForMissingArguments($input, $output): void
     {
-        // Frontend stack selection
-        $this->template = select(
-            label: 'Qual stack frontend deseja usar?',
-            options: [
-                'react' => 'React.js com Inertia.js (Recomendado)',
-                'vue' => 'Vue.js com Inertia.js',
-                'blade' => 'Blade tradicional',
-            ],
-            default: 'react',
-            hint: 'React.js é o padrão para Laravel 12'
-        );
+        // Frontend stack selection — --stack explícito na linha de comando vence o prompt.
+        if ($input->hasParameterOption('--stack')) {
+            $this->template = $this->option('stack');
+        } else {
+            $this->template = select(
+                label: 'Qual stack frontend deseja usar?',
+                options: [
+                    'react' => 'React.js com Inertia.js (Recomendado)',
+                    'vue' => 'Vue.js com Inertia.js',
+                    'blade' => 'Blade tradicional',
+                ],
+                default: $this->option('stack'),
+                hint: 'React.js é o padrão para Laravel 12'
+            );
+        }
 
         // Theme integration
         if ($this->template === 'react' && confirm('Deseja incluir sistema de temas dinâmicos?')) {
@@ -593,20 +617,26 @@ JSX;
     }
 
     /**
-     * Build Blade views (fallback).
+     * Build Blade views (ainda não implementado).
      */
     protected function buildBladeViews(): self
     {
-        // Implementation for Blade views...
+        $this->components->warn(
+            'A stack `blade` ainda não gera views — nenhum arquivo de view foi criado.'
+        );
+
         return $this;
     }
 
     /**
-     * Build Vue components (future implementation).
+     * Build Vue components (ainda não implementado).
      */
     protected function buildVueComponents(): self
     {
-        // Implementation for Vue components...
+        $this->components->warn(
+            'A stack `vue` ainda não gera componentes — nenhum arquivo de view foi criado.'
+        );
+
         return $this;
     }
 

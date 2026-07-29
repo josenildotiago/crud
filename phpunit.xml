@@ -6,6 +6,9 @@
 >
     <testsuite name="Unit">
             <directory suffix="InstallCommandTest.php">./tests/Unit</directory>
+            <file>./tests/Unit/InstallCommandStackTest.php</file>
+            <!-- CrudPackageTest.php fica de fora: foi escrito contra uma API que
+                 não existe (ver CLAUDE.md, "Pendências conhecidas"). -->
     </testsuite>
     <php>
         <!-- <env name="APP_ENV" value="testing"/>
