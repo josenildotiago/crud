@@ -1,5 +1,4 @@
 import React from 'react';
-import { useTheme } from '@/hooks/use-appearance';
 
 interface FormFieldProps {
     label: string;
@@ -30,8 +29,6 @@ export default function FormField({
     className = '',
     disabled = false,
 }: FormFieldProps) {
-    const { theme } = useTheme();
-
     const baseInputClasses = `
         block w-full border-gray-300 dark:border-gray-700 
         dark:bg-gray-900 dark:text-gray-300 
@@ -191,7 +188,7 @@ export default function FormField({
 interface FileUploadProps {
     label: string;
     name: string;
-    onChange: (file: File | null) => void;
+    onChange: (file: File | File[] | null) => void;
     error?: string;
     required?: boolean;
     accept?: string;

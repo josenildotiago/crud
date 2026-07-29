@@ -49,6 +49,12 @@
   Controller definisse `bulkDestroy()`. A exclusão em massa quebrava em runtime. A rota
   é declarada **antes** da curinga `{model}`, senão `DELETE /clientes/bulk-destroy` seria
   lido como `DELETE /clientes/{cliente}`.
+- `FormField` importava `useTheme` de `@/hooks/use-appearance`, que não exporta esse nome.
+  O valor era desestruturado e nunca usado, então o import saiu junto.
+- O `onChange` do upload de arquivo era tipado como arquivo único, mas o componente já
+  aceitava `multiple` e devolvia uma lista nesse caso.
+
+Com isso, o CRUD gerado passa no `tsc` **sem nenhum erro**.
 
 ## [3.0.19] a [3.1.4] - não documentadas
 
