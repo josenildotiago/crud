@@ -1,15 +1,17 @@
 import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeftIcon } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/types';
+import { {{modelName}} } from '@/types';
 {{themeImports}}
 
-interface EditProps extends PageProps {
+interface EditProps {
     {{modelCamel}}: {{modelName}};
 }
 
-export default function Edit({ auth, {{modelCamel}} }: EditProps) {
+export default function Edit({ {{modelCamel}} }: EditProps) {
     const { data, setData, put, processing, errors } = useForm({
 {{editFillableColumns}}
     });

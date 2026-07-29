@@ -2,17 +2,14 @@ import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeftIcon,  PencilIcon, TrashIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-import { PageProps } from '@/types';
-import DangerButton from '@/Components/DangerButton';
-import SecondaryButton from '@/Components/SecondaryButton';
-import PrimaryButton from '@/Components/PrimaryButton';
+import { {{modelName}} } from '@/types';
 {{themeImports}}
 
-interface ShowProps extends PageProps {
+interface ShowProps {
     {{modelCamel}}: {{modelName}};
 }
 
-export default function Show({ auth, {{modelCamel}} }: ShowProps) {
+export default function Show({ {{modelCamel}} }: ShowProps) {
     const handleDelete = () => {
         if (confirm('Tem certeza que deseja excluir este {{modelTitle}}?')) {
             router.delete(route('{{modelRoute}}.destroy', {{modelCamel}}.id));
