@@ -767,7 +767,7 @@ E remover o método `debugColumns()` inteiro (hoje por volta da linha 1393, come
 - [ ] **Step 11: Rodar a suíte inteira**
 
 Run: `vendor/bin/phpunit`
-Expected: `OK (54 tests, ...)` — os 51 do fim da Task 1 mais os 3 novos, todos verdes. Se sobrar falha em algum dos três arquivos antigos, o dublê correspondente ainda não está fabricando schema convencional.
+Expected: `OK (55 tests, ...)` — os 52 do fim da Task 1 (9 originais + 1 da rodada de correção) mais os 3 novos, todos verdes. Se sobrar falha em algum dos três arquivos antigos, o dublê correspondente ainda não está fabricando schema convencional.
 
 - [ ] **Step 12: Acrescentar o resumo do fim da execução**
 
@@ -792,7 +792,7 @@ Em `src/Console/InstallCommand.php`, no fim do `handle()`, entre o `bulletList` 
 - [ ] **Step 13: Rodar a suíte de novo**
 
 Run: `vendor/bin/phpunit`
-Expected: `OK (54 tests, ...)`. O resumo não tem teste próprio de propósito: é uma linha de console derivada de uma contagem já coberta, e testar texto de interface deixa a prosa presa ao teste.
+Expected: `OK (55 tests, ...)`. O resumo não tem teste próprio de propósito: é uma linha de console derivada de uma contagem já coberta, e testar texto de interface deixa a prosa presa ao teste.
 
 - [ ] **Step 14: Verificar no app real, nos dois schemas**
 
@@ -929,7 +929,7 @@ vendor/bin/phpunit
 composer validate --strict
 ```
 
-Esperado: `OK (54 tests, ...)` e `./composer.json is valid`.
+Esperado: `OK (55 tests, ...)` e `./composer.json is valid`.
 
 - [ ] **Merge na `main` e parar**
 
