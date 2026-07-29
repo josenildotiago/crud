@@ -3,6 +3,7 @@
 namespace Crud\Console;
 
 use Composer\InstalledVersions;
+use Crud\NavigationRegion;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Filesystem\Filesystem;
@@ -387,7 +388,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $tableHead = $this->generateTableHeaders();
         $formFields = $this->generateFormFields();
         $showFields = $this->generateShowFields();
-        $this->buildListComponent()->buildTypeScriptTypes()->buildUiComponents();
+        $this->buildListComponent()->buildTypeScriptTypes()->buildUiComponents()->buildSidebarNavigation();
 
         $replace = array_merge($this->buildReplacements(), [
             '{{tableHeaders}}' => $tableHead,
@@ -1137,6 +1138,94 @@ JSX;
         $this->files->put($barrelPath, rtrim($barrelContent, "\n") . "\n" . $export . "\n");
 
         info("Registrado em resources/js/types/index.ts: {$export}");
+    }
+
+    /**
+     * Arquivo de navegação e âncora de cada stack.
+     *
+     * O comentário acompanha a sintaxe do arquivo. Só a react está mapeada; as demais
+     * entram junto com a implementação do respectivo builder.
+     *
+     * @var array<string, array{file: string, open: string, start: string, end: string, import: string}>
+     */
+    protected const SIDEBARS = [
+        'react' => [
+            'file' => 'js/components/app-sidebar.tsx',
+            'open' => '/^const mainNavItems\s*:/',
+            'start' => '// crud:nav:start',
+            'end' => '// crud:nav:end',
+            'import' => "import { List } from 'lucide-react';",
+        ],
+    ];
+
+    /**
+     * Insere o link do CRUD gerado na sidebar do projeto.
+     *
+     * Nunca aborta a geração: qualquer impedimento vira aviso mais o trecho para o
+     * usuário colar onde quiser.
+     */
+    protected function buildSidebarNavigation(): self
+    {
+        if (!config('crud.navigation.sidebar', true)) {
+            return $this;
+        }
+
+        $config = self::SIDEBARS[$this->template] ?? null;
+
+        if ($config === null) {
+            return $this;
+        }
+
+        $path = resource_path($config['file']);
+        $item = sprintf(
+            "{ title: '%s', href: '/%s', icon: List },",
+            Str::title(Str::snake(Str::plural($this->name), ' ')),
+            Str::kebab(Str::plural($this->name))
+        );
+
+        if (!$this->files->exists($path)) {
+            warning("Sidebar não encontrada em {$config['file']}. Adicione o item à mão:");
+            $this->line($item);
+
+            return $this;
+        }
+
+        $region = new NavigationRegion($config['start'], $config['end']);
+        $content = $this->files->get($path);
+        $key = sprintf("'/%s'", Str::kebab(Str::plural($this->name)));
+
+        if (!str_contains($content, $config['start'])) {
+            if (!confirm('Adicionar o link na sidebar?', default: true)) {
+                $this->line($item);
+
+                return $this;
+            }
+
+            $installed = $region->install($content, $config['open'], $config['import']);
+
+            if ($installed === null) {
+                warning('Não consegui localizar a navegação em ' . $config['file'] . '. Adicione o item à mão:');
+                $this->line($item);
+
+                return $this;
+            }
+
+            $content = $installed;
+        }
+
+        $updated = $region->upsert($content, $key, $item);
+
+        if ($updated === null) {
+            warning('Marcadores de navegação malformados em ' . $config['file'] . '. Nada foi alterado.');
+            $this->line($item);
+
+            return $this;
+        }
+
+        $this->write($path, $updated);
+        info('Link adicionado à sidebar.');
+
+        return $this;
     }
 
     /**

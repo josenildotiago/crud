@@ -16,6 +16,10 @@
   em `resources/js/components/ui/`, que os stubs importam mas os starter kits do Laravel
   não trazem. Nenhuma dependência npm nova: ambos usam apenas o que o starter kit já tem.
   Componente já existente **nunca** é sobrescrito.
+- A stack `react` passa a inserir um link para o CRUD gerado na sidebar do projeto,
+  numa região delimitada pelos comentários `crud:nav:start` / `crud:nav:end` que o
+  pacote gerencia sozinho — o resto do seu menu nunca é tocado. Na primeira geração o
+  pacote pergunta antes de criar a região. Desligue com `crud.navigation.sidebar => false`.
 
 ### Alterado
 

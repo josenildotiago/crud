@@ -90,6 +90,20 @@ return [
         'generate_requests' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Navegação
+    |--------------------------------------------------------------------------
+    |
+    | Insere um link para o CRUD gerado na sidebar do projeto, dentro de uma
+    | região delimitada por comentários que o pacote gerencia. Em `false`, o
+    | pacote nunca toca no arquivo de navegação.
+    |
+    */
+    'navigation' => [
+        'sidebar' => true,
+    ],
+
     'model' => [
         'namespace' => 'App\Models',
 
