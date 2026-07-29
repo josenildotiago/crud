@@ -733,7 +733,23 @@ Em `tests/Unit/InstallCommandNavigationRouteTest.php`, na classe `RouteAndSideba
 
 - [ ] **Step 9: Dar colunas convencionais ao dublê do stack**
 
-Em `tests/Unit/InstallCommandStackTest.php`, no dublê: remover o override de `debugColumns()` e acrescentar o mesmo `getColumns()` do Step 7, com o mesmo comentário adaptado ("este arquivo é sobre a resolução de stack").
+Em `tests/Unit/InstallCommandStackTest.php`, no dublê: remover o override de `debugColumns()` e acrescentar:
+
+```php
+    /**
+     * Schema convencional para o pré-voo ficar silencioso: este arquivo é sobre a
+     * resolução de stack, não sobre a inspeção da tabela.
+     */
+    protected function getColumns()
+    {
+        return [
+            (object) ['Field' => 'id', 'Type' => 'bigint unsigned', 'Null' => 'NO', 'Key' => 'PRI', 'Default' => null, 'Extra' => 'auto_increment'],
+            (object) ['Field' => 'nome', 'Type' => 'varchar(255)', 'Null' => 'NO', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'created_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'updated_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
+        ];
+    }
+```
 
 Atenção ao `test_invalid_stack_fails_before_touching_the_database`: ele continua valendo, porque a stack é validada antes do pré-voo no `handle()`.
 
