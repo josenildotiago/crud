@@ -21,19 +21,19 @@
     },
     "require": {
         "php": ">=8.2.0",
-        "illuminate/console": "^12.0",
-        "illuminate/filesystem": "^12.0",
-        "illuminate/support": "^12.0",
-        "illuminate/validation": "^12.0",
-        "illuminate/database": "^12.0",
+        "illuminate/console": "^12.0|^13.0",
+        "illuminate/filesystem": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "illuminate/validation": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
         "symfony/console": "^7.0",
         "laravel/prompts": "^0.3.0"
     },
     "require-dev": {
-        "orchestra/testbench": "^10.0",
-        "phpunit/phpunit": "^11.0",
-        "pestphp/pest": "^3.0",
-        "pestphp/pest-plugin-laravel": "^3.0"
+        "orchestra/testbench": "^10.0|^11.0",
+        "phpunit/phpunit": "^11.5.50|^12.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0"
     },
     "extra": {
         "laravel": {
@@ -46,5 +46,10 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
 }
