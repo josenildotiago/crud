@@ -1,0 +1,11 @@
+import type { Paginated } from './paginated';
+
+export interface {{modelName}} {
+    id: number;
+{{typeScriptColumns}}
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown;
+}
+
+export type Paginated{{modelName}}List = Paginated<{{modelName}}>;

@@ -12,6 +12,7 @@ use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\info;
+use function Laravel\Prompts\warning;
 
 class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 {
@@ -856,63 +857,175 @@ JSX;
     {
         info('Criando tipos TypeScript...');
 
-        $typesPath = resource_path('js/types/index.d.ts');
+        $typesDir = resource_path('js/types');
 
-        if (!$this->files->exists(dirname($typesPath))) {
-            $this->files->makeDirectory(dirname($typesPath), 0755, true);
+        if (!$this->files->exists($typesDir)) {
+            $this->files->makeDirectory($typesDir, 0755, true);
+        }
+
+        // A partir do Laravel 13 o starter kit organiza resources/js/types como um
+        // barrel: index.ts reexportando auth.ts, navigation.ts, ui.ts... Nesse layout
+        // o index.d.ts que escrevíamos nunca era lido, porque o TypeScript resolve
+        // index.ts antes de index.d.ts.
+        if ($this->files->exists($typesDir . '/index.ts')) {
+            return $this->buildTypeScriptTypesBarrel($typesDir);
+        }
+
+        return $this->buildTypeScriptTypesLegacy($typesDir . '/index.d.ts');
+    }
+
+    /**
+     * Layout Laravel 13: um arquivo de tipos por model ao lado do barrel index.ts.
+     */
+    protected function buildTypeScriptTypesBarrel(string $typesDir): self
+    {
+        $barrelPath = $typesDir . '/index.ts';
+        $fileName = $this->_getTypeFileName();
+
+        // Paginated<T> é compartilhado por todos os models: escrito uma única vez.
+        $paginatedPath = $typesDir . '/paginated.ts';
+
+        if (!$this->files->exists($paginatedPath)) {
+            $this->write($paginatedPath, $this->getStubOrPackageDefault('react/TypesPaginated'));
+            info('Tipo compartilhado criado: resources/js/types/paginated.ts');
+        }
+
+        $this->registerTypeInBarrel($barrelPath, 'paginated');
+
+        $modelPath = $typesDir . "/{$fileName}.ts";
+
+        // Regerar a mesma tabela substitui o arquivo — nada de {Model}2, {Model}3.
+        if ($this->files->exists($modelPath) && !confirm(
+            label: "O arquivo resources/js/types/{$fileName}.ts já existe. Deseja sobrescrevê-lo?",
+            default: true,
+            hint: 'O conteúdo é derivado do schema; sobrescrever mantém os tipos em dia'
+        )) {
+            $this->registerTypeInBarrel($barrelPath, $fileName);
+
+            return $this;
         }
 
         $replace = $this->buildReplacements();
 
-        // Get the stub content
-        $typesContent = $this->getStub('react/Types');
+        $this->write($modelPath, str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $this->getStubOrPackageDefault('react/TypesModel')
+        ));
 
-        // Check if types file exists and handle duplications
-        if ($this->files->exists($typesPath)) {
-            $existingContent = $this->files->get($typesPath);
+        $this->registerTypeInBarrel($barrelPath, $fileName);
 
-            // Check if Paginated already exists
-            $hasPaginated = strpos($existingContent, 'export interface Paginated<T>') !== false;
-
-            // Check if the model interface already exists
-            $modelName = $this->name;
-            $hasModelInterface = strpos($existingContent, "export interface {$modelName}") !== false;
-
-            // Remove Paginated from stub if it already exists
-            if ($hasPaginated) {
-                $typesContent = $this->removePaginatedFromStub($typesContent);
-            }
-
-            // Handle model interface duplication
-            if ($hasModelInterface) {
-                $modelName = $this->getUniqueModelName($existingContent, $modelName);
-                $replace['{{modelName}}'] = $modelName;
-            }
-
-            // Replace placeholders
-            $newTypesContent = str_replace(
-                array_keys($replace),
-                array_values($replace),
-                $typesContent
-            );
-
-            // Append new types to existing file
-            $this->files->put($typesPath, $existingContent . "\n" . $newTypesContent);
-
-            info("Tipos TypeScript adicionados ao arquivo existente: {$modelName}");
-        } else {
-            // Create new types file
-            $newTypesContent = str_replace(
-                array_keys($replace),
-                array_values($replace),
-                $typesContent
-            );
-
-            $this->write($typesPath, $newTypesContent);
-            info("Arquivo de tipos TypeScript criado: {$this->name}");
-        }
+        info("Tipos TypeScript criados: resources/js/types/{$fileName}.ts");
 
         return $this;
+    }
+
+    /**
+     * Layout Laravel 12: arquivo único resources/js/types/index.d.ts.
+     */
+    protected function buildTypeScriptTypesLegacy(string $typesPath): self
+    {
+        $replace = $this->buildReplacements();
+        $typesContent = $this->getStub('react/Types');
+
+        if (!$this->files->exists($typesPath)) {
+            $this->write($typesPath, str_replace(
+                array_keys($replace),
+                array_values($replace),
+                $typesContent
+            ));
+
+            info("Arquivo de tipos TypeScript criado: {$this->name}");
+
+            return $this;
+        }
+
+        $existingContent = $this->files->get($typesPath);
+
+        // Paginated<T> só entra uma vez no arquivo.
+        if (str_contains($existingContent, 'export interface Paginated<T>')) {
+            $typesContent = $this->removePaginatedFromStub($typesContent);
+        }
+
+        // Regerar a mesma tabela substitui o bloco antigo. Antes a interface nova era
+        // renomeada para {Model}2, {Model}3... e nenhum componente importava esse nome.
+        if (str_contains($existingContent, "export interface {$this->name} {")) {
+            if (!confirm(
+                label: "A interface {$this->name} já existe em resources/js/types/index.d.ts. Deseja sobrescrevê-la?",
+                default: true,
+                hint: 'O conteúdo é derivado do schema; sobrescrever mantém os tipos em dia'
+            )) {
+                return $this;
+            }
+
+            $cleanedContent = $this->removeModelTypesFromContent($existingContent, $this->name);
+
+            if ($cleanedContent === $existingContent) {
+                warning("Não foi possível localizar o bloco de {$this->name} para substituir. Arquivo mantido como está.");
+
+                return $this;
+            }
+
+            $existingContent = $cleanedContent;
+        }
+
+        $newTypesContent = str_replace(
+            array_keys($replace),
+            array_values($replace),
+            $typesContent
+        );
+
+        $this->files->put($typesPath, rtrim($existingContent, "\n") . "\n\n" . $newTypesContent);
+
+        info("Tipos TypeScript atualizados no arquivo existente: {$this->name}");
+
+        return $this;
+    }
+
+    /**
+     * Registra o arquivo de tipos no barrel resources/js/types/index.ts.
+     *
+     * Idempotente: rodar o gerador de novo não duplica a linha — mesmo cuidado que
+     * buildRouter() toma com o require do web.php.
+     */
+    protected function registerTypeInBarrel(string $barrelPath, string $fileName): void
+    {
+        $barrelContent = $this->files->get($barrelPath);
+
+        if (preg_match('#from\s+[\'"]\./' . preg_quote($fileName, '#') . '[\'"]#', $barrelContent)) {
+            return;
+        }
+
+        $export = "export type * from './{$fileName}';";
+
+        $this->files->put($barrelPath, rtrim($barrelContent, "\n") . "\n" . $export . "\n");
+
+        info("Registrado em resources/js/types/index.ts: {$export}");
+    }
+
+    /**
+     * Nome do arquivo de tipos do model, em kebab-case (ex.: ordem-servico).
+     */
+    protected function _getTypeFileName(): string
+    {
+        return Str::kebab($this->name);
+    }
+
+    /**
+     * Lê um stub respeitando crud.stub_path, com fallback para os stubs do pacote.
+     *
+     * Necessário para stubs novos: quem configurou um stub_path customizado antes
+     * deles existirem não teria o arquivo, e getStub() estouraria.
+     */
+    protected function getStubOrPackageDefault(string $type): string
+    {
+        $path = $this->getStub($type, false);
+
+        if ($this->files->exists($path)) {
+            return $this->files->get($path);
+        }
+
+        return $this->files->get(__DIR__ . "/../stubs/{$type}.stub");
     }
 
     /**
@@ -926,19 +1039,18 @@ JSX;
     }
 
     /**
-     * Get unique model name if interface already exists.
+     * Remove a interface do model e o alias de paginação gerados anteriormente.
+     *
+     * As interfaces geradas não têm chaves aninhadas, então [^}]* delimita o bloco.
      */
-    protected function getUniqueModelName(string $existingContent, string $modelName): string
+    protected function removeModelTypesFromContent(string $content, string $modelName): string
     {
-        $counter = 2;
-        $newModelName = $modelName;
+        $name = preg_quote($modelName, '#');
 
-        while (strpos($existingContent, "export interface {$newModelName}") !== false) {
-            $newModelName = $modelName . $counter;
-            $counter++;
-        }
+        $content = preg_replace('#export interface ' . $name . ' \{[^}]*\}\n*#', '', $content);
+        $content = preg_replace('#export type Paginated' . $name . 'List = Paginated<' . $name . '>;\n*#', '', $content);
 
-        return $newModelName;
+        return $content;
     }
 
     /**
