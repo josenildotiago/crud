@@ -26,11 +26,16 @@ final class NavigationRegion
      * o array, e a região entra antes do primeiro fechamento depois dela — assim os
      * itens gerados ficam abaixo do que o usuário já tem.
      *
-     * Devolve null se a âncora ou o fechamento não forem encontrados. Falhar aqui é
-     * seguro: quem chama cai no caminho de imprimir o trecho para colar à mão.
+     * Devolve null se a âncora não for encontrada, se o fechamento não for encontrado,
+     * ou se a região já existe. Falhar aqui é seguro: quem chama cai no caminho de
+     * imprimir o trecho para colar à mão.
      */
     public function install(string $content, string $openPattern, string $importLine): ?string
     {
+        if (str_contains($content, $this->startMarker)) {
+            return null;
+        }
+
         $lines = preg_split('/\R/', $content);
 
         $openLine = null;

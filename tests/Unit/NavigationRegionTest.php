@@ -147,13 +147,24 @@ class NavigationRegionTest extends TestCase
 
     public function test_install_nao_duplica_um_import_ja_presente(): void
     {
-        $region = $this->region();
-        $import = "import { List } from 'lucide-react';";
+        $content = <<<'TSX'
+        import { BookOpen, LayoutGrid } from 'lucide-react';
+        import { List } from 'lucide-react';
+        import type { NavItem } from '@/types';
 
-        $once = $region->install($this->sidebarWithoutRegion(), self::OPEN_PATTERN, $import);
-        $twice = $region->install($once, self::OPEN_PATTERN, $import);
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        ];
+        TSX;
 
-        $this->assertSame(1, substr_count($twice, $import));
+        $result = $this->region()->install(
+            $content,
+            self::OPEN_PATTERN,
+            "import { List } from 'lucide-react';"
+        );
+
+        $this->assertNotNull($result);
+        $this->assertSame(1, substr_count($result, "import { List } from 'lucide-react';"));
     }
 
     public function test_install_devolve_null_quando_a_ancora_nao_existe(): void
@@ -187,5 +198,24 @@ class NavigationRegionTest extends TestCase
 
         $this->assertNotNull($result);
         $this->assertStringContainsString("href: '/clientes'", $result);
+    }
+
+    public function test_install_devolve_null_quando_a_regiao_ja_existe(): void
+    {
+        $region = $this->region();
+
+        $once = $region->install(
+            $this->sidebarWithoutRegion(),
+            self::OPEN_PATTERN,
+            "import { List } from 'lucide-react';"
+        );
+
+        $twice = $region->install(
+            $once,
+            self::OPEN_PATTERN,
+            "import { List } from 'lucide-react';"
+        );
+
+        $this->assertNull($twice);
     }
 }
