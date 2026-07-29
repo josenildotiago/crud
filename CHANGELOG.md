@@ -6,6 +6,10 @@
 
 - Suporte a **Laravel 13**, mantendo o Laravel 12. `illuminate/*` passa a aceitar
   `^12.0|^13.0`. Suíte executada contra o 13 (Testbench 11, PHPUnit 12).
+- A stack `react` passa a instalar os componentes `table` e `pagination` do shadcn/ui
+  em `resources/js/components/ui/`, que os stubs importam mas os starter kits do Laravel
+  não trazem. Nenhuma dependência npm nova: ambos usam apenas o que o starter kit já tem.
+  Componente já existente **nunca** é sobrescrito.
 
 ### Alterado
 
@@ -29,6 +33,12 @@
   nenhum dos dois.
 - `Show.stub` importava `DangerButton`, `SecondaryButton` e `PrimaryButton` de
   `@/Components` — caminho do Breeze que não existe mais — e não usava nenhum dos três.
+- O tipo TypeScript do model era escrito em `resources/js/types/index.d.ts`, mas o
+  starter kit do Laravel 13 usa `index.ts` como barrel, e o TypeScript resolve `index.ts`
+  primeiro — o tipo gerado nunca era lido. Agora o layout é detectado: com barrel, gera
+  um arquivo por model e registra no `index.ts`; sem barrel, mantém o `index.d.ts` de antes.
+- Regerar a mesma tabela substitui o bloco de tipos em vez de anexar `Cliente2`,
+  `Cliente3` e assim por diante — versões que nenhum componente gerado importava.
 
 ## [3.0.19] a [3.1.4] - não documentadas
 

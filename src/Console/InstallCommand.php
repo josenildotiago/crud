@@ -296,7 +296,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $tableHead = $this->generateTableHeaders();
         $formFields = $this->generateFormFields();
         $showFields = $this->generateShowFields();
-        $this->buildListComponent()->buildTypeScriptTypes();
+        $this->buildListComponent()->buildTypeScriptTypes()->buildUiComponents();
 
         $replace = array_merge($this->buildReplacements(), [
             '{{tableHeaders}}' => $tableHead,
@@ -1001,6 +1001,50 @@ JSX;
         $this->files->put($barrelPath, rtrim($barrelContent, "\n") . "\n" . $export . "\n");
 
         info("Registrado em resources/js/types/index.ts: {$export}");
+    }
+
+    /**
+     * Componentes shadcn/ui que os stubs react importam mas que os starter kits
+     * do Laravel não trazem instalados.
+     *
+     * Ambos são copiados do próprio pacote em vez de exigirem `shadcn add`, porque
+     * nenhum dos dois precisa de dependência npm nova: `table` usa só `cn`, e
+     * `pagination` usa `buttonVariants` do ui/button mais ícones do lucide-react.
+     */
+    protected const UI_COMPONENTS = ['table', 'pagination'];
+
+    /**
+     * Instala os componentes shadcn/ui que faltam no app do usuário.
+     *
+     * Só escreve o que não existe: o usuário pode ter customizado o table.tsx dele,
+     * e um CRUD novo não é motivo para sobrescrever componente compartilhado.
+     */
+    protected function buildUiComponents(): self
+    {
+        $uiDir = resource_path('js/components/ui');
+
+        if (!$this->files->exists($uiDir)) {
+            $this->files->makeDirectory($uiDir, 0755, true);
+        }
+
+        $installed = [];
+
+        foreach (self::UI_COMPONENTS as $component) {
+            $path = $uiDir . "/{$component}.tsx";
+
+            if ($this->files->exists($path)) {
+                continue;
+            }
+
+            $this->write($path, $this->getStubOrPackageDefault("react/ui/{$component}.tsx"));
+            $installed[] = $component;
+        }
+
+        if ($installed !== []) {
+            info('Componentes shadcn/ui instalados: ' . implode(', ', $installed));
+        }
+
+        return $this;
     }
 
     /**
