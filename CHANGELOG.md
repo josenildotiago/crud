@@ -1,5 +1,39 @@
 # Changelog
 
+## [Não lançado]
+
+### Adicionado
+
+- Suporte a **Laravel 13**, mantendo o Laravel 12. `illuminate/*` passa a aceitar
+  `^12.0|^13.0`. Suíte executada contra o 13 (Testbench 11, PHPUnit 12).
+
+### Alterado
+
+- **Mudança de comportamento:** `--stack` passa a ser honrado fora do prompt interativo.
+  Até a 3.1.4 a flag era ignorada quando o nome da tabela vinha na linha de comando, e
+  **nenhuma view era gerada — inclusive para `--stack=react`**, apesar de o README
+  documentar esse uso. Uma stack desconhecida agora falha com mensagem clara, em vez de
+  gerar nada em silêncio.
+- Os componentes `Edit` e `Show` gerados não dependem mais de `PageProps` de `@/types`,
+  que o starter kit do Laravel 13 não exporta. Nenhum dos dois usava o prop `auth` que
+  ele fornecia, então a mudança também vale para Laravel 12 — só remove uma dependência
+  desnecessária.
+
+### Corrigido
+
+- JSX inválido nos componentes React gerados. `getTableCellsForIndex()` produzia
+  `{{model}.campo}` em vez de `{model.campo}`, uma célula quebrada por coluna; e
+  `Edit.stub`/`Show.stub` vazavam o idioma de escape do Blade (`{{'{'}}`) para dentro de
+  arquivos `.tsx`, que nunca passam pelo compilador Blade.
+- `Edit.stub` injetava campos de formulário com `<Label>` e `<Input>` sem importar
+  nenhum dos dois.
+- `Show.stub` importava `DangerButton`, `SecondaryButton` e `PrimaryButton` de
+  `@/Components` — caminho do Breeze que não existe mais — e não usava nenhum dos três.
+
+## [3.0.19] a [3.1.4] - não documentadas
+
+Estas releases saíram sem entrada no changelog. Ver `git log v3.0.18..v3.1.4`.
+
 ## [3.0.18] - 2025-08-26
 
 ### 🎉 Major Release - React.js shadcn/ui Integration
