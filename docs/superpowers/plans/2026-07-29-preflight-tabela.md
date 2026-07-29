@@ -344,7 +344,7 @@ Em `src/TableInspection.php`, dentro de `inspect()`, imediatamente antes do `ret
 - [ ] **Step 17: Rodar a suíte inteira**
 
 Run: `vendor/bin/phpunit`
-Expected: `OK (50 tests, ...)` — os 42 de antes mais os 8 novos, sem nenhuma falha. Se algum teste antigo falhar aqui, pare: a classe nova não deveria ter afetado nada ainda, porque ninguém a chama.
+Expected: `OK (51 tests, ...)` — os 42 de antes mais os 9 novos, sem nenhuma falha. Se algum teste antigo falhar aqui, pare: a classe nova não deveria ter afetado nada ainda, porque ninguém a chama.
 
 - [ ] **Step 18: Commit**
 
@@ -767,7 +767,7 @@ E remover o método `debugColumns()` inteiro (hoje por volta da linha 1393, come
 - [ ] **Step 11: Rodar a suíte inteira**
 
 Run: `vendor/bin/phpunit`
-Expected: `OK (53 tests, ...)` — os 50 do fim da Task 1 mais os 3 novos, todos verdes. Se sobrar falha em algum dos três arquivos antigos, o dublê correspondente ainda não está fabricando schema convencional.
+Expected: `OK (54 tests, ...)` — os 51 do fim da Task 1 mais os 3 novos, todos verdes. Se sobrar falha em algum dos três arquivos antigos, o dublê correspondente ainda não está fabricando schema convencional.
 
 - [ ] **Step 12: Acrescentar o resumo do fim da execução**
 
@@ -792,7 +792,7 @@ Em `src/Console/InstallCommand.php`, no fim do `handle()`, entre o `bulletList` 
 - [ ] **Step 13: Rodar a suíte de novo**
 
 Run: `vendor/bin/phpunit`
-Expected: `OK (53 tests, ...)`. O resumo não tem teste próprio de propósito: é uma linha de console derivada de uma contagem já coberta, e testar texto de interface deixa a prosa presa ao teste.
+Expected: `OK (54 tests, ...)`. O resumo não tem teste próprio de propósito: é uma linha de console derivada de uma contagem já coberta, e testar texto de interface deixa a prosa presa ao teste.
 
 - [ ] **Step 14: Verificar no app real, nos dois schemas**
 
@@ -929,7 +929,7 @@ vendor/bin/phpunit
 composer validate --strict
 ```
 
-Esperado: `OK (53 tests, ...)` e `./composer.json is valid`.
+Esperado: `OK (54 tests, ...)` e `./composer.json is valid`.
 
 - [ ] **Merge na `main` e parar**
 
