@@ -1,5 +1,7 @@
 # Laravel CRUD Generator v3.2.0
 
+[![tests](https://github.com/josenildotiago/crud/actions/workflows/tests.yml/badge.svg)](https://github.com/josenildotiago/crud/actions/workflows/tests.yml)
+
 Um pacote moderno para Laravel que gera operações CRUD completas com integração React.js e sistema de temas dinâmicos.
 
 ## 🚀 Características Principais

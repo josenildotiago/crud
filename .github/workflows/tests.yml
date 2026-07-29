@@ -1,0 +1,95 @@
+# Verifica mecanicamente a faixa que o composer.json promete.
+#
+# O composer.json aceita PHP >= 8.2, illuminate/* ^12|^13 e symfony/console ^7|^8, mas
+# nem toda combinação existe:
+#
+#   - Laravel 13 exige PHP ^8.3, então PHP 8.2 só é honesto com Laravel 12.
+#   - symfony/console 8.0 exige PHP >= 8.4, então o braço ^8.0 do constraint só é
+#     exercitado nos jobs de PHP 8.4 — em nenhuma outra combinação ele é alcançável.
+#
+# A versão do Testbench é que fixa a do framework (^10 → Laravel 12, ^11 → Laravel 13),
+# por isso ela é a dimensão da matrix em vez de constrainer os cinco illuminate/* na mão.
+#
+# Os jobs `lowest` provam o piso do constraint. Sem eles, o limite inferior é ficção:
+# ninguém instala illuminate 12.0 na prática, mas o composer.json diz que dá.
+#
+# Nenhum serviço de banco aqui de propósito: a suíte ativa não toca banco. Se algum teste
+# passar a exercitar geração de verdade, ele vai precisar de MySQL — `getColumns()` usa
+# `SHOW COLUMNS`, que sqlite não tem — e este workflow terá de ganhar um `services:`.
+
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: PHP ${{ matrix.php }} · Testbench ^${{ matrix.testbench }} · ${{ matrix.deps }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+        testbench: ['10', '11']
+        deps: [highest]
+        exclude:
+          # Laravel 13 exige PHP ^8.3.
+          - php: '8.2'
+            testbench: '11'
+        include:
+          - php: '8.3'
+            testbench: '10'
+            deps: lowest
+          - php: '8.3'
+            testbench: '11'
+            deps: lowest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+
+      - name: Fixar a versão do Testbench desta combinação
+        run: composer require --dev "orchestra/testbench:^${{ matrix.testbench }}.0" --no-update --no-interaction
+
+      - name: Instalar dependências (mais recentes)
+        if: matrix.deps == 'highest'
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Instalar dependências (piso do constraint)
+        if: matrix.deps == 'lowest'
+        run: composer update --prefer-dist --prefer-lowest --prefer-stable --no-interaction
+
+      # `composer show` aceita um pacote por chamada, então o filtro é no grep — com
+      # vários argumentos ele sai com erro e derruba o job.
+      - name: Registrar o que foi resolvido
+        run: composer show | grep -E '^(laravel/framework|orchestra/testbench|phpunit/phpunit|symfony/console) '
+
+      - run: vendor/bin/phpunit
+
+  package:
+    name: composer validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      # --strict pega o campo `version` de volta, entre outras coisas: ele foi removido
+      # nesta release porque o Packagist deriva a versão da tag do git.
+      - run: composer validate --strict
