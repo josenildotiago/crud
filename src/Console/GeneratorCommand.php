@@ -298,6 +298,19 @@ abstract class GeneratorCommand extends Command
     }
 
     /**
+     * Segmento de URL das rotas geradas, honrando `--route`.
+     *
+     * Fonte única da verdade: o replacement `{{modelRoute}}`, o href do item de
+     * navegação e a chave de idempotência da sidebar precisam concordar. Enquanto cada
+     * ponta recalculava o segmento por conta própria, `--route` movia as rotas e
+     * deixava o link da sidebar apontando para a URL antiga.
+     */
+    protected function routeSegment(): string
+    {
+        return $this->options['route'] ?? Str::kebab(Str::plural($this->name));
+    }
+
+    /**
      * Build the replacement.
      *
      * @return array
@@ -314,7 +327,7 @@ abstract class GeneratorCommand extends Command
             '{{modelNamePluralLowerCase}}' => Str::camel(Str::plural($this->name)),
             '{{modelNamePluralUpperCase}}' => ucfirst(Str::plural($this->name)),
             '{{modelNameLowerCase}}' => Str::camel($this->name),
-            '{{modelRoute}}' => $this->options['route'] ?? Str::kebab(Str::plural($this->name)),
+            '{{modelRoute}}' => $this->routeSegment(),
             '{{modelRouteNotPlural}}' => $this->options['route'] ?? Str::kebab(Str::singular($this->name)),
             '{{modelView}}' => Str::kebab($this->name),
         ];

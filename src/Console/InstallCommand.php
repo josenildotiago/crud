@@ -1180,7 +1180,7 @@ JSX;
         $item = sprintf(
             "{ title: '%s', href: '/%s', icon: List },",
             Str::title(Str::snake(Str::plural($this->name), ' ')),
-            Str::kebab(Str::plural($this->name))
+            $this->routeSegment()
         );
 
         if (!$this->files->exists($path)) {
@@ -1192,7 +1192,7 @@ JSX;
 
         $region = new NavigationRegion($config['start'], $config['end']);
         $content = $this->files->get($path);
-        $key = sprintf("'/%s'", Str::kebab(Str::plural($this->name)));
+        $key = sprintf("'/%s'", $this->routeSegment());
 
         if (!str_contains($content, $config['start'])) {
             if (!confirm('Adicionar o link na sidebar?', default: true)) {

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // {{modelTitle}} CRUD routes
-    Route::get('/{{modelRoute}}/index', [{{modelName}}Controller::class, 'index'])->name('{{modelRoute}}.index');
+    Route::get('/{{modelRoute}}', [{{modelName}}Controller::class, 'index'])->name('{{modelRoute}}.index');
     Route::get('/{{modelRoute}}/create', [{{modelName}}Controller::class, 'create'])->name('{{modelRoute}}.create');
     Route::post('/{{modelRoute}}', [{{modelName}}Controller::class, 'store'])->name('{{modelRoute}}.store');
     // Precisa vir antes da rota curinga abaixo, senão `bulk-destroy` é lido como {{{modelCamel}}}.
