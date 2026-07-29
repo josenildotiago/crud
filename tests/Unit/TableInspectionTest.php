@@ -134,6 +134,23 @@ class TableInspectionTest extends TestCase
         $this->assertSame([], $findings, 'Acento não quebra `$model->endereço` nem o tipo TS.');
     }
 
+    public function test_palavra_reservada_do_php_e_nome_de_coluna_valido(): void
+    {
+        // Palavra-chave do PHP é identificador válido para coluna: `$model->class`,
+        // `class: string;` compilam em ambas as linguagens. Se alguém enriquecer a regex
+        // com blocklist de palavras-chave, este teste protege contra ruptura silenciosa.
+        $findings = (new TableInspection())->inspect([
+            self::column('id', 'bigint unsigned', 'PRI'),
+            self::column('class'),
+            self::column('function'),
+            self::column('list'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame([], $findings, 'Palavra-chave do PHP é identificador válido para propriedade Eloquent e tipo TypeScript.');
+    }
+
     public function test_a_ordem_dos_achados_e_fixa(): void
     {
         // `clientes` do banco de teste, reduzida: sem timestamps, sem PRI, e com um nome
