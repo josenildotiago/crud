@@ -60,6 +60,18 @@ return [
         'enabled' => true,
         'components_path' => 'js/pages',
         'layout_component' => 'Layouts/AuthenticatedLayout',
+
+        /*
+        | Como os componentes gerados resolvem URLs de rota.
+        |
+        | 'auto'      → usa wayfinder se `laravel/wayfinder` estiver instalado,
+        |               senão cai no helper global route() do Ziggy.
+        | 'wayfinder' → sempre importa as funções de `@/routes/{rota}`.
+        | 'ziggy'     → sempre usa route('nome.da.rota', ...).
+        |
+        | A flag `--routes=` do getic:install sobrepõe este valor.
+        */
+        'route_helper' => 'auto',
     ],
 
     /*

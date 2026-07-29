@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import AppLayout from '@/layouts/app-layout';
 import { {{modelName}} } from '@/types';
-import { LoaderCircle, PlusIcon, Search, TrashIcon } from 'lucide-react';
+import { LoaderCircle, PlusIcon, Search, TrashIcon } from 'lucide-react';{{routeImports}}
 {{themeImports}}
 
 interface Props {
@@ -39,7 +39,7 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        router.get(route('{{modelRoute}}.index'), { search }, {
+        router.get({{routeIndex}}, { search }, {
             preserveState: true,
             replace: true,
         });
@@ -50,7 +50,7 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
         
         if (confirm(`Tem certeza que deseja deletar ${selectedIds.length} registros?`)) {
             setIsDeleting(true);
-            router.delete(route('{{modelRoute}}.bulk-destroy'), {
+            router.delete({{routeBulkDestroy}}, {
                 data: { ids: selectedIds },
                 onSuccess: () => {
                     setSelectedIds([]);
@@ -63,7 +63,7 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
 
     const handleSingleDelete = (id: number) => {
         if (confirm('Tem certeza que deseja deletar este registro?')) {
-            router.delete(route('{{modelRoute}}.destroy', id));
+            router.delete({{routeDestroyId}});
         }
     };
 
@@ -94,7 +94,7 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
                             <CardTitle className="uppercase">{{modelTitlePlural}}</CardTitle>
                             
                             <div className="flex items-center gap-4">
-                                <Link href={route('{{modelRoute}}.create')}>
+                                <Link href={{{routeCreate}}}>
                                     <Button className="flex items-center gap-2">
                                         <PlusIcon className="w-4 h-4" />
                                         Novo {{modelTitle}}
@@ -165,12 +165,12 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
 {{tableCells}}
                                                 <TableCell>
                                                     <div className="flex items-center gap-2">
-                                                        <Link href={route('{{modelRoute}}.show', {{modelNameLowerCase}}.id)}>
+                                                        <Link href={{{routeShowModel}}}>
                                                             <Button variant="outline" size="sm">
                                                                 Ver
                                                             </Button>
                                                         </Link>
-                                                        <Link href={route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id)}>
+                                                        <Link href={{{routeEditModel}}}>
                                                             <Button variant="outline" size="sm">
                                                                 Editar
                                                             </Button>

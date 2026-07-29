@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeftIcon,  PencilIcon, TrashIcon } from 'lucide-react';
 import AppLayout from '@/layouts/app-layout';
-import { {{modelName}} } from '@/types';
+import { {{modelName}} } from '@/types';{{routeImports}}
 {{themeImports}}
 
 interface ShowProps {
@@ -12,7 +12,7 @@ interface ShowProps {
 export default function Show({ {{modelCamel}} }: ShowProps) {
     const handleDelete = () => {
         if (confirm('Tem certeza que deseja excluir este {{modelTitle}}?')) {
-            router.delete(route('{{modelRoute}}.destroy', {{modelCamel}}.id));
+            router.delete({{routeDestroyModel}});
         }
     };
 
@@ -43,7 +43,7 @@ export default function Show({ {{modelCamel}} }: ShowProps) {
                             <div className="flex items-center justify-between mb-6">
                                 <div className="flex items-center gap-4">
                                     <Link
-                                        href={route('{{modelRoute}}.index')}
+                                        href={{{routeIndex}}}
                                         className="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 active:bg-gray-900 focus:outline-none focus:border-gray-900 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150"
                                     >
                                         <ArrowLeftIcon className="w-4 h-4 mr-2" />
@@ -56,7 +56,7 @@ export default function Show({ {{modelCamel}} }: ShowProps) {
 
                                 <div className="flex items-center space-x-4">
                                     <Link
-                                        href={route('{{modelRoute}}.edit', {{modelCamel}}.id)}
+                                        href={{{routeEditModel}}}
                                         className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 active:bg-blue-900 focus:outline-none focus:border-blue-900 focus:ring ring-blue-300 disabled:opacity-25 transition ease-in-out duration-150"
                                     >
                                         <PencilIcon className="w-4 h-4 mr-2" />

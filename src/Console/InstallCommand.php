@@ -2,10 +2,12 @@
 
 namespace Crud\Console;
 
+use Composer\InstalledVersions;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
+use Symfony\Component\Process\Process;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
@@ -21,6 +23,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
      */
     protected $signature = 'getic:install {name : Table name}
                                             {--stack=react : Frontend stack (react, vue, blade)}
+                                            {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
                                             {--relationship : Specify if you want to establish a relationship}
                                             {--api : Generate API endpoints}
@@ -37,6 +40,30 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     protected const STACKS = ['react', 'vue', 'blade'];
 
     /**
+     * Helpers de rota aceitos pelos componentes gerados.
+     */
+    protected const ROUTE_HELPERS = ['ziggy', 'wayfinder'];
+
+    /**
+     * Símbolos que cada componente React importa de `@/routes/{rota}` no modo wayfinder.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected const WAYFINDER_IMPORTS = [
+        'Index' => ['index', 'create', 'show', 'edit', 'destroy', 'bulkDestroy'],
+        'Create' => ['store'],
+        'Edit' => ['index', 'update'],
+        'Show' => ['index', 'edit', 'destroy'],
+        'FormField' => [],
+        'ModelList' => ['edit', 'destroy'],
+    ];
+
+    /**
+     * Helper de rota resolvido para esta execução. Ziggy é o padrão histórico.
+     */
+    protected string $routeHelper = 'ziggy';
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -51,6 +78,10 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             $this->components->error(
                 "Stack `{$this->template}` inválida. Opções: " . implode(', ', self::STACKS)
             );
+            return self::FAILURE;
+        }
+
+        if (!$this->resolveRouteHelper()) {
             return self::FAILURE;
         }
 
@@ -88,6 +119,8 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
                 ->buildFormRequest();
         }
 
+        $this->generateWayfinderRoutes();
+
         info('✅ CRUD criado com sucesso!');
 
         $generated = [
@@ -114,6 +147,64 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     protected function isLaravel12OrHigher(): bool
     {
         return version_compare(app()->version(), '12.0', '>=');
+    }
+
+    /**
+     * Define como os componentes gerados resolvem URLs de rota.
+     *
+     * Precedência: --routes > config('crud.inertia.route_helper') > detecção automática.
+     */
+    protected function resolveRouteHelper(): bool
+    {
+        $flag = $this->input->hasOption('routes') ? (string) $this->option('routes') : '';
+
+        if ($flag !== '') {
+            if (!in_array($flag, self::ROUTE_HELPERS, true)) {
+                $this->components->error(
+                    "Helper de rotas `{$flag}` inválido. Opções: " . implode(', ', self::ROUTE_HELPERS)
+                );
+
+                return false;
+            }
+
+            $this->routeHelper = $flag;
+
+            return true;
+        }
+
+        $configured = (string) config('crud.inertia.route_helper', 'auto');
+
+        if (!in_array($configured, ['auto', ...self::ROUTE_HELPERS], true)) {
+            $this->components->error(
+                "crud.inertia.route_helper `{$configured}` inválido. Opções: auto, "
+                    . implode(', ', self::ROUTE_HELPERS)
+            );
+
+            return false;
+        }
+
+        $this->routeHelper = $configured === 'auto'
+            ? ($this->wayfinderIsInstalled() ? 'wayfinder' : 'ziggy')
+            : $configured;
+
+        return true;
+    }
+
+    /**
+     * O pacote laravel/wayfinder está instalado no projeto do usuário?
+     */
+    protected function wayfinderIsInstalled(): bool
+    {
+        return class_exists(InstalledVersions::class)
+            && InstalledVersions::isInstalled('laravel/wayfinder');
+    }
+
+    /**
+     * Está gerando componentes que importam funções de rota do wayfinder?
+     */
+    protected function usesWayfinder(): bool
+    {
+        return $this->routeHelper === 'wayfinder';
     }
 
     /**
@@ -311,6 +402,9 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         foreach ($components as $component) {
             $componentPath = $this->_getReactComponentPath($component);
 
+            // Cada componente importa só as funções de rota que usa.
+            $replace['{{routeImports}}'] = $this->getRouteImports($component);
+
             $componentTemplate = str_replace(
                 array_keys($replace),
                 array_values($replace),
@@ -356,6 +450,48 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 
         info("Rotas criadas em: routes/{$routeFileName}");
         info("Require adicionado ao web.php");
+
+        return $this;
+    }
+
+    /**
+     * Regenera `resources/js/routes` para que os imports `@/routes/{rota}` existam.
+     *
+     * O require recém-acrescentado ao web.php não entra no roteador já carregado
+     * deste processo, então o wayfinder roda num processo novo. Sem isso, quem
+     * usa só o Artisan (sem `npm run dev`) fica com import quebrado.
+     */
+    protected function generateWayfinderRoutes(): self
+    {
+        if ($this->template !== 'react' || !$this->usesWayfinder()) {
+            return $this;
+        }
+
+        $application = $this->getApplication();
+
+        if (!$application || !$application->has('wayfinder:generate')) {
+            warning(
+                'Componentes gerados importam de `@/routes/` mas o comando `wayfinder:generate` '
+                    . 'não foi encontrado. Instale laravel/wayfinder ou use --routes=ziggy.'
+            );
+
+            return $this;
+        }
+
+        info('Gerando rotas TypeScript (wayfinder)...');
+
+        $artisan = base_path('artisan');
+
+        $process = new Process([PHP_BINARY, $artisan, 'wayfinder:generate'], base_path());
+        $process->setTimeout(120);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            warning(
+                'Falha ao executar `wayfinder:generate`. Rode manualmente antes do build: '
+                    . 'php artisan wayfinder:generate'
+            );
+        }
 
         return $this;
     }
@@ -1180,6 +1316,7 @@ JSX;
             '{{tableHeaders}}' => $this->getTableHeadersForList(),
             '{{tableCells}}' => $this->getTableCellsForList(),
             '{{colSpan}}' => $this->getColSpan(),
+            '{{routeImports}}' => $this->getRouteImports('ModelList'),
         ]);
 
         $content = str_replace(
@@ -1256,7 +1393,93 @@ JSX;
             '{{formFields}}' => $this->generateFormFields(), // For Create/Edit forms
         ];
 
-        return array_merge($baseReplacements, $enhancedReplacements);
+        return array_merge(
+            $baseReplacements,
+            $enhancedReplacements,
+            $this->navigationReplacements($baseReplacements['{{modelRoute}}'])
+        );
+    }
+
+    /**
+     * Expressões de navegação dos componentes React.
+     *
+     * Um único conjunto de stubs atende os dois helpers: o stub carrega o
+     * placeholder, este mapa decide se ele vira `route('x.show', y.id)` (ziggy)
+     * ou `showRoute(y.id)` (wayfinder).
+     *
+     * @return array<string, string>
+     */
+    protected function navigationReplacements(string $route): array
+    {
+        // Mesmo valor de {{modelNameLowerCase}} e {{modelCamel}}: a variável do
+        // registro dentro do componente.
+        $model = Str::camel($this->name);
+
+        if (!$this->usesWayfinder()) {
+            return [
+                '{{routeImports}}' => '',
+                '{{routeIndex}}' => "route('{$route}.index')",
+                '{{routeCreate}}' => "route('{$route}.create')",
+                '{{routeBulkDestroy}}' => "route('{$route}.bulk-destroy')",
+                '{{routeShowModel}}' => "route('{$route}.show', {$model}.id)",
+                '{{routeEditModel}}' => "route('{$route}.edit', {$model}.id)",
+                '{{routeDestroyModel}}' => "route('{$route}.destroy', {$model}.id)",
+                '{{routeDestroyId}}' => "route('{$route}.destroy', id)",
+                '{{formStoreMethod}}' => 'post',
+                '{{formStoreCall}}' => "post(route('{$route}.store'))",
+                '{{formUpdateMethod}}' => 'put',
+                '{{formUpdateCall}}' => "put(route('{$route}.update', {$model}.id))",
+            ];
+        }
+
+        // O sufixo Route evita colisão com identificadores locais dos componentes:
+        // ModelList recebe uma prop booleana `edit` e Index tem um parâmetro `index`
+        // no map da paginação.
+        return [
+            // Sobrescrito por componente em buildReactComponents()/buildListComponent().
+            '{{routeImports}}' => '',
+            '{{routeIndex}}' => 'indexRoute()',
+            '{{routeCreate}}' => 'createRoute()',
+            '{{routeBulkDestroy}}' => 'bulkDestroyRoute()',
+            '{{routeShowModel}}' => "showRoute({$model}.id)",
+            '{{routeEditModel}}' => "editRoute({$model}.id)",
+            '{{routeDestroyModel}}' => "destroyRoute({$model}.id)",
+            '{{routeDestroyId}}' => 'destroyRoute(id)',
+            // useForm().post()/put() só aceitam string; submit() aceita o
+            // { url, method } que o wayfinder devolve.
+            '{{formStoreMethod}}' => 'submit',
+            '{{formStoreCall}}' => 'submit(storeRoute())',
+            '{{formUpdateMethod}}' => 'submit',
+            '{{formUpdateCall}}' => "submit(updateRoute({$model}.id))",
+        ];
+    }
+
+    /**
+     * Linha de import das funções de rota do wayfinder para um componente.
+     *
+     * Vem colada ao fim do último import do stub, então precisa trazer o próprio
+     * "\n". Assim o modo ziggy devolve string vazia sem deixar linha em branco.
+     */
+    protected function getRouteImports(string $component): string
+    {
+        if (!$this->usesWayfinder()) {
+            return '';
+        }
+
+        $symbols = self::WAYFINDER_IMPORTS[$component] ?? [];
+
+        if ($symbols === []) {
+            return '';
+        }
+
+        $aliased = array_map(
+            fn(string $symbol): string => "{$symbol} as {$symbol}Route",
+            $symbols
+        );
+
+        $route = $this->options['route'] ?? Str::kebab(Str::plural($this->name));
+
+        return "\nimport { " . implode(', ', $aliased) . " } from '@/routes/{$route}';";
     }
     /**
      * Get Form Request path.

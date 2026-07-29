@@ -6,6 +6,12 @@
 
 - Suporte a **Laravel 13**, mantendo o Laravel 12. `illuminate/*` passa a aceitar
   `^12.0|^13.0`. Suíte executada contra o 13 (Testbench 11, PHPUnit 12).
+- Suporte ao **`laravel/wayfinder`** nos componentes React gerados: as rotas viram funções
+  TypeScript importadas de `@/routes/{recurso}`, em vez de chamadas ao helper global
+  `route()`. Nova config `crud.inertia.route_helper` (`auto`, `ziggy`, `wayfinder`) e flag
+  `--routes=`. Em `auto`, o pacote detecta se o `laravel/wayfinder` está instalado no
+  projeto. **Quem não tem wayfinder recebe exatamente a mesma saída de antes** — verificado
+  por comparação byte a byte dos componentes gerados.
 - A stack `react` passa a instalar os componentes `table` e `pagination` do shadcn/ui
   em `resources/js/components/ui/`, que os stubs importam mas os starter kits do Laravel
   não trazem. Nenhuma dependência npm nova: ambos usam apenas o que o starter kit já tem.
@@ -39,6 +45,10 @@
   um arquivo por model e registra no `index.ts`; sem barrel, mantém o `index.d.ts` de antes.
 - Regerar a mesma tabela substitui o bloco de tipos em vez de anexar `Cliente2`,
   `Cliente3` e assim por diante — versões que nenhum componente gerado importava.
+- A rota `bulk-destroy` nunca era declarada, embora o `Index` gerado a chamasse e o
+  Controller definisse `bulkDestroy()`. A exclusão em massa quebrava em runtime. A rota
+  é declarada **antes** da curinga `{model}`, senão `DELETE /clientes/bulk-destroy` seria
+  lido como `DELETE /clientes/{cliente}`.
 
 ## [3.0.19] a [3.1.4] - não documentadas
 

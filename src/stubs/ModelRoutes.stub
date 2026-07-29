@@ -18,6 +18,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/{{modelRoute}}/index', [{{modelName}}Controller::class, 'index'])->name('{{modelRoute}}.index');
     Route::get('/{{modelRoute}}/create', [{{modelName}}Controller::class, 'create'])->name('{{modelRoute}}.create');
     Route::post('/{{modelRoute}}', [{{modelName}}Controller::class, 'store'])->name('{{modelRoute}}.store');
+    // Precisa vir antes da rota curinga abaixo, senão `bulk-destroy` é lido como {{{modelCamel}}}.
+    Route::delete('/{{modelRoute}}/bulk-destroy', [{{modelName}}Controller::class, 'bulkDestroy'])->name('{{modelRoute}}.bulk-destroy');
     Route::get('/{{modelRoute}}/{{{modelCamel}}}', [{{modelName}}Controller::class, 'show'])->name('{{modelRoute}}.show');
     Route::get('/{{modelRoute}}/{{{modelCamel}}}/edit', [{{modelName}}Controller::class, 'edit'])->name('{{modelRoute}}.edit');
     Route::put('/{{modelRoute}}/{{{modelCamel}}}', [{{modelName}}Controller::class, 'update'])->name('{{modelRoute}}.update');

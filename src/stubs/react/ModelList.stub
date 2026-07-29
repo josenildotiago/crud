@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Paginated{{modelName}}List } from '@/types';
 import { router } from '@inertiajs/react';
 import { Pencil, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';{{routeImports}}
 
 type Props = {
     {{modelNamePluralLowerCase}}: Paginated{{modelName}}List;
@@ -110,7 +110,7 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                                             {edit && (
                                                 <Button
                                                     size="icon"
-                                                    onClick={() => router.visit(route('{{modelRoute}}.edit', {{modelNameLowerCase}}.id))}
+                                                    onClick={() => router.visit({{routeEditModel}})}
                                                 >
                                                     <Pencil className="h-4 w-4" />
                                                 </Button>
@@ -120,7 +120,7 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                                                     size="icon"
                                                     onClick={() => {
                                                         if (confirm('Tem certeza que deseja excluir este {{modelNameLowerCase}}?')) {
-                                                            router.delete(route('{{modelRoute}}.destroy', {{modelNameLowerCase}}.id));
+                                                            router.delete({{routeDestroyModel}});
                                                         }
                                                     }}
                                                 >
