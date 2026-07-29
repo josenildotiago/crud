@@ -725,6 +725,17 @@ their builders are implemented; the text machinery is already stack-agnostic."
 
 ---
 
+## Desvios decididos durante a execução
+
+**Task 2 — `install()` se defende de chamada dupla.** O código da Task 2 acima não
+verificava se a região já existia, deixando essa guarda só no chamador (Task 3). A
+revisão mostrou que chamar `install()` duas vezes duplicava os marcadores em silêncio,
+contrariando a promessa do docblock da própria classe. Por decisão do dono do projeto,
+`install()` passou a devolver `null` quando o marcador inicial já está presente, com
+teste próprio. A guarda do chamador na Task 3 continua — defesa em profundidade. Quem
+for implementar as outras stacks deve seguir o código em `src/NavigationRegion.php`,
+não o bloco da Task 2 acima.
+
 ## Notas de implementação
 
 **Import duplicado do lucide-react.** O arquivo já traz `import { BookOpen, FolderGit2, LayoutGrid } from 'lucide-react';`, e o pacote acrescenta um segundo import do mesmo módulo. É ES module válido e o TypeScript compila; um lint com `no-duplicate-imports` reclamaria. Fundir no import existente exigiria editar uma linha fora da região gerenciada, que é justamente o que este desenho evita.
