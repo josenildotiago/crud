@@ -1487,7 +1487,10 @@ JSX;
             '{{searchableFields}}' => $this->getSearchableFields(),
             '{{controllerFields}}' => $this->getControllerFieldsWithModel(),
             '{{modelTable}}' => $this->table,
-            '{{modelRoutePlural}}' => Str::kebab(Str::plural($this->name)),
+            // Mesmo segmento das rotas: é com este placeholder que os breadcrumbs dos
+            // componentes react são escritos, e recalculá-lo aqui fazia `--route` mover
+            // as rotas e deixar o breadcrumb apontando para a URL antiga.
+            '{{modelRoutePlural}}' => $this->routeSegment(),
             '{{modelTitlePlural}}' => Str::title(Str::snake(Str::plural($this->name), ' ')),
             '{{modelCamel}}' => Str::camel($this->name),
             '{{tableName}}' => $this->table,

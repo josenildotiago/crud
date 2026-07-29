@@ -70,6 +70,19 @@ class RouteAndSidebarSpyInstallCommand extends InstallCommand
     {
         return $this->buildSidebarNavigation();
     }
+
+    /**
+     * Mapa de replacements como os stubs o recebem.
+     *
+     * Os stubs são texto: o que decide a URL escrita dentro deles é este mapa, então é
+     * nele que os placeholders de rota precisam concordar entre si.
+     *
+     * @return array<string, string>
+     */
+    public function replacementsForTest(): array
+    {
+        return $this->buildReplacements();
+    }
 }
 
 class InstallCommandNavigationRouteTest extends TestCase
@@ -110,9 +123,13 @@ class InstallCommandNavigationRouteTest extends TestCase
         parent::tearDown();
     }
 
-    private function spyCommand(): void
+    private function spyCommand(): RouteAndSidebarSpyInstallCommand
     {
-        $this->app[Kernel::class]->registerCommand(new RouteAndSidebarSpyInstallCommand(new Filesystem()));
+        $command = new RouteAndSidebarSpyInstallCommand(new Filesystem());
+
+        $this->app[Kernel::class]->registerCommand($command);
+
+        return $command;
     }
 
     /**
@@ -175,5 +192,22 @@ class InstallCommandNavigationRouteTest extends TestCase
 
         $this->assertSame('/parceiros', $href);
         $this->assertContains($href, $this->generatedGetUris());
+    }
+
+    public function test_custom_route_reaches_the_url_placeholders_the_components_use(): void
+    {
+        $command = $this->spyCommand();
+
+        $this->artisan('test:route-sidebar-spy clientes --route=parceiros')
+            ->expectsConfirmation('Adicionar o link na sidebar?', 'yes')
+            ->assertExitCode(0);
+
+        $replacements = $command->replacementsForTest();
+
+        // Os breadcrumbs dos componentes react são escritos com {{modelRoutePlural}} e
+        // as rotas com {{modelRoute}}: se os dois divergirem, o breadcrumb aponta para
+        // uma URL que não existe — o mesmo defeito do link da sidebar, seis vezes.
+        $this->assertSame('parceiros', $replacements['{{modelRoute}}']);
+        $this->assertSame('parceiros', $replacements['{{modelRoutePlural}}']);
     }
 }
