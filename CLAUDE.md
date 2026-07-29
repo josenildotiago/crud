@@ -124,6 +124,15 @@ junto ou avisar — não fingir que não existe.
   só funciona passando as flags na linha de comando.
 - Tag `crud-assets` publica `src/stubs/js` e `src/stubs/css` — nenhum dos dois existe.
 - `$this->name = $this->_buildClassName()` sobrescreve o `$name` do `Illuminate\Console\Command`.
+- **O Controller das stacks `vue` e `blade` redireciona para rota que não existe.**
+  `InstallCommand.php:290` escolhe `Controller.stub` quando a stack não é `react`, e ele
+  redireciona para `route('{{modelRouteNotPlural}}.index')` — nome no singular
+  (`cliente.index`). Mas `buildRouter()` gera as rotas a partir de `ModelRoutes.stub`, que
+  nomeia no plural (`clientes.index`). Store, update e destroy morrem com
+  `RouteNotFoundException`. Com `--route=X` os dois placeholders viram `X` e funciona por
+  acidente. A stack `react` não é afetada: `InertiaController.stub` usa `{{modelRoute}}`.
+  Levantado em 29/07/2026, fora do escopo da 3.2.0 porque a stack `blade` não gera view
+  nenhuma de qualquer forma.
 
 **Contradições**
 - `config/crud.php` anuncia `mysql, pgsql, sqlite, sqlsrv`, mas `getColumns()` e
@@ -136,11 +145,16 @@ junto ou avisar — não fingir que não existe.
 - `tests/Unit/CrudPackageTest.php` foi escrito contra API inexistente: espera `getThemes()`
   devolvendo array associativo (devolve `Collection` de ids) e arquivos em
   `js/types/themes.ts` (o código usa `js/lib/themes.ts`). Especificação aspiracional, não
-  suíte válida. O `phpunit.xml` só carrega `InstallCommandTest.php`, então isso passa batido.
-- Versões divergentes: `composer.json` 3.1.4, README 3.0.18, REPORT.md 2.1.3. O campo
-  `version` do composer.json deveria sair (Packagist deriva de tag git) — o próprio
-  `composer validate` avisa sobre isso.
-- README manda `vendor:publish --tag="config"`; a tag real é `crud-config`.
+  suíte válida. Desde 29/07/2026 o `phpunit.xml` carrega `./tests/Unit` inteiro com
+  `<exclude>` explícito deste arquivo — antes ele passava batido por não estar na lista.
+- Versões divergentes: ~~`composer.json` 3.1.4~~ (o campo `version` saiu em 29/07/2026,
+  Packagist deriva da tag git), ~~README 3.0.18~~ (agora 3.2.0), **REPORT.md 2.1.3** —
+  este continua podre.
+- ~~README manda `vendor:publish --tag="config"`.~~ Corrigido em 29/07/2026: a tag real,
+  `crud-config`, está no README.
+- `src/stubs/routes.stub` é arquivo morto: os únicos stubs de rota carregados são
+  `ModelRoutes` (`InstallCommand.php:433`) e `ApiRoutes` (`:558`). Ele declara rotas num
+  formato antigo (`{{modelNameLowerCase}}-index`) que nada gera mais.
 - Prefixo `getic:` no comando principal vs `crud:` nos outros três.
 - `test_install.php` solto na raiz.
 
@@ -156,7 +170,7 @@ junto ou avisar — não fingir que não existe.
 ## Verificação
 
 ```bash
-vendor/bin/phpunit          # hoje só roda InstallCommandTest
+vendor/bin/phpunit          # tests/Unit inteiro, menos CrudPackageTest.php
 composer validate
 ```
 
