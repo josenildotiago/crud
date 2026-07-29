@@ -47,6 +47,15 @@ final class TableInspection
             $findings[] = ['code' => 'primary-key-not-id', 'columns' => [$primaryKey]];
         }
 
+        $invalid = array_values(array_filter(
+            $names,
+            static fn (string $name): bool => preg_match(self::IDENTIFIER, $name) !== 1
+        ));
+
+        if ($invalid !== []) {
+            $findings[] = ['code' => 'column-identifier', 'columns' => $invalid];
+        }
+
         return $findings;
     }
 }

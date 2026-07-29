@@ -93,4 +93,44 @@ class TableInspectionTest extends TestCase
         $this->assertSame(['primary-key-not-id'], $this->codes($findings));
         $this->assertSame(['idClientes'], $findings[0]['columns']);
     }
+
+    public function test_coluna_com_nome_que_nao_e_identificador_valido(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('id', 'bigint unsigned', 'PRI'),
+            self::column('2fa_secret'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame(['column-identifier'], $this->codes($findings));
+        $this->assertSame(['2fa_secret'], $findings[0]['columns']);
+    }
+
+    public function test_varias_colunas_invalidas_viram_um_achado_so(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('id', 'bigint unsigned', 'PRI'),
+            self::column('2fa_secret'),
+            self::column('nome-cliente'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame(['column-identifier'], $this->codes($findings));
+        $this->assertSame(['2fa_secret', 'nome-cliente'], $findings[0]['columns']);
+    }
+
+    public function test_nome_acentuado_e_identificador_valido_em_php(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('id', 'bigint unsigned', 'PRI'),
+            self::column('endereço'),
+            self::column('órgão'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+        ]);
+
+        $this->assertSame([], $findings, 'Acento não quebra `$model->endereço` nem o tipo TS.');
+    }
 }
