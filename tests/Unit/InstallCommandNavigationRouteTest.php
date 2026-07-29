@@ -41,11 +41,6 @@ class RouteAndSidebarSpyInstallCommand extends InstallCommand
         return $this;
     }
 
-    protected function debugColumns(): void
-    {
-        // Sem banco no teste.
-    }
-
     /**
      * Colunas fixas no formato de `SHOW COLUMNS`.
      *
@@ -57,6 +52,8 @@ class RouteAndSidebarSpyInstallCommand extends InstallCommand
         return [
             (object) ['Field' => 'id', 'Type' => 'bigint unsigned', 'Null' => 'NO', 'Key' => 'PRI', 'Default' => null, 'Extra' => 'auto_increment'],
             (object) ['Field' => 'nome', 'Type' => 'varchar(255)', 'Null' => 'NO', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'created_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'updated_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
         ];
     }
 

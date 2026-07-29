@@ -4,6 +4,7 @@ namespace Crud\Console;
 
 use Composer\InstalledVersions;
 use Crud\NavigationRegion;
+use Crud\TableInspection;
 use Illuminate\Console\Command;
 use Illuminate\Contracts\Console\PromptsForMissingInput;
 use Illuminate\Filesystem\Filesystem;
@@ -65,6 +66,11 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     protected string $routeHelper = 'ziggy';
 
     /**
+     * Quantos avisos o pré-voo levantou, para o resumo do fim da execução.
+     */
+    protected int $preflightWarnings = 0;
+
+    /**
      * Execute the console command.
      */
     public function handle(): int
@@ -98,6 +104,10 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             return self::FAILURE;
         }
 
+        if (!$this->preflightTable()) {
+            return self::FAILURE;
+        }
+
         $this->name = $this->_buildClassName();
 
         info("🚀 Gerador de CRUD Laravel 12 ({$this->template}) em execução...");
@@ -108,9 +118,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             ->buildModel()
             ->buildViews()
             ->buildRouter();
-
-        // Adicionar temporariamente para debug
-        $this->debugColumns();
 
         // Generate API if requested
         if ($this->option('api')) {
@@ -139,6 +146,15 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         $this->components->info('Arquivos gerados:');
         $this->components->bulletList($generated);
 
+        if ($this->preflightWarnings > 0) {
+            warning(sprintf(
+                'Gerado com %d %s sobre `%s` (acima). Revise antes de usar.',
+                $this->preflightWarnings,
+                $this->preflightWarnings === 1 ? 'aviso' : 'avisos',
+                $this->table
+            ));
+        }
+
         return self::SUCCESS;
     }
 
@@ -148,6 +164,77 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     protected function isLaravel12OrHigher(): bool
     {
         return version_compare(app()->version(), '12.0', '>=');
+    }
+
+    /**
+     * Avisa sobre a tabela antes de escrever qualquer arquivo.
+     *
+     * Avisa, não bloqueia: a tabela é do usuário, e gerar em cima de uma tabela torta
+     * para ajustar o Model à mão depois é caso legítimo. Devolve `false` só quando a
+     * pessoa responde que não quer seguir.
+     */
+    protected function preflightTable(): bool
+    {
+        $findings = (new TableInspection())->inspect($this->getColumns());
+
+        if ($findings === []) {
+            return true;
+        }
+
+        $this->preflightWarnings = count($findings);
+
+        warning(sprintf(
+            '%d %s sobre a tabela `%s`:',
+            $this->preflightWarnings,
+            $this->preflightWarnings === 1 ? 'aviso' : 'avisos',
+            $this->table
+        ));
+
+        foreach ($findings as $finding) {
+            $this->line('   • ' . $this->preflightMessage($finding));
+        }
+
+        // Sem terminal interativo não há como confirmar, e a postura é não bloquear:
+        // segue, mas dizendo que segue por conta e risco de quem chamou.
+        if (!$this->input->isInteractive()) {
+            $this->line('   Modo não interativo: seguindo por sua conta e risco.');
+
+            return true;
+        }
+
+        if (confirm('Gerar mesmo assim?', default: true)) {
+            return true;
+        }
+
+        info('Geração cancelada.');
+
+        return false;
+    }
+
+    /**
+     * Frase em português para cada achado do pré-voo.
+     *
+     * @param array{code: string, columns: array<int, string>} $finding
+     */
+    protected function preflightMessage(array $finding): string
+    {
+        return match ($finding['code']) {
+            'timestamps' => 'Sem `created_at`/`updated_at`: a listagem gerada ordena por `created_at` e vai falhar no banco.',
+            'primary-key-missing' => 'Sem chave primária declarada: o `Index` usa `id` para a key da linha e para os links de ver/editar/excluir, e ele vai vir nulo.',
+            'primary-key-not-id' => sprintf(
+                'A chave primária é `%s`, não `id`: o Model gerado não declara `$primaryKey`, então `id` vai vir nulo no `Index`.',
+                $finding['columns'][0]
+            ),
+            'column-identifier' => count($finding['columns']) === 1
+                ? sprintf(
+                    'A coluna `%s` não é um identificador válido: o Controller e o tipo TypeScript gerados não vão compilar.',
+                    $finding['columns'][0]
+                )
+                : sprintf(
+                    'As colunas %s não são identificadores válidos: o Controller e o tipo TypeScript gerados não vão compilar.',
+                    implode(', ', array_map(static fn (string $column): string => "`{$column}`", $finding['columns']))
+                ),
+        };
     }
 
     /**
@@ -1399,29 +1486,6 @@ JSX;
         }
 
         return $visibleColumns + 1; // +1 para coluna de Ações
-    }
-
-    /**
-     * Adicionar método de debug para verificar estrutura dos dados
-     */
-    protected function debugColumns(): void
-    {
-        $columns = $this->getFilteredColumns();
-
-        $this->info("Debugando estrutura das colunas:");
-        foreach ($columns as $index => $column) {
-            $this->info("Coluna $index:");
-            if (is_array($column)) {
-                $this->info("  Tipo: Array");
-                $this->info("  Dados: " . json_encode($column));
-            } elseif (is_object($column)) {
-                $this->info("  Tipo: Object");
-                $this->info("  Propriedades: " . json_encode(get_object_vars($column)));
-            } else {
-                $this->info("  Tipo: " . gettype($column));
-                $this->info("  Valor: $column");
-            }
-        }
     }
 
     protected function _getListComponentPath(string $name): string

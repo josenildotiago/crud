@@ -43,9 +43,18 @@ class SidebarSpyInstallCommand extends InstallCommand
         return $this;
     }
 
-    protected function debugColumns(): void
+    /**
+     * Schema convencional para o pré-voo ficar silencioso: este arquivo é sobre a
+     * sidebar, não sobre a inspeção da tabela.
+     */
+    protected function getColumns()
     {
-        // Sem banco no teste.
+        return [
+            (object) ['Field' => 'id', 'Type' => 'bigint unsigned', 'Null' => 'NO', 'Key' => 'PRI', 'Default' => null, 'Extra' => 'auto_increment'],
+            (object) ['Field' => 'nome', 'Type' => 'varchar(255)', 'Null' => 'NO', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'created_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
+            (object) ['Field' => 'updated_at', 'Type' => 'timestamp', 'Null' => 'YES', 'Key' => '', 'Default' => null, 'Extra' => ''],
+        ];
     }
 
     protected function generateWayfinderRoutes(): self
