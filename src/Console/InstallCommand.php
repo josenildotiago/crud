@@ -1141,6 +1141,17 @@ JSX;
     }
 
     /**
+     * Identificador do ícone dentro do arquivo do usuário.
+     *
+     * O import é apelidado em vez de trazer `List` direto: num app que já importa
+     * `List` do lucide-react, uma segunda ligação do mesmo identificador não é
+     * duplicação cosmética de import — é erro de compilação em TS e SyntaxError em
+     * ES modules, ou seja, o build do usuário para. O nome prefixado torna a colisão
+     * improvável por construção.
+     */
+    protected const NAV_ICON = 'CrudNavIcon';
+
+    /**
      * Arquivo de navegação e âncora de cada stack.
      *
      * O comentário acompanha a sintaxe do arquivo. Só a react está mapeada; as demais
@@ -1154,7 +1165,7 @@ JSX;
             'open' => '/^const mainNavItems\s*:/',
             'start' => '// crud:nav:start',
             'end' => '// crud:nav:end',
-            'import' => "import { List } from 'lucide-react';",
+            'import' => "import { List as " . self::NAV_ICON . " } from 'lucide-react';",
         ],
     ];
 
@@ -1178,9 +1189,10 @@ JSX;
 
         $path = resource_path($config['file']);
         $item = sprintf(
-            "{ title: '%s', href: '/%s', icon: List },",
+            "{ title: '%s', href: '/%s', icon: %s },",
             Str::title(Str::snake(Str::plural($this->name), ' ')),
-            $this->routeSegment()
+            $this->routeSegment(),
+            self::NAV_ICON
         );
 
         if (!$this->files->exists($path)) {

@@ -134,6 +134,42 @@ class NavigationRegionTest extends TestCase
         $this->assertGreaterThan($end, $close, 'a região deve ficar dentro do array');
     }
 
+    private function sidebarWithMultilineImport(): string
+    {
+        return <<<'TSX'
+        import { BookOpen, LayoutGrid } from 'lucide-react';
+        import type { NavItem } from '@/types';
+        import {
+            Sidebar,
+            SidebarContent,
+        } from '@/components/ui/sidebar';
+
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+        ];
+        TSX;
+    }
+
+    public function test_install_nao_quebra_um_import_multilinha(): void
+    {
+        $result = $this->region()->install(
+            $this->sidebarWithMultilineImport(),
+            self::OPEN_PATTERN,
+            "import { List } from 'lucide-react';"
+        );
+
+        $this->assertNotNull($result);
+        $this->assertSame(1, substr_count($result, "import { List } from 'lucide-react';"));
+
+        // O bloco multilinha tem de continuar contíguo: uma inserção entre as chaves
+        // deixa o arquivo do usuário sem compilar. O app-sidebar.tsx dos starter kits
+        // do Laravel importa exatamente assim os componentes de ui/sidebar.
+        $this->assertStringContainsString(
+            "import {\n    Sidebar,\n    SidebarContent,\n} from '@/components/ui/sidebar';",
+            $result
+        );
+    }
+
     public function test_install_acrescenta_o_import_do_icone(): void
     {
         $result = $this->region()->install(

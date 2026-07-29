@@ -165,7 +165,13 @@ final class NavigationRegion
         $lastImport = null;
 
         foreach ($lines as $i => $line) {
-            if (str_starts_with(trim($line), 'import ')) {
+            $line = trim($line);
+
+            // Só linhas que abrem *e* fecham o import na mesma linha servem de âncora:
+            // num import multilinha (`import {` ... `} from '...';`) a primeira linha
+            // também começa com `import `, e inserir depois dela cairia entre as
+            // chaves, deixando o arquivo do usuário sem compilar.
+            if (str_starts_with($line, 'import ') && str_ends_with($line, ';')) {
                 $lastImport = $i;
             }
         }

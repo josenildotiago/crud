@@ -144,6 +144,74 @@ class InstallCommandSidebarNavigationTest extends TestCase
         TSX;
     }
 
+    private function sidebarAlreadyImportingTheIcon(): string
+    {
+        return <<<'TSX'
+        import { BookOpen, LayoutGrid, List } from 'lucide-react';
+        import type { NavItem } from '@/types';
+
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+            { title: 'Tarefas', href: '/tarefas', icon: List },
+        ];
+        TSX;
+    }
+
+    /**
+     * Identificadores que os imports do lucide-react ligam em escopo.
+     *
+     * `X as Y` liga `Y`; sem alias, liga o próprio nome. Ligar o mesmo identificador
+     * duas vezes não é duplicação cosmética de import: é erro de compilação em TS e
+     * SyntaxError em ES modules, ou seja, o build do usuário para.
+     *
+     * @return array<int, string>
+     */
+    private function lucideBindings(string $sidebar): array
+    {
+        preg_match_all("/^import \{([^}]*)\} from 'lucide-react';$/m", $sidebar, $matches);
+
+        $bindings = [];
+
+        foreach ($matches[1] as $group) {
+            foreach (explode(',', $group) as $specifier) {
+                $specifier = trim($specifier);
+
+                if ($specifier === '') {
+                    continue;
+                }
+
+                $parts = preg_split('/\s+as\s+/', $specifier);
+                $bindings[] = end($parts);
+            }
+        }
+
+        return $bindings;
+    }
+
+    public function test_an_icon_already_imported_does_not_gain_a_second_binding(): void
+    {
+        $this->putSidebar($this->sidebarAlreadyImportingTheIcon());
+
+        $this->spyCommand();
+
+        $this->artisan('test:sidebar-spy clientes')
+            ->expectsConfirmation('Adicionar o link na sidebar?', 'yes')
+            ->assertExitCode(0);
+
+        $result = $this->getSidebar();
+        $bindings = $this->lucideBindings($result);
+
+        $this->assertSame(
+            array_values(array_unique($bindings)),
+            $bindings,
+            'A sidebar ficou com o mesmo identificador importado duas vezes do lucide-react.'
+        );
+
+        // E o ícone que o item gerado usa tem de estar entre os identificadores ligados.
+        $this->assertSame(1, preg_match('/href: \'\/clientes\', icon: (\w+) \},/', $result, $matches));
+        $this->assertContains($matches[1], $bindings);
+    }
+
     public function test_navigation_disabled_by_config_leaves_the_file_untouched(): void
     {
         $original = $this->sidebarWithoutRegion();
@@ -186,10 +254,10 @@ class InstallCommandSidebarNavigationTest extends TestCase
         $this->assertStringContainsString('// crud:nav:start', $result);
         $this->assertStringContainsString('// crud:nav:end', $result);
         $this->assertStringContainsString(
-            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            "{ title: 'Clientes', href: '/clientes', icon: CrudNavIcon },",
             $result
         );
-        $this->assertStringContainsString("import { List } from 'lucide-react';", $result);
+        $this->assertStringContainsString("import { List as CrudNavIcon } from 'lucide-react';", $result);
     }
 
     public function test_malformed_markers_leave_the_file_byte_for_byte_unchanged(): void
@@ -220,6 +288,6 @@ class InstallCommandSidebarNavigationTest extends TestCase
 
         $this->assertSame(1, substr_count($result, "href: '/clientes'"));
         $this->assertSame(1, substr_count($result, '// crud:nav:start'));
-        $this->assertSame(1, substr_count($result, "import { List } from 'lucide-react';"));
+        $this->assertSame(1, substr_count($result, "import { List as CrudNavIcon } from 'lucide-react';"));
     }
 }
