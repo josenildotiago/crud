@@ -536,7 +536,7 @@ JSX;
         <div className="bg-white dark:bg-gray-800 overflow-hidden shadow rounded-lg mb-4">
             <div className="px-4 py-5 sm:p-6">
                 <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">{$title}</dt>
-                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{{{{modelNameLowerCase}}.{$column}}}</dd>
+                <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{{{modelNameLowerCase}}.{$column}}</dd>
             </div>
         </div>
 JSX;
@@ -1059,7 +1059,7 @@ JSX;
         $modelVarName = Str::camel($this->name);
 
         foreach ($this->getFilteredColumns() as $field) {
-            $cells[] = "                                <TableCell>{{{$modelVarName}}.{$field}}</TableCell>";
+            $cells[] = "                                <TableCell>{{$modelVarName}.{$field}}</TableCell>";
         }
 
         return implode("\n", $cells);

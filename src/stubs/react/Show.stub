@@ -53,7 +53,7 @@ export default function Show({ auth, {{modelCamel}} }: ShowProps) {
                                         Voltar
                                     </Link>
                                     <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                        {{modelTitle}} #{{'{'}}{{{{modelCamel}}.id}{{'}}'}}
+                                        {{modelTitle}} #{{{modelCamel}}.id}
                                     </h3>
                                 </div>
 

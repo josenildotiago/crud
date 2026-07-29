@@ -51,7 +51,7 @@ export default function Edit({ auth, {{modelCamel}} }: EditProps) {
                                     Voltar
                                 </Link>
                                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                                    Editar {{modelTitle}} #{{'{'}}{{{{modelCamel}}.id}{{'}}'}}
+                                    Editar {{modelTitle}} #{{{modelCamel}}.id}
                                 </h3>
                             </div>
 
