@@ -52,4 +52,19 @@ class TableInspectionTest extends TestCase
         $this->assertSame(['timestamps'], $this->codes($findings));
         $this->assertSame([], $findings[0]['columns']);
     }
+
+    public function test_tabela_convencional_nao_gera_aviso(): void
+    {
+        $this->assertSame([], (new TableInspection())->inspect(self::conventional()));
+    }
+
+    public function test_falta_de_uma_coluna_de_timestamp_ja_gera_o_aviso(): void
+    {
+        $findings = (new TableInspection())->inspect([
+            self::column('id', 'bigint unsigned', 'PRI'),
+            self::column('created_at', 'timestamp'),
+        ]);
+
+        $this->assertSame(['timestamps'], $this->codes($findings));
+    }
 }
