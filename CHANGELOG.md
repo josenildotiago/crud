@@ -1,6 +1,6 @@
 # Changelog
 
-## [Não lançado]
+## [3.2.0] - 2026-07-29
 
 ### ⚠️ Leia antes de atualizar
 

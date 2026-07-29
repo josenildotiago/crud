@@ -1,8 +1,13 @@
 # RELATÓRIO TÉCNICO - Sistema CRUD Laravel GETIC
 
+> **Documento histórico.** É a fotografia de uma análise feita em 24/08/2025, sobre o
+> código da 2.1.3. Não foi atualizado desde então e **não descreve o pacote atual** — os
+> números abaixo são os daquela data. Para o estado corrente, ver o `CHANGELOG.md`, o
+> `README.md` e o `composer.json`.
+
 **Data da Análise:** 24 de agosto de 2025  
 **Pacote:** josenildotiago/crud  
-**Versão Atual:** 2.1.3  
+**Versão analisada:** 2.1.3  
 **Linguagem:** PHP 8.0+  
 **Framework:** Laravel 8.0-12.0
 

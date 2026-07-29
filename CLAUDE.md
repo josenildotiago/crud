@@ -147,9 +147,10 @@ junto ou avisar — não fingir que não existe.
   `js/types/themes.ts` (o código usa `js/lib/themes.ts`). Especificação aspiracional, não
   suíte válida. Desde 29/07/2026 o `phpunit.xml` carrega `./tests/Unit` inteiro com
   `<exclude>` explícito deste arquivo — antes ele passava batido por não estar na lista.
-- Versões divergentes: ~~`composer.json` 3.1.4~~ (o campo `version` saiu em 29/07/2026,
-  Packagist deriva da tag git), ~~README 3.0.18~~ (agora 3.2.0), **REPORT.md 2.1.3** —
-  este continua podre.
+- ~~Versões divergentes entre `composer.json`, README e REPORT.md.~~ Resolvido em
+  29/07/2026: o campo `version` saiu do composer.json (Packagist deriva da tag git), o
+  README foi para 3.2.0, e o `REPORT.md` foi carimbado como documento histórico — é a
+  análise de 24/08/2025 sobre a 2.1.3 e não descreve o pacote atual.
 - ~~README manda `vendor:publish --tag="config"`.~~ Corrigido em 29/07/2026: a tag real,
   `crud-config`, está no README.
 - `src/stubs/routes.stub` é arquivo morto: os únicos stubs de rota carregados são
