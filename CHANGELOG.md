@@ -10,7 +10,9 @@ um Controller Blade clássico e **nenhuma view**. Agora gera a stack `react` int
 `ui/table.tsx` e `ui/pagination.tsx` se faltarem, e um item no `app-sidebar.tsx`. O
 Controller é o arquivo que mais se edita à mão, então **não regere sobre um Controller
 que você já customizou sem antes conferir o diff** — o pacote pergunta antes de
-sobrescrever, e `--force` pula a pergunta.
+sobrescrever, e não existe flag para pular essa pergunta. Em modo não interativo a
+resposta padrão é **não** sobrescrever: o Controller existente fica como está e o resto
+da geração segue.
 
 Quem quer a saída antiga passa `--stack=blade`, mas note que `buildBladeViews()` ainda é
 vazio: só o Controller sai, sem views.
