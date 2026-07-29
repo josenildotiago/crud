@@ -6,3 +6,4 @@ vendor
 .vscode
 coverage
 .claude/settings.local.json
+.superpowers
