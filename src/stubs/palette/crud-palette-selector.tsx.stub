@@ -1,0 +1,33 @@
+import { Check } from 'lucide-react';
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { getPalette, palettes, setPalette } from '@/lib/crud-palette';
+
+export function CrudPaletteSelector() {
+    const [selected, setSelected] = useState<string>(() => getPalette());
+
+    const choose = (id: string) => {
+        setPalette(id);
+        setSelected(id);
+    };
+
+    return (
+        <div className="space-y-2">
+            <p className="text-sm font-medium">Paleta de cores</p>
+
+            <div className="flex flex-wrap gap-2">
+                {palettes.map((palette) => (
+                    <Button
+                        key={palette.id}
+                        variant={selected === palette.id ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => choose(palette.id)}
+                    >
+                        {selected === palette.id && <Check className="mr-1 h-4 w-4" />}
+                        {palette.name}
+                    </Button>
+                ))}
+            </div>
+        </div>
+    );
+}

@@ -290,4 +290,57 @@ class GeneratedLintContractTest extends TestCase
             }
         }
     }
+
+    /**
+     * O seletor não passa por replacement nenhum — é arquivo pronto — mas é TSX que o
+     * pacote escreve no projeto do usuário, então vale o mesmo contrato dos componentes.
+     */
+    public function test_os_seletores_de_paleta_respeitam_o_contrato_de_lint(): void
+    {
+        $stubs = [
+            'crud-palette-selector.tsx.stub',
+            'CrudPaletteSelector.vue.stub',
+            'CrudPaletteSelector.svelte.stub',
+        ];
+
+        foreach ($stubs as $stub) {
+            $this->assertSelectorImportsAreOrdered($stub);
+        }
+    }
+
+    /**
+     * Os três starter kits impõem o mesmo `import/order`: externos antes dos `@/`, cada
+     * grupo em ordem alfabética. Em `.vue` e `.svelte` os imports vivem dentro do bloco
+     * `<script>`, e a varredura por linha acha do mesmo jeito.
+     */
+    private function assertSelectorImportsAreOrdered(string $stub): void
+    {
+        $rendered = file_get_contents(__DIR__ . '/../../src/stubs/palette/' . $stub);
+
+        $this->assertIsString($rendered, "stub {$stub} não encontrado");
+
+        $modules = $this->importedModules($rendered);
+        $internos = false;
+
+        foreach ($modules as $module) {
+            if (str_starts_with($module, '@/')) {
+                $internos = true;
+                continue;
+            }
+
+            $this->assertFalse($internos, "{$stub}: `{$module}` é externo e veio depois de um import `@/`.");
+        }
+
+        $grupos = [
+            'externo' => array_values(array_filter($modules, static fn (string $m): bool => !str_starts_with($m, '@/'))),
+            'interno' => array_values(array_filter($modules, static fn (string $m): bool => str_starts_with($m, '@/'))),
+        ];
+
+        foreach ($grupos as $nome => $grupo) {
+            $ordenado = $grupo;
+            usort($ordenado, static fn (string $a, string $b): int => strcasecmp($a, $b));
+
+            $this->assertSame($ordenado, $grupo, "{$stub}: o grupo {$nome} não está em ordem alfabética.");
+        }
+    }
 }

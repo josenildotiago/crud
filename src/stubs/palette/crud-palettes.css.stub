@@ -1,0 +1,105 @@
+/*
+ * Paletas do pacote josenildotiago/crud.
+ *
+ * Cada paleta define só os acentos. Superfície, texto e borda continuam sendo do seu
+ * app: é o que mantém o contraste de claro/escuro sob seu controle.
+ *
+ * A paleta "Padrão" não aparece aqui de propósito — ela é a ausência do atributo, ou
+ * seja, as cores que você já tem.
+ */
+
+:root[data-crud-palette='azul'] {
+    --primary: oklch(0.55 0.19 250);
+    --primary-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.55 0.19 250);
+    --sidebar-primary: oklch(0.55 0.19 250);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-ring: oklch(0.55 0.19 250);
+    --chart-1: oklch(0.55 0.19 250);
+    --chart-2: oklch(0.65 0.15 275);
+    --chart-3: oklch(0.75 0.11 300);
+}
+
+:root.dark[data-crud-palette='azul'] {
+    --primary: oklch(0.7 0.16 250);
+    --primary-foreground: oklch(0.21 0.03 250);
+    --ring: oklch(0.7 0.16 250);
+    --sidebar-primary: oklch(0.7 0.16 250);
+    --sidebar-primary-foreground: oklch(0.21 0.03 250);
+    --sidebar-ring: oklch(0.7 0.16 250);
+    --chart-1: oklch(0.7 0.16 250);
+    --chart-2: oklch(0.62 0.14 275);
+    --chart-3: oklch(0.54 0.12 300);
+}
+
+:root[data-crud-palette='verde'] {
+    --primary: oklch(0.55 0.19 155);
+    --primary-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.55 0.19 155);
+    --sidebar-primary: oklch(0.55 0.19 155);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-ring: oklch(0.55 0.19 155);
+    --chart-1: oklch(0.55 0.19 155);
+    --chart-2: oklch(0.65 0.15 180);
+    --chart-3: oklch(0.75 0.11 205);
+}
+
+:root.dark[data-crud-palette='verde'] {
+    --primary: oklch(0.7 0.16 155);
+    --primary-foreground: oklch(0.21 0.03 155);
+    --ring: oklch(0.7 0.16 155);
+    --sidebar-primary: oklch(0.7 0.16 155);
+    --sidebar-primary-foreground: oklch(0.21 0.03 155);
+    --sidebar-ring: oklch(0.7 0.16 155);
+    --chart-1: oklch(0.7 0.16 155);
+    --chart-2: oklch(0.62 0.14 180);
+    --chart-3: oklch(0.54 0.12 205);
+}
+
+:root[data-crud-palette='roxo'] {
+    --primary: oklch(0.55 0.19 300);
+    --primary-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.55 0.19 300);
+    --sidebar-primary: oklch(0.55 0.19 300);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-ring: oklch(0.55 0.19 300);
+    --chart-1: oklch(0.55 0.19 300);
+    --chart-2: oklch(0.65 0.15 325);
+    --chart-3: oklch(0.75 0.11 350);
+}
+
+:root.dark[data-crud-palette='roxo'] {
+    --primary: oklch(0.7 0.16 300);
+    --primary-foreground: oklch(0.21 0.03 300);
+    --ring: oklch(0.7 0.16 300);
+    --sidebar-primary: oklch(0.7 0.16 300);
+    --sidebar-primary-foreground: oklch(0.21 0.03 300);
+    --sidebar-ring: oklch(0.7 0.16 300);
+    --chart-1: oklch(0.7 0.16 300);
+    --chart-2: oklch(0.62 0.14 325);
+    --chart-3: oklch(0.54 0.12 350);
+}
+
+:root[data-crud-palette='vermelho'] {
+    --primary: oklch(0.55 0.19 25);
+    --primary-foreground: oklch(0.985 0 0);
+    --ring: oklch(0.55 0.19 25);
+    --sidebar-primary: oklch(0.55 0.19 25);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-ring: oklch(0.55 0.19 25);
+    --chart-1: oklch(0.55 0.19 25);
+    --chart-2: oklch(0.65 0.15 50);
+    --chart-3: oklch(0.75 0.11 75);
+}
+
+:root.dark[data-crud-palette='vermelho'] {
+    --primary: oklch(0.7 0.16 25);
+    --primary-foreground: oklch(0.21 0.03 25);
+    --ring: oklch(0.7 0.16 25);
+    --sidebar-primary: oklch(0.7 0.16 25);
+    --sidebar-primary-foreground: oklch(0.21 0.03 25);
+    --sidebar-ring: oklch(0.7 0.16 25);
+    --chart-1: oklch(0.7 0.16 25);
+    --chart-2: oklch(0.62 0.14 50);
+    --chart-3: oklch(0.54 0.12 75);
+}
