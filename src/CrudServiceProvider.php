@@ -6,6 +6,7 @@ use Crud\Console\InstallCommand;
 use Crud\Console\CreateThemeCommand;
 use Illuminate\Support\ServiceProvider;
 use Crud\Console\InstallThemeSystemCommand;
+use Crud\Console\InstallPaletteCommand;
 use Crud\Console\InstallOnlyServicesCommand;
 
 class CrudServiceProvider extends ServiceProvider
@@ -33,6 +34,7 @@ class CrudServiceProvider extends ServiceProvider
                 InstallCommand::class,
                 CreateThemeCommand::class,
                 InstallThemeSystemCommand::class,
+                InstallPaletteCommand::class,
                 InstallOnlyServicesCommand::class,
             ]);
 
