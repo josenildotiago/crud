@@ -1,8 +1,8 @@
-import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { ArrowLeftIcon,  PencilIcon, TrashIcon } from 'lucide-react';
-import AppLayout from '@/layouts/app-layout';
-import { {{modelName}} } from '@/types';{{routeImports}}
+import { ArrowLeftIcon, PencilIcon, TrashIcon } from 'lucide-react';
+import React from 'react';
+import AppLayout from '@/layouts/app-layout';{{routeImports}}
+import type { {{modelName}} } from '@/types';
 {{themeImports}}
 
 interface ShowProps {

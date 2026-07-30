@@ -210,6 +210,7 @@ export function FileUpload({
 }: FileUploadProps) {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
+
         if (multiple) {
             onChange(files ? Array.from(files) : null);
         } else {
@@ -256,6 +257,9 @@ interface RichTextEditorProps {
     disabled?: boolean;
 }
 
+// `placeholder` continua na interface, mas fora daqui: a área editável é um
+// `contentEditable`, que não tem onde pôr o atributo. Desestruturar sem usar é erro de
+// lint; tirar da interface quebraria quem já passa a prop.
 export function RichTextEditor({
     label,
     name,
@@ -263,7 +267,6 @@ export function RichTextEditor({
     onChange,
     error,
     required = false,
-    placeholder,
     className = '',
     disabled = false,
 }: RichTextEditorProps) {
