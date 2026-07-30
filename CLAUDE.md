@@ -105,6 +105,23 @@ API Controller / Resource / Collection / FormRequest.
 4. Placeholders `{{...}}` — quem usa `crud.stub_path` customizado depende deles
 5. Estrutura dos arquivos gerados que o usuário depois edita à mão
 
+O item 5 é o que mais gera dúvida, então a régua é esta: **o critério é o que sobrevive à
+regeração, não o que o pacote escreve.** Nome de rota, nome de método do Controller,
+nome de componente e forma das props são API — o app do usuário referencia isso de fora do
+arquivo gerado, e mudar quebra código que ele escreveu. **URL gerada também é**: `route()`
+continua resolvendo, mas link, favorito, teste de feature e integração externa apontam para
+a string. Foi por isso que a troca de `GET /{recurso}/index` por `GET /{recurso}` na 3.2.0
+deveria ter sido major, e não minor.
+
+Não é API o que existe só dentro do arquivo gerado: layout do JSX, ordem dos imports,
+nomes de variável local, formatação. Também não são as classes internas do gerador
+(`NavigationRegion`, `TableInspection`) — elas rodam durante o `php artisan` e nada no app
+do usuário as referencia.
+
+Agravante que pesa na decisão: `routes/{model}.php` e as páginas `.tsx` são sobrescritos
+**sem perguntar**, então mudar a saída deles não é só "mudar a próxima geração" — é apagar
+o que o usuário editou, na hora em que ele regera.
+
 ## Pendências conhecidas
 
 Levantadas em 29/07/2026, ainda não corrigidas. Ao mexer perto de uma delas, corrigir

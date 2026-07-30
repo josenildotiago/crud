@@ -1,6 +1,51 @@
 # Changelog
 
-## [Não lançado]
+## [3.3.1] - 2026-07-30
+
+### Corrigido
+
+- **Regerar uma tabela depois de `npm run format` corrompia o `app-sidebar.tsx`.** O
+  prettier do starter kit quebra o item da navegação em várias linhas assim que ele passa
+  das 80 colunas, o que um nome de tabela médio provoca — o item de
+  `configuracoes_sistema` tem 88. A idempotência do pacote é linha a linha, então ela
+  casava só a linha do `href:` e a substituía no lugar, deixando as irmãs órfãs e o TSX
+  inválido, gravado sem pergunta e sem backup. Agora o pacote confere que cada item cabe
+  numa linha antes de tocar no arquivo; quando não cabe, ele não altera nada, diz que o
+  item foi reformatado e imprime a linha para você ajustar à mão.
+- **`eslint .` passava a falhar depois do install.** O import do ícone entrava depois do
+  último import de uma linha qualquer, o que no `app-sidebar.tsx` dos starter kits o punha
+  depois dos imports `@/` e violava a regra `import/order`. Como `npm run lint:check` é
+  gate de CI deles, a build quebrava por causa da nossa edição. O import agora entra no
+  grupo dos módulos externos.
+- **Breadcrumbs de `Show` e `Edit` mostravam o href literal.** O template literal saía sem
+  `${}`, então a trilha exibia o texto cru em vez do id do registro.
+- **O import do ícone não voltava quando sumia.** Ele só era garantido na criação da
+  região, e trocar o ícone à mão deixa o `CrudNavIcon` órfão — que qualquer organizador de
+  imports remove. A geração seguinte reescrevia `icon: CrudNavIcon` num arquivo que não
+  importava mais o símbolo, e a build do usuário parava. Agora a linha é reafirmada a cada
+  geração (sem duplicar, se já estiver lá).
+
+### Documentação
+
+- A tabela de arquivos escritos dizia "criado" para `routes/{model}.php` e para as páginas
+  `.tsx`, mas os dois são **sobrescritos sem perguntar**. Só o Controller e o Model
+  perguntam.
+- O exemplo de rotas do README mostrava `/products/bulk` e punha a rota curinga antes da
+  de bulk — a ordem que o comentário do próprio stub diz não usar.
+- O exemplo de `config/crud.php` do README estava várias releases atrasado: layout errado,
+  uma chave `theme_integration` que não existe, e sem `route_helper`, `navigation`,
+  `api.prefix` nem `api.middleware`.
+- `--route` também move o segmento das rotas de `--api`, não só o das rotas web.
+
+### Interno
+
+- `NavigationRegion::upsert()` passou a receber a linha de import como quarto argumento.
+  A classe é colaboradora interna do `getic:install` e não faz parte da API pública
+  listada no `CLAUDE.md`.
+- A matrix do CI ganhou um job `--prefer-lowest` em PHP 8.2 — o piso do `composer.json`,
+  que só existe com Laravel 12 e não era exercitado por nenhum job.
+
+## [3.3.0] - 2026-07-30
 
 ### Adicionado
 
@@ -42,6 +87,16 @@ da geração segue.
 
 Quem quer a saída antiga passa `--stack=blade`, mas note que `buildBladeViews()` ainda é
 vazio: só o Controller sai, sem views.
+
+**A URL da listagem mudou: `GET /{recurso}/index` deixou de existir, e agora é
+`GET /{recurso}`.** O nome da rota continua `{recurso}.index`, então `route()` e os
+imports do wayfinder não mudam — mas qualquer link, favorito, teste ou integração que
+aponte para a URL antiga passa a dar 404.
+
+**Regerar sobrescreve `routes/{model}.php` e as páginas `.tsx` sem perguntar.** As duas
+coisas acontecem na mesma release em que o conteúdo desses arquivos mudou por inteiro, o
+que torna "regerar" destrutivo para quem os editou à mão. Confira o diff antes, ou guarde
+uma cópia.
 
 **Arquivos que o pacote escreve ou edita no seu projeto** (stack `react`). O Controller e o
 Model são a exceção, não a regra: só eles perguntam antes de sobrescrever. Regerar uma

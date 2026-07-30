@@ -1,4 +1,4 @@
-# Laravel CRUD Generator v3.2.0
+# Laravel CRUD Generator v3.3.1
 
 [![tests](https://github.com/josenildotiago/crud/actions/workflows/tests.yml/badge.svg)](https://github.com/josenildotiago/crud/actions/workflows/tests.yml)
 
