@@ -68,4 +68,83 @@ class CreatePaletteCommandTest extends TestCase
     {
         $this->artisan('crud:create-palette Laranja --hue=400')->assertExitCode(1);
     }
+
+    public function test_crlf_no_ts_falha_sem_escrever(): void
+    {
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+
+        // Substitui LF por CRLF
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace("\n", "\r\n", $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        $cssBefore = $fs->get($this->base . '/resources/css/crud-palettes.css');
+        $tsBefore = $fs->get($tsPath);
+
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(1);
+
+        // Nenhum dos dois arquivos deve ser modificado
+        $this->assertSame($cssBefore, $fs->get($this->base . '/resources/css/crud-palettes.css'));
+        $this->assertSame($tsBefore, $fs->get($tsPath));
+    }
+
+    public function test_sem_ancora_no_ts_falha_sem_escrever(): void
+    {
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+
+        // Remove a função getPalette
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace("export function getPalette", "export function OTHER_FUNC", $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        $cssBefore = $fs->get($this->base . '/resources/css/crud-palettes.css');
+        $tsBefore = $fs->get($tsPath);
+
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(1);
+
+        // Nenhum dos dois arquivos deve ser modificado
+        $this->assertSame($cssBefore, $fs->get($this->base . '/resources/css/crud-palettes.css'));
+        $this->assertSame($tsBefore, $fs->get($tsPath));
+    }
+
+    public function test_id_no_css_detectado_como_duplicata(): void
+    {
+        // Cria a paleta primeiro
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // Remove do TS mas mantém no CSS
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace("    { id: 'laranja', name: 'Laranja' },\n", "", $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        // Tenta criar de novo
+        $this->artisan('crud:create-palette Laranja --hue=100')->assertExitCode(1);
+    }
+
+    public function test_id_no_ts_detectado_como_duplicata(): void
+    {
+        // Cria a paleta primeiro
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // Remove do CSS mas mantém no TS (simulando dessincronização anterior)
+        $fs = new Filesystem();
+        $cssPath = $this->base . '/resources/css/crud-palettes.css';
+        $conteudo = $fs->get($cssPath);
+
+        // Remove só o primeiro bloco (claro)
+        $conteudo = preg_replace(
+            "/\\s*:root\\[data-crud-palette='laranja'\\]\\s*\\{[^}]+\\}/s",
+            "",
+            $conteudo,
+            1
+        );
+        $fs->put($cssPath, $conteudo);
+
+        // Tenta criar de novo
+        $this->artisan('crud:create-palette Laranja --hue=100')->assertExitCode(1);
+    }
 }

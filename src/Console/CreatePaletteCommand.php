@@ -44,23 +44,45 @@ class CreatePaletteCommand extends Command
         }
 
         $css = $this->files->get($cssPath);
+        $ts = $this->files->get($tsPath);
 
-        if (str_contains($css, "data-crud-palette='{$id}'")) {
+        // Validar antes de escrever qualquer coisa
+        if (str_contains($css, "data-crud-palette='{$id}'") || str_contains($ts, "id: '{$id}'")) {
             $this->components->error("Já existe uma paleta `{$id}`.");
 
             return self::FAILURE;
         }
 
-        $this->files->put($cssPath, $css . "\n" . $this->blocks($id, (float) $hue));
+        // Verificar que a âncora existe no TS com a estrutura esperada (LF apenas)
+        // Arquivos com CRLF indicam má configuração do git/editor
+        if (!str_contains($ts, "];\n\nexport function getPalette")) {
+            $this->components->error('Estrutura do arquivo de paletas inválida. Rode `php artisan crud:install-palette` novamente.');
 
-        $ts = $this->files->get($tsPath);
+            return self::FAILURE;
+        }
+
+        // Acrescentar ao CSS
+        $cssNovo = $css . "\n" . $this->blocks($id, (float) $hue);
+        $this->files->put($cssPath, $cssNovo);
+
+        // Substituir no TS (validação anterior garante que contém ];\n\n literal)
         $entrada = "    { id: '{$id}', name: '{$nome}' },";
-
-        $this->files->put($tsPath, str_replace(
+        $tsNovo = str_replace(
             "];\n\nexport function getPalette",
             $entrada . "\n];\n\nexport function getPalette",
             $ts
-        ));
+        );
+
+        // Verificar que a substituição realmente aconteceu
+        if ($tsNovo === $ts) {
+            // Desfazer: restaurar o CSS
+            $this->files->put($cssPath, $css);
+            $this->components->error('Falha ao atualizar lista de paletas. Rode `php artisan crud:install-palette` novamente.');
+
+            return self::FAILURE;
+        }
+
+        $this->files->put($tsPath, $tsNovo);
 
         $this->components->info("Paleta `{$id}` criada. Rode `npm run build` para vê-la.");
 
