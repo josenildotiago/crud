@@ -148,4 +148,47 @@ class InstallCommandPreflightTest extends TestCase
 
         $this->assertTrue($command->generated);
     }
+
+    public function test_modo_nao_interativo_avisa_e_segue(): void
+    {
+        $command = $this->spyCommand(self::legacy());
+
+        // Testa a decisão do dono do pacote: quando não há terminal interativo,
+        // avisar que segue por conta e risco, e não bloquear. Scripts em lote
+        // não devem abortar em silêncio só porque a tabela não é convencional.
+        $this->artisan('test:preflight clientes --no-interaction')
+            ->expectsOutputToContain('Modo não interativo: seguindo por sua conta e risco.')
+            ->assertExitCode(0);
+
+        $this->assertTrue($command->generated);
+    }
+
+    public function test_avisos_de_chave_primaria_e_coluna_invalida(): void
+    {
+        // Schema que dispara dois ramos do match em preflightMessage():
+        // - primary-key-not-id: chave primária é 'idClientes', não 'id'
+        // - column-identifier (plural): colunas '2fa_secret' e 'nome-cliente' são inválidas
+        $schema = [
+            self::column('idClientes', 'int', 'PRI'),
+            self::column('created_at', 'timestamp'),
+            self::column('updated_at', 'timestamp'),
+            self::column('2fa_secret'),
+            self::column('nome-cliente'),
+        ];
+
+        $command = $this->spyCommand($schema);
+
+        // Testa a cobertura dos ramos: a mensagem deve interpolar a chave primária
+        // e listar os identificadores inválidos. Não assevera a frase inteira para
+        // pegar mudanças de interpolação ou ramo trocado. Verifica a chave primária
+        // não convencional (ramo primary-key-not-id) e a coluna inválida com underscore
+        // (ramo column-identifier). O comando deve gerar mesmo assim após confirmação.
+        $this->artisan('test:preflight clientes')
+            ->expectsConfirmation('Gerar mesmo assim?', 'yes')
+            ->expectsOutputToContain('idClientes')
+            ->expectsOutputToContain('2fa_secret')
+            ->assertExitCode(0);
+
+        $this->assertTrue($command->generated);
+    }
 }
