@@ -1546,9 +1546,15 @@ E os três métodos:
         // A chave de ordenação tem que ser o módulo deste import, não um literal: no vue e
         // no svelte o seletor é `@/components/CrudPaletteSelector.vue`/`.svelte`, e
         // posicioná-lo pela string do react o joga para o lugar errado do bloco.
-        preg_match("/from '([^']+)';$/", $import, $modulo);
+        $modulo = $this->extractModule($import);
 
-        $comImport = MarkedRegion::insertImport($novo, $import, $modulo[1]);
+        if ($modulo === null) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $comImport = MarkedRegion::insertImport($novo, $import, $modulo);
 
         if ($comImport === null) {
             $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
