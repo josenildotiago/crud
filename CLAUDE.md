@@ -121,6 +121,11 @@ junto ou avisar — não fingir que não existe.
   `docs/superpowers/specs/2026-07-29-preflight-tabela-design.md`.
 - `InstallCommand::STACKS` é `['react', 'vue', 'blade']` — `svelte` e `livewire` são
   rejeitadas no `handle()` antes de qualquer geração.
+- `TableInspection` nomeia só a **primeira** coluna `PRI` em chave composta, porque dá
+  `break` na primeira. O aviso sai incompleto ("A chave primária é `permission_id`, não
+  `id`"), embora a conclusão — o Model gerado não vai funcionar — continue válida. Casos
+  reais no banco de referência: `model_has_permissions`, `model_has_roles`,
+  `role_has_permissions`. Nenhum teste cobre chave composta.
 - **As respostas interativas de `--api` e `--theme` são descartadas** — mesma raiz do bug
   do `--stack`. `afterPromptingForMissingArguments()` grava em `$this->options['api']` e
   `$this->options['theme']` (o array custom do `GeneratorCommand`, que só é lido para
