@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Crud\Console\InstallThemeSystemCommand;
 use Crud\Console\InstallPaletteCommand;
 use Crud\Console\InstallOnlyServicesCommand;
+use Crud\Console\CreatePaletteCommand;
 
 class CrudServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,7 @@ class CrudServiceProvider extends ServiceProvider
                 InstallThemeSystemCommand::class,
                 InstallPaletteCommand::class,
                 InstallOnlyServicesCommand::class,
+                CreatePaletteCommand::class,
             ]);
 
             $this->publishes([
