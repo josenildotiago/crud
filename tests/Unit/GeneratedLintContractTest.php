@@ -129,7 +129,7 @@ class GeneratedLintContractTest extends TestCase
         $modules = [];
 
         foreach (explode("\n", $rendered) as $line) {
-            if (preg_match("/^import .* from '([^']+)';$/", $line, $match) === 1) {
+            if (preg_match("/^\s*import .* from '([^']+)';$/", $line, $match) === 1) {
                 $modules[] = $match[1];
                 continue;
             }
@@ -310,8 +310,8 @@ class GeneratedLintContractTest extends TestCase
 
     /**
      * Os três starter kits impõem o mesmo `import/order`: externos antes dos `@/`, cada
-     * grupo em ordem alfabética. Em `.vue` e `.svelte` os imports vivem dentro do bloco
-     * `<script>`, e a varredura por linha acha do mesmo jeito.
+     * grupo em ordem alfabética. Em `.vue` e `.svelte` os imports vivem indentados dentro
+     * do bloco `<script>`, então o regex aceita espaço em branco antes do `import`.
      */
     private function assertSelectorImportsAreOrdered(string $stub): void
     {
