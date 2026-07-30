@@ -178,17 +178,16 @@ class MarkedRegionTest extends TestCase
     public function test_casa_a_primeira_ocorrencia_de_marcador_inicial_com_orfao_antes(): void
     {
         $content = "{/* crud:palette:start */}\n"
-            . "{/* crud:palette:end */}\n"
             . "<AppearanceTabs />\n"
             . "{/* crud:palette:start */}\n"
             . "<Original />\n"
             . "{/* crud:palette:end */}";
 
         $region = $this->region();
-        $result = $region->replace($content, '<Novo />');
+        $result = $region->remove($content);
 
-        $this->assertNotNull($result);
-        $this->assertStringContainsString('<Novo />', $result);
-        $this->assertStringContainsString('<Original />', $result);
+        // Com guard correto: [0,4], remove tudo da primeira start até o end.
+        // Sem guard (bug): reatribui start a cada início, pega [2,4], deixa linhas 0-1.
+        $this->assertSame("", $result);
     }
 }
