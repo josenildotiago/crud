@@ -173,23 +173,22 @@ class InstallCommandPreflightTest extends TestCase
     {
         // Schema que dispara dois ramos do match em preflightMessage():
         // - primary-key-not-id: chave primária é 'idClientes', não 'id'
-        // - column-identifier (plural): colunas '2fa_secret' e 'invalido_nome' são inválidas
+        // - column-identifier na forma PLURAL: são precisos dois nomes inválidos, e
+        //   `nome-cliente` só é inválido por causa do hífen. Trocá-lo por algo como
+        //   `invalido_nome` — que é identificador válido — deixaria o schema com uma
+        //   coluna inválida só e faria este teste exercitar o ramo singular.
         $schema = [
             self::column('idClientes', 'int', 'PRI'),
             self::column('created_at', 'timestamp'),
             self::column('updated_at', 'timestamp'),
             self::column('2fa_secret'),
-            self::column('invalido_nome'),
+            self::column('nome-cliente'),
         ];
 
         $command = $this->spyCommand($schema);
 
-        // Testa a cobertura dos ramos: a mensagem deve interpolar a chave primária
-        // e listar os identificadores inválidos. Não assevera a frase inteira para
-        // pegar mudanças de interpolação ou ramo trocado. Verifica a chave primária
-        // não convencional (ramo primary-key-not-id) e a coluna inválida que dispara
-        // o ramo column-identifier (que pode ter um ou múltiplos nomes). O comando
-        // deve gerar mesmo assim após confirmação.
+        // Não assevera a frase inteira, para não prender o teste à prosa: assevera que
+        // o dado certo chegou na saída.
         $this->artisan('test:preflight clientes')
             ->expectsConfirmation('Gerar mesmo assim?', 'yes')
             ->expectsOutputToContain('idClientes')
@@ -228,5 +227,26 @@ class InstallCommandPreflightTest extends TestCase
         $this->assertIsString($message);
         $this->assertNotEmpty($message);
         $this->assertStringContainsString('2fa_secret', $message);
+    }
+
+    public function test_varias_colunas_invalidas_saem_todas_na_mensagem(): void
+    {
+        $command = $this->spyCommand(self::conventional());
+
+        $message = $command->messageForTest([
+            'code' => 'column-identifier',
+            'columns' => ['2fa_secret', 'nome-cliente'],
+        ]);
+
+        // Os dois nomes são exigidos de propósito: com um só, o ramo plural poderia
+        // regredir para imprimir apenas `columns[0]` e ninguém notaria.
+        $this->assertStringContainsString('2fa_secret', $message);
+        $this->assertStringContainsString('nome-cliente', $message);
+
+        // A asserção acima roda contra a string devolvida, e não contra a saída do
+        // console, de propósito: o `expectsOutputToContain` do Testbench não casa o
+        // segundo nome mesmo quando ele está literalmente na linha impressa —
+        // verificado capturando a saída real, onde a frase sai completa.
+        $this->assertStringNotContainsString('A coluna `', $message, 'Devia usar a forma plural.');
     }
 }

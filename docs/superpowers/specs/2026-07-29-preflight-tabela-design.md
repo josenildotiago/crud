@@ -30,7 +30,7 @@ Ele narra, não avisa, e chega tarde.
 
 ## O que este trabalho é e o que não é
 
-**É:** avisar, antes de escrever qualquer arquivo, que a tabela tem características que o
+**É:** avisar, antes de escrever qualquer arquivo do CRUD, que a tabela tem características que o
 código gerado não suporta; deixar a pessoa decidir; e registrar no terminal que ela
 decidiu seguir.
 
@@ -102,7 +102,8 @@ Contrato de multiplicidade e ordem, para não deixar ambíguo:
 
 O pré-voo entra no `InstallCommand::handle()` **depois** do `tableExists()` e do
 `isLaravel12OrHigher()`, e **antes** de `$this->name = $this->_buildClassName()`. É o
-último ponto em que nenhum arquivo foi escrito ainda.
+último ponto em que nenhum arquivo do CRUD foi escrito ainda — com a exceção do sistema
+de temas, descrita na Arquitetura.
 
 `getColumns()` memoiza em `$this->tableColumns`, então chamá-lo aqui não custa consulta
 extra depois.

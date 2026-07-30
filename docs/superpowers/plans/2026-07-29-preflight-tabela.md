@@ -589,7 +589,7 @@ Em `src/Console/InstallCommand.php`, no `handle()`, **entre** a checagem de vers
         $this->name = $this->_buildClassName();
 ```
 
-Este é o último ponto em que nenhum arquivo foi escrito.
+Este é o último ponto em que nenhum arquivo do CRUD foi escrito. (O `crud:install-theme-system`, quando aceito no prompt inicial, roda antes disto: ele é disparado no `interact()` do Artisan, fora do `handle()`.)
 
 - [ ] **Step 4: Acrescentar a propriedade e os dois métodos**
 
@@ -606,7 +606,7 @@ E os dois métodos, logo depois de `isLaravel12OrHigher()`:
 
 ```php
     /**
-     * Avisa sobre a tabela antes de escrever qualquer arquivo.
+     * Avisa sobre a tabela antes de escrever qualquer arquivo do CRUD.
      *
      * Avisa, não bloqueia: a tabela é do usuário, e gerar em cima de uma tabela torta
      * para ajustar o Model à mão depois é caso legítimo. Devolve `false` só quando a
