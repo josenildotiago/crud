@@ -48,6 +48,10 @@ Uma classe nova, `src/TableInspection.php`, no molde do `src/NavigationRegion.ph
 release estabeleceu: `final`, sem dependência de framework, sem I/O. Dados entram, achados
 saem.
 
+É o último ponto em que nenhum arquivo do CRUD foi escrito ainda. Uma exceção: se você
+aceitar instalar o sistema de temas no prompt inicial, ele é instalado antes, porque roda
+na fase de perguntas do próprio Artisan — cancelar no pré-voo não desfaz isso.
+
 ```php
 final class TableInspection
 {

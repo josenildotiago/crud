@@ -141,15 +141,20 @@ pergunta antes de criar a região. Para desligar:
 
 #### Pré-voo da tabela
 
-Antes de escrever qualquer arquivo, o pacote confere se a tabela tem o que o código
-gerado assume: `created_at`/`updated_at`, chave primária chamada `id`, e nomes de coluna
+Antes de escrever qualquer arquivo do CRUD, o pacote confere se a tabela tem o que o código
+gerado assume: `created_at` e/ou `updated_at`, chave primária chamada `id`, e nomes de coluna
 que sejam identificadores válidos. Se algo falta, ele lista os avisos e pergunta se você
 quer gerar mesmo assim — **avisa, não bloqueia**, porque gerar em cima de uma tabela
 legada e ajustar o Model à mão depois é caso legítimo. Numa tabela criada pelas migrations
 do Laravel ele não diz nada.
 
 Em modo não interativo (`--no-interaction`, script, CI) ele imprime os avisos, segue, e
-repete o resumo no fim — por sua conta e risco.
+repete o resumo no fim — por sua conta e risco. O padrão da pergunta é gerar (apertar Enter
+continua).
+
+Uma exceção: se você aceitar instalar o sistema de temas no prompt inicial, ele é instalado
+antes, porque roda na fase de perguntas do próprio Artisan — cancelar no pré-voo não desfaz
+isso.
 
 ## 🎨 Sistema de Temas
 

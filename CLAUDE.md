@@ -63,7 +63,8 @@ src/
   CrudServiceProvider.php     # merge de crud.php + themes.php; singleton 'crud'; publishes
   CrudManager.php             # binding 'crud'; detecta sistema de temas instalado
   ModelGenerator.php          # infere relacionamentos Eloquent do schema
-  TableInspection.php          # pré-voo: o que na tabela o código gerado não suporta
+  TableInspection.php         # pré-voo: o que na tabela o código gerado não suporta
+  NavigationRegion.php        # região marcada da navegação do usuário; molde do TableInspection
   Facades/Crud.php
   config/crud.php             # config mora em src/config/, não em config/
   config/themes.php

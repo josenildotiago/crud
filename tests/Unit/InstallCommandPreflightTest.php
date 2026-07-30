@@ -64,6 +64,12 @@ class PreflightSpyInstallCommand extends InstallCommand
     {
         return $this;
     }
+
+    /** @param array{code: string, columns: array<int, string>} $finding */
+    public function messageForTest(array $finding): string
+    {
+        return $this->preflightMessage($finding);
+    }
 }
 
 class InstallCommandPreflightTest extends TestCase
@@ -167,13 +173,13 @@ class InstallCommandPreflightTest extends TestCase
     {
         // Schema que dispara dois ramos do match em preflightMessage():
         // - primary-key-not-id: chave primária é 'idClientes', não 'id'
-        // - column-identifier (plural): colunas '2fa_secret' e 'nome-cliente' são inválidas
+        // - column-identifier (plural): colunas '2fa_secret' e 'invalido_nome' são inválidas
         $schema = [
             self::column('idClientes', 'int', 'PRI'),
             self::column('created_at', 'timestamp'),
             self::column('updated_at', 'timestamp'),
             self::column('2fa_secret'),
-            self::column('nome-cliente'),
+            self::column('invalido_nome'),
         ];
 
         $command = $this->spyCommand($schema);
@@ -181,8 +187,9 @@ class InstallCommandPreflightTest extends TestCase
         // Testa a cobertura dos ramos: a mensagem deve interpolar a chave primária
         // e listar os identificadores inválidos. Não assevera a frase inteira para
         // pegar mudanças de interpolação ou ramo trocado. Verifica a chave primária
-        // não convencional (ramo primary-key-not-id) e a coluna inválida com underscore
-        // (ramo column-identifier). O comando deve gerar mesmo assim após confirmação.
+        // não convencional (ramo primary-key-not-id) e a coluna inválida que dispara
+        // o ramo column-identifier (que pode ter um ou múltiplos nomes). O comando
+        // deve gerar mesmo assim após confirmação.
         $this->artisan('test:preflight clientes')
             ->expectsConfirmation('Gerar mesmo assim?', 'yes')
             ->expectsOutputToContain('idClientes')
@@ -190,5 +197,36 @@ class InstallCommandPreflightTest extends TestCase
             ->assertExitCode(0);
 
         $this->assertTrue($command->generated);
+    }
+
+    public function test_preflightMessage_cobre_todos_os_codigos_conhecidos(): void
+    {
+        // Este teste existe para que um código novo em TableInspection sem frase
+        // correspondente quebre a suíte em vez de quebrar no terminal do usuário.
+        // Se TableInspection emitir um novo código e InstallCommand não tiver o braço
+        // correspondente no match, preflightMessage() lança UnhandledMatchError aqui.
+        $command = new PreflightSpyInstallCommand(new Filesystem());
+
+        // timestamps: dispara faltando qualquer uma (ou ambas) das colunas.
+        $message = $command->messageForTest(['code' => 'timestamps', 'columns' => []]);
+        $this->assertIsString($message);
+        $this->assertNotEmpty($message);
+
+        // primary-key-missing: tabela sem chave primária declarada.
+        $message = $command->messageForTest(['code' => 'primary-key-missing', 'columns' => []]);
+        $this->assertIsString($message);
+        $this->assertNotEmpty($message);
+
+        // primary-key-not-id: chave primária existe, mas é chamada de outro nome.
+        $message = $command->messageForTest(['code' => 'primary-key-not-id', 'columns' => ['idClientes']]);
+        $this->assertIsString($message);
+        $this->assertNotEmpty($message);
+        $this->assertStringContainsString('idClientes', $message);
+
+        // column-identifier: coluna cujo nome não é identificador válido em PHP/TS.
+        $message = $command->messageForTest(['code' => 'column-identifier', 'columns' => ['2fa_secret']]);
+        $this->assertIsString($message);
+        $this->assertNotEmpty($message);
+        $this->assertStringContainsString('2fa_secret', $message);
     }
 }
