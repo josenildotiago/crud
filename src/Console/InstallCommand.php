@@ -1355,7 +1355,11 @@ JSX;
         $updated = $region->upsert($content, $key, $item);
 
         if ($updated === null) {
-            warning('Marcadores de navegação malformados em ' . $config['file'] . '. Nada foi alterado.');
+            warning($region->hasMultilineItem($content)
+                ? 'O item da navegação em ' . $config['file'] . ' foi reformatado em várias'
+                    . ' linhas e não dá para atualizá-lo com segurança. Nada foi alterado;'
+                    . ' ajuste a linha à mão:'
+                : 'Marcadores de navegação malformados em ' . $config['file'] . '. Nada foi alterado.');
             $this->line($item);
 
             return $this;

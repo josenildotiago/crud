@@ -79,6 +79,65 @@ class NavigationRegionTest extends TestCase
         $this->assertStringContainsString("href: '/produtos'", $withBoth);
     }
 
+    /**
+     * A região depois de `npm run format`: o prettier quebra o item em várias linhas
+     * assim que ele passa das 80 colunas, o que acontece com nome de tabela médio.
+     */
+    private function sidebarWithPrettierFormattedItem(): string
+    {
+        return <<<'TSX'
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+            // crud:nav:start
+            {
+                title: 'Configuracoes Sistema',
+                href: '/configuracoes-sistema',
+                icon: CrudNavIcon,
+            },
+            // crud:nav:end
+        ];
+        TSX;
+    }
+
+    public function test_upsert_recusa_regiao_com_item_reformatado_em_varias_linhas(): void
+    {
+        $original = $this->sidebarWithPrettierFormattedItem();
+
+        $result = $this->region()->upsert(
+            $original,
+            "'/configuracoes-sistema'",
+            "{ title: 'Configuracoes Sistema', href: '/configuracoes-sistema', icon: CrudNavIcon },"
+        );
+
+        // Substituir só a linha do `href:` deixaria as irmãs órfãs e o TSX inválido —
+        // gravado sem pergunta e sem backup. Recusar devolve o controle a quem chama,
+        // que já imprime o trecho para colar à mão.
+        $this->assertNull($result);
+    }
+
+    public function test_reconhece_a_regiao_com_item_em_varias_linhas(): void
+    {
+        $this->assertTrue(
+            $this->region()->hasMultilineItem($this->sidebarWithPrettierFormattedItem())
+        );
+    }
+
+    public function test_regiao_com_um_item_por_linha_nao_conta_como_multilinha(): void
+    {
+        $this->assertFalse(
+            $this->region()->hasMultilineItem($this->sidebarWithEmptyRegion())
+        );
+    }
+
+    public function test_marcadores_malformados_nao_contam_como_item_multilinha(): void
+    {
+        // As duas causas mandam o `upsert()` devolver null, e quem chama escolhe a
+        // mensagem por aqui: confundi-las manda o usuário procurar o defeito errado.
+        $content = "const mainNavItems: NavItem[] = [\n    // crud:nav:start\n];\n";
+
+        $this->assertFalse($this->region()->hasMultilineItem($content));
+    }
+
     public function test_devolve_null_quando_nao_ha_marcadores(): void
     {
         $content = "const mainNavItems: NavItem[] = [\n];\n";

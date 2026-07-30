@@ -153,6 +153,50 @@ class InstallCommandSidebarNavigationTest extends TestCase
         TSX;
     }
 
+    /**
+     * A sidebar depois de um `npm run format` — script do próprio starter kit, com
+     * `printWidth: 80`.
+     *
+     * O item que a geração de `configuracoes_sistema` escreve tem 88 colunas, então o
+     * prettier o quebra em várias linhas. Regerar a mesma tabela cai aqui.
+     */
+    private function sidebarWithPrettierFormattedItem(): string
+    {
+        return <<<'TSX'
+        import { LayoutGrid, List as CrudNavIcon } from 'lucide-react';
+        import type { NavItem } from '@/types';
+
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+            // crud:nav:start
+            {
+                title: 'Configuracoes Sistemas',
+                href: '/configuracoes-sistemas',
+                icon: CrudNavIcon,
+            },
+            // crud:nav:end
+        ];
+        TSX;
+    }
+
+    public function test_a_reformatted_item_is_left_alone_and_the_reason_is_named(): void
+    {
+        $original = $this->sidebarWithPrettierFormattedItem();
+        $this->putSidebar($original);
+
+        $this->spyCommand();
+
+        // Uma palavra só, e não a frase: `expectsOutputToContain` casa contra a saída
+        // já quebrada em linhas, e o aviso não cabe numa. O que o teste prende é que a
+        // causa seja nomeada — dizer "marcadores malformados" aqui manda o usuário
+        // procurar um defeito que não existe, e colar um item que já está no arquivo.
+        $this->artisan('test:sidebar-spy configuracoes_sistema')
+            ->expectsOutputToContain('reformatado')
+            ->assertExitCode(0);
+
+        $this->assertSame($original, $this->getSidebar());
+    }
+
     private function sidebarAlreadyImportingTheIcon(): string
     {
         return <<<'TSX'

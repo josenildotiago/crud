@@ -88,8 +88,8 @@ final class NavigationRegion
      * Insere ou substitui um item na região.
      *
      * $key identifica o item para fins de idempotência — na prática, o trecho do href.
-     * Devolve null se a região não existir ou estiver malformada; escrever pela metade
-     * seria pior que não escrever.
+     * Devolve null se a região não existir, estiver malformada ou tiver item quebrado
+     * em várias linhas; escrever pela metade seria pior que não escrever.
      */
     public function upsert(string $content, string $key, string $item): ?string
     {
@@ -103,10 +103,11 @@ final class NavigationRegion
 
         $indent = $this->indentOf($lines[$startLine]);
 
-        $body = array_values(array_filter(
-            array_slice($lines, $startLine + 1, $endLine - $startLine - 1),
-            static fn (string $line): bool => trim($line) !== ''
-        ));
+        $body = $this->bodyOf($lines, $startLine, $endLine);
+
+        if (!$this->isOneItemPerLine($body)) {
+            return null;
+        }
 
         $replaced = false;
 
@@ -127,6 +128,64 @@ final class NavigationRegion
             $body,
             array_slice($lines, $endLine)
         ));
+    }
+
+    /**
+     * A região existe e tem item quebrado em mais de uma linha.
+     *
+     * Consulta para quem chama distinguir as duas causas de `upsert()` devolver null:
+     * marcador faltando é defeito no arquivo, item reformatado é o `npm run format`
+     * fazendo o trabalho dele. As mensagens são diferentes, e trocá-las manda o
+     * usuário procurar um problema que não existe.
+     */
+    public function hasMultilineItem(string $content): bool
+    {
+        $lines = preg_split('/\R/', $content);
+
+        [$startLine, $endLine] = $this->locate($lines);
+
+        if ($startLine === null || $endLine === null) {
+            return false;
+        }
+
+        return !$this->isOneItemPerLine($this->bodyOf($lines, $startLine, $endLine));
+    }
+
+    /**
+     * Linhas não vazias entre os marcadores.
+     *
+     * @param array<int, string> $lines
+     * @return array<int, string>
+     */
+    private function bodyOf(array $lines, int $startLine, int $endLine): array
+    {
+        return array_values(array_filter(
+            array_slice($lines, $startLine + 1, $endLine - $startLine - 1),
+            static fn (string $line): bool => trim($line) !== ''
+        ));
+    }
+
+    /**
+     * Toda linha da região é um item inteiro.
+     *
+     * A idempotência do `upsert()` é linha a linha, então ela só está correta enquanto
+     * item e linha forem a mesma coisa. O `npm run format` do starter kit quebra o item
+     * em várias linhas assim que ele passa das 80 colunas — o que acontece com nome de
+     * tabela médio — e daí substituir a linha do href deixaria as irmãs órfãs e o
+     * arquivo sem compilar. Chave que abre e não fecha na mesma linha é a assinatura
+     * disso, e recusar devolve o controle a quem chama.
+     *
+     * @param array<int, string> $body
+     */
+    private function isOneItemPerLine(array $body): bool
+    {
+        foreach ($body as $line) {
+            if (substr_count($line, '{') !== substr_count($line, '}')) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
