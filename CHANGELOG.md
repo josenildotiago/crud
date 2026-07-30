@@ -1,5 +1,51 @@
 # Changelog
 
+## [4.0.2] - 2026-07-30
+
+### Corrigido
+
+- **Os componentes react gerados quebravam o `npm run lint:check` do projeto.** Eram 23
+  erros do eslint, todos em arquivo que o pacote escreve — e como as páginas `.tsx` são
+  sobrescritas sem perguntar, o usuário via a build dele falhar sem ter editado nada. O
+  `lint:check` é gate de CI nos starter kits.
+
+  Os blocos de import dos seis stubs estavam fora da ordem que o `import/order` exige
+  (`react`, `@inertiajs/react` e `lucide-react` depois dos `@/…`, e cada grupo fora da
+  ordem alfabética), e a linha do wayfinder entrava colada no fim, depois de `@/types`.
+  Agora ela entra na posição alfabética dela, entre `@/layouts` e `@/types`. Junto: os
+  imports de `@/types` viraram `import type` (`consistent-type-imports`), o `if` de uma
+  linha do `Index` ganhou chaves (`curly`), três instruções de controle ganharam a linha
+  em branco que o `padding-line-between-statements` pede, e o `placeholder` que o
+  `RichTextEditor` desestruturava sem usar saiu da desestruturação — a prop continua na
+  interface, porque a área editável é um `contentEditable` e não tem onde pô-la, e tirá-la
+  quebraria quem já passa.
+
+  Verificado rodando o eslint de verdade contra a saída, no starter kit: 23 → 0, nos dois
+  helpers de rota, com `tsc --noEmit` limpo.
+
+### Interno
+
+- `GeneratedLintContractTest` fixa as quatro regras que morderam — ordem dos grupos de
+  import, ordem alfabética dentro de cada um, `import type` em `@/types`, chaves no `if` e
+  linha em branco antes de instrução de controle — nos seis componentes e nos dois helpers.
+  O eslint não roda aqui: config e plugins moram no projeto do usuário e o CI deste pacote
+  não tem node.
+- **PHPStan nível 5 virou gate de CI** (`phpstan.neon`, job `phpstan`). É a rede que faltava
+  na 4.0.0: `return.missing` é reportado desde o nível 0 e não é suprimível, então aquele
+  bug não passaria do commit. Deixar verde custou quatro correções internas — chave
+  `{{relations}}` duplicada no mapa de replacements, `match` do pré-voo sem `default` (um
+  código de achado novo era `UnhandledMatchError` no terminal), `@return $this` que o
+  `buildViews()` não cumpre, e um `??` morto no `CrudManager`. Nada disso muda arquivo
+  gerado.
+
+### Conhecido, não corrigido
+
+- `npx prettier --check` ainda reprova os seis arquivos gerados: os stubs têm linhas acima
+  das 80 colunas do `printWidth` dos starter kits. É anterior a esta release — o backup dos
+  arquivos de antes reprova igual — e alinhar exigiria requebrar os stubs inteiros.
+- `--routes=ziggy` num projeto sem ziggy gera código que não compila (`Cannot find name
+  'route'`). O `auto` não cai nisso, porque escolhe wayfinder quando ele está instalado.
+
 ## [4.0.1] - 2026-07-30
 
 ### Corrigido
@@ -22,12 +68,6 @@
   contrato que faltava — toda chamada `xRoute()` de um stub renderizado tem que estar na
   linha de import daquele componente. É o teste que a 4.0.0 não tinha: `php -l` vê arquivo
   válido, então só execução (ou análise estática) pega retorno faltando.
-- **PHPStan nível 5 virou gate de CI** (`phpstan.neon`, job `phpstan`). É a rede que faltava:
-  `return.missing` é reportado desde o nível 0 e não é suprimível, então o bug da 4.0.0 não
-  passaria do commit. Deixar verde custou quatro correções internas — chave `{{relations}}`
-  duplicada no mapa de replacements, `match` do pré-voo sem `default` (um código de achado
-  novo era `UnhandledMatchError` no terminal), `@return $this` que o `buildViews()` não
-  cumpre, e um `??` morto no `CrudManager`. Nada disso muda arquivo gerado.
 
 ## [4.0.0] - 2026-07-30
 

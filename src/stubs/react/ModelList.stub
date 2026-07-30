@@ -1,13 +1,13 @@
 'use client';
 
+import { router } from '@inertiajs/react';
+import { Pencil, Search, Trash2, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Paginated{{modelName}}List } from '@/types';
-import { router } from '@inertiajs/react';
-import { Pencil, Search, Trash2, X } from 'lucide-react';
-import { useEffect, useState } from 'react';{{routeImports}}
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';{{routeImports}}
+import type { Paginated{{modelName}}List } from '@/types';
 
 type Props = {
     {{modelNamePluralLowerCase}}: Paginated{{modelName}}List;
@@ -152,9 +152,11 @@ export function {{modelName}}List({ {{modelNamePluralLowerCase}}, edit, canDelet
                                             isActive={link.active}
                                             onClick={() => {
                                                 const url = new URL(link.url!);
+
                                                 if (filters?.search) {
                                                     url.searchParams.set('search', filters.search);
                                                 }
+
                                                 router.visit(url.toString());
                                             }}
                                             dangerouslySetInnerHTML={{ __html: link.label }}

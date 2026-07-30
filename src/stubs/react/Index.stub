@@ -1,13 +1,13 @@
-import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
+import { LoaderCircle, PlusIcon, Search, TrashIcon } from 'lucide-react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
-import AppLayout from '@/layouts/app-layout';
-import { {{modelName}} } from '@/types';
-import { LoaderCircle, PlusIcon, Search, TrashIcon } from 'lucide-react';{{routeImports}}
+import AppLayout from '@/layouts/app-layout';{{routeImports}}
+import type { {{modelName}} } from '@/types';
 {{themeImports}}
 
 interface Props {
@@ -46,8 +46,10 @@ export default function Index({ {{modelNamePluralLowerCase}}, filters }: Props) 
     };
 
     const handleBulkDelete = async () => {
-        if (selectedIds.length === 0) return;
-        
+        if (selectedIds.length === 0) {
+            return;
+        }
+
         if (confirm(`Tem certeza que deseja deletar ${selectedIds.length} registros?`)) {
             setIsDeleting(true);
             router.delete({{routeBulkDestroy}}, {
