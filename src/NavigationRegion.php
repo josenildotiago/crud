@@ -12,6 +12,15 @@ namespace Crud;
  */
 final class NavigationRegion
 {
+    /**
+     * Import que abre e fecha na mesma linha, em qualquer forma: `import X from 'm';`,
+     * `import { A, B } from 'm';`, `import type { T } from 'm';`.
+     *
+     * Import multilinha não casa de propósito: a primeira linha dele também começa com
+     * `import `, e ancorar ali colocaria a linha nova entre as chaves.
+     */
+    private const SINGLE_LINE_IMPORT = '/^\s*import\s.+\bfrom\s+(?<module>\'[^\']+\'|"[^"]+");$/';
+
     public function __construct(
         private readonly string $startMarker,
         private readonly string $endMarker,
@@ -162,26 +171,49 @@ final class NavigationRegion
         }
 
         $lines = preg_split('/\R/', $content);
+
         $lastImport = null;
+        $lastExternalImport = null;
 
         foreach ($lines as $i => $line) {
-            $line = trim($line);
+            if (preg_match(self::SINGLE_LINE_IMPORT, $line, $parsed) !== 1) {
+                continue;
+            }
 
-            // Só linhas que abrem *e* fecham o import na mesma linha servem de âncora:
-            // num import multilinha (`import {` ... `} from '...';`) a primeira linha
-            // também começa com `import `, e inserir depois dela cairia entre as
-            // chaves, deixando o arquivo do usuário sem compilar.
-            if (str_starts_with($line, 'import ') && str_ends_with($line, ';')) {
-                $lastImport = $i;
+            $lastImport = $i;
+
+            if (!$this->isLocalModule($parsed['module'])) {
+                $lastExternalImport = $i;
             }
         }
 
-        $at = $lastImport === null ? 0 : $lastImport + 1;
+        // Depois do último import de módulo externo, e não simplesmente depois do último
+        // import: no app-sidebar.tsx dos starter kits os imports `@/` vêm por último, e
+        // uma linha de `lucide-react` colada ali viola a regra `import/order` do eslint
+        // deles — cujo `npm run lint:check` é gate de CI e passaria a falhar por causa
+        // da nossa edição. Fundir o símbolo no import que já existe também resolveria o
+        // eslint, mas passaria a linha de 80 colunas e quebraria o `prettier --check`.
+        $anchor = $lastExternalImport ?? $lastImport;
+        $at = $anchor === null ? 0 : $anchor + 1;
 
         return implode("\n", array_merge(
             array_slice($lines, 0, $at),
             [$importLine],
             array_slice($lines, $at)
         ));
+    }
+
+    /**
+     * Módulo do próprio projeto — alias `@/` ou caminho relativo.
+     *
+     * O `$module` chega com as aspas, como casado pelo regex.
+     */
+    private function isLocalModule(string $module): bool
+    {
+        $path = trim($module, '\'"');
+
+        return str_starts_with($path, '@/')
+            || str_starts_with($path, './')
+            || str_starts_with($path, '../');
     }
 }

@@ -181,6 +181,31 @@ class NavigationRegionTest extends TestCase
         $this->assertSame(1, substr_count($result, "import { List } from 'lucide-react';"));
     }
 
+    public function test_install_poe_o_import_no_grupo_dos_modulos_externos(): void
+    {
+        $result = $this->region()->install(
+            $this->sidebarWithoutRegion(),
+            self::OPEN_PATTERN,
+            "import { List as CrudNavIcon } from 'lucide-react';"
+        );
+
+        $this->assertNotNull($result);
+
+        // A regra `import/order` do eslint dos starter kits quer os módulos externos
+        // antes dos `@/`, e o `npm run lint:check` deles é gate de CI: a linha nova tem
+        // de cair **antes** do primeiro import `@/`, não depois do último import.
+        $novo = strpos($result, "import { List as CrudNavIcon } from 'lucide-react';");
+        $externo = strpos($result, "import { BookOpen, LayoutGrid } from 'lucide-react';");
+        $local = strpos($result, "import type { NavItem } from '@/types';");
+
+        $this->assertGreaterThan($externo, $novo, 'Devia vir depois dos imports externos.');
+        $this->assertLessThan($local, $novo, 'Devia vir antes dos imports `@/`.');
+
+        // Fundir o símbolo no import que já existe também calaria o eslint, mas passaria
+        // a linha de 80 colunas e quebraria o `prettier --check` do mesmo starter kit.
+        $this->assertStringContainsString("import { BookOpen, LayoutGrid } from 'lucide-react';", $result);
+    }
+
     public function test_install_nao_duplica_um_import_ja_presente(): void
     {
         $content = <<<'TSX'
