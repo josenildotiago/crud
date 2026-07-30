@@ -141,34 +141,6 @@ abstract class GeneratorCommand extends Command
     abstract protected function buildViews();
 
     /**
-     * Generate the API controller (if --api flag is used).
-     *
-     * @return $this
-     */
-    abstract protected function buildApiController();
-
-    /**
-     * Generate the API resource (if --api flag is used).
-     *
-     * @return $this
-     */
-    abstract protected function buildApiResource();
-
-    /**
-     * Generate the form request (if --api flag is used).
-     *
-     * @return $this
-     */
-    abstract protected function buildFormRequest();
-
-    /**
-     * Generate the API routes (if --api flag is used).
-     *
-     * @return $this
-     */
-    abstract protected function buildApiRoutes();
-
-    /**
      * Create directory if it doesn't exist and return file path.
      */
     protected function makeDirectory($path): string

@@ -1,4 +1,4 @@
-# Laravel CRUD Generator v3.3.1
+# Laravel CRUD Generator v4.0.0
 
 [![tests](https://github.com/josenildotiago/crud/actions/workflows/tests.yml/badge.svg)](https://github.com/josenildotiago/crud/actions/workflows/tests.yml)
 
@@ -96,14 +96,10 @@ Este comando gera:
   - `Index.tsx` - Listagem com paginação e busca
   - `Show.tsx` - Visualização de registro
 - **Routes**: `routes/user.php` com middleware auth e verified
-- **Form Request**: `app/Http/Requests/UserRequest.php` para validação
 
 #### Opções Avançadas
 
 ```bash
-# Com API RESTful
-php artisan getic:install products --api
-
 # Com relacionamentos automáticos
 php artisan getic:install orders --relationship
 
@@ -197,9 +193,6 @@ php artisan crud:create-theme {nome}
 # Gerar CRUD completo
 php artisan getic:install {tabela}
 
-# Com API RESTful
-php artisan getic:install {tabela} --api
-
 # Com relacionamentos
 php artisan getic:install {tabela} --relationship
 
@@ -228,7 +221,7 @@ php artisan crud:create-theme corporativo
 ### 2. Gerar CRUD para Produtos
 
 ```bash
-php artisan getic:install products --api --theme
+php artisan getic:install products --theme
 ```
 
 ### 3. Resultado Gerado
@@ -360,14 +353,6 @@ return [
         // 'auto' usa wayfinder se estiver instalado, senão o route() do Ziggy.
         // Também aceita 'wayfinder' e 'ziggy'. A flag --routes= sobrepõe.
         'route_helper' => 'auto',
-    ],
-
-    'api' => [
-        'enabled' => true,
-        'prefix' => 'api',
-        'middleware' => ['api'],
-        'generate_resources' => true,
-        'generate_requests' => true,
     ],
 
     // Em false, o pacote nunca toca no arquivo de navegação do projeto.

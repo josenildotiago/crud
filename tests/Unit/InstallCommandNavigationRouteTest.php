@@ -23,7 +23,6 @@ class RouteAndSidebarSpyInstallCommand extends InstallCommand
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
                                             {--relationship : Specify if you want to establish a relationship}
-                                            {--api : Generate API endpoints}
                                             {--theme : Include theme-aware components}';
 
     protected function tableExists()

@@ -79,12 +79,15 @@ src/
 ```
 
 Fluxo do `getic:install {tabela}`:
-`buildOptions → buildController → buildModel → buildViews → buildRouter`,
-e com `--api` também `buildApiController → buildApiRoutes → buildApiResources → buildFormRequest`.
+`buildOptions → buildController → buildModel → buildViews → buildRouter`.
 
-Gera no app do usuário: Model, Controller (Inertia ou clássico), componentes React,
-`routes/{model}.php` com `require` idempotente no `web.php`, e opcionalmente
-API Controller / Resource / Collection / FormRequest.
+Gera no app do usuário: Model, Controller (Inertia ou clássico), componentes React e
+`routes/{model}.php` com `require` idempotente no `web.php`.
+
+**O pacote não gera API.** A flag `--api` e os cinco stubs dela saíram na 4.0.0: nunca
+funcionaram em release nenhuma — pressupunham um motor de templating handlebars que jamais
+existiu, e 21 dos 29 placeholders deles não estavam no mapa de replacements. Não
+ressuscitar sem decidir antes qual motor processa os stubs.
 
 ## Stacks
 
@@ -143,12 +146,12 @@ junto ou avisar — não fingir que não existe.
   `id`"), embora a conclusão — o Model gerado não vai funcionar — continue válida. Casos
   reais no banco de referência: `model_has_permissions`, `model_has_roles`,
   `role_has_permissions`. Nenhum teste cobre chave composta.
-- **As respostas interativas de `--api` e `--theme` são descartadas** — mesma raiz do bug
-  do `--stack`. `afterPromptingForMissingArguments()` grava em `$this->options['api']` e
-  `$this->options['theme']` (o array custom do `GeneratorCommand`, que só é lido para
-  `route`), mas `handle()` e `buildReactComponents()` leem `$this->option('api')` /
-  `$this->option('theme')` (as opções do Symfony). Responder "sim" no prompt não faz nada;
-  só funciona passando as flags na linha de comando.
+- **A resposta interativa de `--theme` é descartada** — mesma raiz do bug do `--stack`.
+  `afterPromptingForMissingArguments()` grava em `$this->options['theme']` (o array custom
+  do `GeneratorCommand`, que só é lido para `route`), mas `buildReactComponents()` lê
+  `$this->option('theme')` (a opção do Symfony). Responder "sim" no prompt não faz nada; só
+  funciona passando `--theme` na linha de comando. Era o mesmo com `--api`, que saiu na
+  4.0.0 — este é o último caso.
 - Tag `crud-assets` publica `src/stubs/js` e `src/stubs/css` — nenhum dos dois existe.
 - `$this->name = $this->_buildClassName()` sobrescreve o `$name` do `Illuminate\Console\Command`.
 - **O Controller das stacks `vue` e `blade` redireciona para rota que não existe.**
@@ -180,11 +183,10 @@ junto ou avisar — não fingir que não existe.
   análise de 24/08/2025 sobre a 2.1.3 e não descreve o pacote atual.
 - ~~README manda `vendor:publish --tag="config"`.~~ Corrigido em 29/07/2026: a tag real,
   `crud-config`, está no README.
-- `src/stubs/routes.stub` e `src/stubs/InertiaRoutes.stub` são arquivos mortos: os únicos
-  stubs de rota carregados são `ModelRoutes` e `ApiRoutes`. O `routes.stub` declara rotas
-  num formato antigo (`{{modelNameLowerCase}}-index`) que nada gera mais; o
-  `InertiaRoutes.stub` não é citado em lugar nenhum (`grep -rn InertiaRoutes src/` devolve
-  zero).
+- `src/stubs/routes.stub` e `src/stubs/InertiaRoutes.stub` são arquivos mortos: o único
+  stub de rota carregado é `ModelRoutes`. O `routes.stub` declara rotas num formato antigo
+  (`{{modelNameLowerCase}}-index`) que nada gera mais; o `InertiaRoutes.stub` não é citado
+  em lugar nenhum (`grep -rn InertiaRoutes src/` devolve zero).
 - Prefixo `getic:` no comando principal vs `crud:` nos outros três.
 - `test_install.php` solto na raiz.
 

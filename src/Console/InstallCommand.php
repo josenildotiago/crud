@@ -28,7 +28,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
                                             {--relationship : Specify if you want to establish a relationship}
-                                            {--api : Generate API endpoints}
                                             {--theme : Include theme-aware components}';
 
     /**
@@ -118,14 +117,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             ->buildModel()
             ->buildViews()
             ->buildRouter();
-
-        // Generate API if requested
-        if ($this->option('api')) {
-            $this->buildApiController()
-                ->buildApiRoutes()
-                ->buildApiResources()
-                ->buildFormRequest();
-        }
 
         $this->generateWayfinderRoutes();
 
@@ -340,11 +331,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             }
         }
 
-        // API generation
-        if (confirm('Deseja gerar endpoints de API RESTful?')) {
-            $this->options['api'] = true;
-        }
-
         // Relationship logic
         if (confirm('Deseja estabelecer um relacionamento?')) {
             $relatedTable = select(
@@ -387,34 +373,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         return $this;
     }
 
-    /**
-     * Build API Controller.
-     */
-    protected function buildApiController(): self
-    {
-        $controllerPath = $this->_getApiControllerPath($this->name);
-
-        if ($this->files->exists($controllerPath) && !confirm(
-            label: 'Este API Controller já existe. Você quer sobrescrever?',
-            default: false
-        )) {
-            return $this;
-        }
-
-        info('Criando API Controller...');
-
-        $replace = $this->buildReplacements();
-
-        $controllerTemplate = str_replace(
-            array_keys($replace),
-            array_values($replace),
-            $this->getStub('ApiController')
-        );
-
-        $this->write($controllerPath, $controllerTemplate);
-
-        return $this;
-    }
 
     /**
      * Build Model.
@@ -624,64 +582,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
         return $this;
     }
 
-    /**
-     * Build API Routes.
-     */
-    protected function buildApiRoutes(): self
-    {
-        if (!$this->option('api')) {
-            return $this;
-        }
-
-        info('Criando rotas de API...');
-
-        $apiPath = base_path('routes/api.php');
-
-        if (!$this->files->exists($apiPath)) {
-            $this->files->put($apiPath, "<?php\n\nuse Illuminate\Http\Request;\nuse Illuminate\Support\Facades\Route;\n\n");
-        }
-
-        $apiContent = $this->files->get($apiPath);
-        $stubContent = $this->getStub('ApiRoutes');
-
-        $replacements = $this->buildReplacements();
-        $stubContent = str_replace(array_keys($replacements), array_values($replacements), $stubContent);
-
-        $newApiContent = $apiContent . "\n" . $stubContent;
-        $this->files->put($apiPath, $newApiContent);
-
-        return $this;
-    }
-
-    /**
-     * Build API Resources.
-     */
-    protected function buildApiResources(): self
-    {
-        info('Criando API Resources...');
-
-        $resourcePath = $this->_getApiResourcePath($this->name);
-        $collectionPath = $this->_getApiResourceCollectionPath($this->name);
-
-        // Generate Resource
-        $replace = $this->buildReplacements();
-        $resourceTemplate = str_replace(
-            array_keys($replace),
-            array_values($replace),
-            $this->getStub('ApiResource')
-        );
-        $this->write($resourcePath, $resourceTemplate);
-
-        // Generate Resource Collection
-        $collectionTemplate = str_replace(
-            array_keys($replace),
-            array_values($replace),
-            $this->getStub('ApiResourceCollection')
-        );
-        $this->write($collectionPath, $collectionTemplate);
-
-        return $this;
-    }
 
     /**
      * Generate table headers for React components.
@@ -849,29 +749,6 @@ JSX;
         return "{$modelPath}/{$component}.tsx";
     }
 
-    /**
-     * Get API controller path.
-     */
-    protected function _getApiControllerPath(string $name): string
-    {
-        return $this->makeDirectory(app_path("Http/Controllers/Api/{$name}Controller.php"));
-    }
-
-    /**
-     * Get API resource path.
-     */
-    protected function _getApiResourcePath(string $name): string
-    {
-        return $this->makeDirectory(app_path("Http/Resources/{$name}Resource.php"));
-    }
-
-    /**
-     * Get API resource collection path.
-     */
-    protected function _getApiResourceCollectionPath(string $name): string
-    {
-        return $this->makeDirectory(app_path("Http/Resources/{$name}Collection.php"));
-    }
 
     /**
      * Make the class name from table name.
@@ -905,45 +782,6 @@ JSX;
         return $this;
     }
 
-    /**
-     * Build API Resource (required by GeneratorCommand).
-     */
-    protected function buildApiResource(): self
-    {
-        return $this->buildApiResources();
-    }
-
-    /**
-     * Build Form Request (required by GeneratorCommand).
-     */
-    protected function buildFormRequest(): self
-    {
-        if (!$this->option('api')) {
-            return $this;
-        }
-
-        info('Criando Form Request...');
-
-        $requestPath = $this->_getFormRequestPath($this->name);
-
-        if ($this->files->exists($requestPath) && !confirm(
-            label: 'Este Form Request já existe. Você quer sobrescrever?',
-            default: false
-        )) {
-            return $this;
-        }
-
-        $replace = $this->buildReplacements();
-        $requestTemplate = str_replace(
-            array_keys($replace),
-            array_values($replace),
-            $this->getStub('FormRequest')
-        );
-
-        $this->write($requestPath, $requestTemplate);
-
-        return $this;
-    }
 
     /**
      * Gera campos de busca dinâmicos para o controller
@@ -1689,14 +1527,6 @@ JSX;
             $symbols
         );
 
-        return "\nimport { " . implode(', ', $aliased) . " } from '@/routes/{$this->routeSegment()}';";
-    }
-    /**
-     * Get Form Request path.
-     */
-    protected function _getFormRequestPath(string $name): string
-    {
-        return $this->makeDirectory(app_path("Http/Requests/{$name}Request.php"));
     }
 
     /**

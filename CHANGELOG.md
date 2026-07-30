@@ -1,5 +1,50 @@
 # Changelog
 
+## [4.0.0] - 2026-07-30
+
+### ⚠️ Leia antes de atualizar
+
+**A geração de API saiu do pacote.** A flag `--api`, o prompt "Deseja gerar endpoints de
+API RESTful?" e os cinco stubs correspondentes foram removidos. Passar `--api` agora é
+erro do Symfony ("The `--api` option does not exist"), em vez de gerar arquivos quebrados
+em silêncio.
+
+Isto **não deve quebrar nenhum projeto em produção**, porque a feature nunca funcionou em
+release nenhuma:
+
+- Os stubs pressupunham um motor de templating handlebars (`{{#each}}`, `{{#if (eq type
+  'string')}}`) que jamais foi escrito — a substituição do pacote sempre foi `str_replace`
+  sobre um mapa plano, então esses blocos iam literais para o arquivo do usuário.
+- Dos 29 placeholders usados pelos stubs de API, **21 nunca estiveram no mapa de
+  replacements** — inclusive `{{namespace}}`, que é a linha 3 do `ApiController` gerado.
+  O arquivo não passava do parse.
+- Mesmo com PHP válido, as rotas não carregariam: desde o Laravel 11 o `routes/api.php` só
+  é registrado depois de `php artisan install:api`, e o pacote nunca fez essa parte. O stub
+  ainda pedia `auth:sanctum` num starter kit que não traz o Sanctum, e um limiter
+  `throttle:public-api` que não existe.
+
+Se você tem arquivos gerados por `--api` no projeto, eles continuam onde estão — o pacote
+não apaga nada. Eles é que nunca funcionaram.
+
+**Chaves de config removidas:** `api.*` e `validation.*`. Nenhuma delas era lida por
+código nenhum. Se você publicou o `config/crud.php`, pode apagar as duas seções.
+
+### Removido
+
+- Flag `--api` do `getic:install` e o prompt de API do fluxo interativo.
+- Os builders `buildApiController()`, `buildApiRoutes()`, `buildApiResources()`,
+  `buildApiResource()` e `buildFormRequest()`, mais os quatro helpers de caminho deles, e
+  os quatro métodos abstratos correspondentes em `GeneratorCommand`.
+- Os stubs `ApiController`, `ApiRoutes`, `ApiResource`, `ApiResourceCollection` e
+  `FormRequest` — 660 linhas.
+- As chaves `api` e `validation` de `src/config/crud.php`.
+
+### Por que major
+
+Remover flag documentada de comando Artisan é o item 1 da API pública listada no
+`CLAUDE.md`. A régua escrita na 3.3.1 diz que isso é breaking independentemente de a
+feature funcionar, e é ela que decide aqui — não o julgamento caso a caso.
+
 ## [3.3.1] - 2026-07-30
 
 ### Corrigido

@@ -76,22 +76,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | API Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configurações para geração de APIs RESTful
-    |
-    */
-    'api' => [
-        'enabled' => true,
-        'prefix' => 'api',
-        'middleware' => ['api'],
-        'generate_resources' => true,
-        'generate_requests' => true,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
     | Navegação
     |--------------------------------------------------------------------------
     |
@@ -157,20 +141,6 @@ return [
         'prefix' => null,
         'middleware' => ['web', 'auth'],
         'name_prefix' => null,
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Validation Configuration
-    |--------------------------------------------------------------------------
-    |
-    | Configurações para geração automática de validações
-    |
-    */
-    'validation' => [
-        'generate_form_requests' => true,
-        'auto_rules' => true,
-        'include_custom_rules' => true,
     ],
 
     /*
