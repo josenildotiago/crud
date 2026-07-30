@@ -203,8 +203,15 @@ junto ou avisar — não fingir que não existe.
 
 ```bash
 vendor/bin/phpunit          # tests/Unit inteiro, menos CrudPackageTest.php
+vendor/bin/phpstan analyse  # nível 5 sobre src/, tem que ficar em zero
 composer validate
 ```
+
+O PHPStan entrou porque `php -l` não vê método que nunca alcança o `return` — foi assim que
+a 4.0.0 saiu com `getRouteImports()` sem retorno e nenhuma geração react funcionando. Ele
+reporta isso como `return.missing`, desde o nível 0 e sem permitir supressão. O nível 5 é
+o teto de graça: o 6 exige tipo nativo em ~68 pontos dos métodos antigos do
+`GeneratorCommand`.
 
 `.github/workflows/tests.yml` cobre a faixa que o `composer.json` promete: 8 jobs, PHP
 8.2/8.3/8.4 × Testbench ^10 (Laravel 12) / ^11 (Laravel 13), mais três jobs
