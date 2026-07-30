@@ -27,7 +27,7 @@ export default function Show({ {{modelCamel}} }: ShowProps) {
         },
         {
             title: 'Visualizar {{modelTitle}}',
-            href: `/{{modelRoutePlural}}/{{modelCamel}}.id`,
+            href: `/{{modelRoutePlural}}/${{{modelCamel}}.id}`,
         },
     ];
 

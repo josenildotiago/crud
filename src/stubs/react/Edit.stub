@@ -32,7 +32,7 @@ export default function Edit({ {{modelCamel}} }: EditProps) {
         },
         {
             title: 'Editar {{modelTitle}}',
-            href: `/{{modelRoutePlural}}/{{modelCamel}}.id/edit`,
+            href: `/{{modelRoutePlural}}/${{{modelCamel}}.id}/edit`,
         },
     ];
 
