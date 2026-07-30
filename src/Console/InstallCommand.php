@@ -1527,6 +1527,7 @@ JSX;
             $symbols
         );
 
+        return "\nimport { " . implode(', ', $aliased) . " } from '@/routes/{$this->routeSegment()}';";
     }
 
     /**
