@@ -1,5 +1,28 @@
 # Changelog
 
+## [4.0.1] - 2026-07-30
+
+### Corrigido
+
+- **A 4.0.0 não gerava nada em react com wayfinder.** O comando morria no primeiro
+  componente com `TypeError: getRouteImports(): Return value must be of type string, none
+  returned`. A remoção da API na 4.0.0 apagou o `_getFormRequestPath()` uma linha antes do
+  início dele: o hunk começou no `return` do `getRouteImports()` e terminou antes da chave
+  de fechamento do `_getFormRequestPath`, então a chave que sobrou passou a fechar o
+  `getRouteImports()` — sem `return` nenhum no caminho do wayfinder. O modo ziggy não era
+  afetado, porque retorna `''` antes de chegar ali; o wayfinder é o default em projeto com
+  `laravel/wayfinder` instalado, que é o caso dos starter kits do Laravel 13.
+
+  **Atualize direto para a 4.0.1.** A 4.0.0 não serve para nada em react.
+
+### Interno
+
+- `InstallCommandRouteImportsTest`: a linha de import exata por componente, ziggy e
+  componente sem rota devolvendo string vazia, `--route` movendo o módulo importado, e o
+  contrato que faltava — toda chamada `xRoute()` de um stub renderizado tem que estar na
+  linha de import daquele componente. É o teste que a 4.0.0 não tinha: `php -l` vê arquivo
+  válido, então só execução (ou análise estática) pega retorno faltando.
+
 ## [4.0.0] - 2026-07-30
 
 ### ⚠️ Leia antes de atualizar
