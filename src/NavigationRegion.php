@@ -90,8 +90,13 @@ final class NavigationRegion
      * $key identifica o item para fins de idempotência — na prática, o trecho do href.
      * Devolve null se a região não existir, estiver malformada ou tiver item quebrado
      * em várias linhas; escrever pela metade seria pior que não escrever.
+     *
+     * $importLine é reafirmado a cada chamada, e não só na criação da região: o ícone
+     * do item pertence ao pacote, mas o import mora no arquivo do usuário, onde um
+     * organizador de imports pode levá-lo embora assim que ele fica órfão — o que
+     * acontece justamente quando o usuário troca o ícone à mão.
      */
-    public function upsert(string $content, string $key, string $item): ?string
+    public function upsert(string $content, string $key, string $item, string $importLine): ?string
     {
         $lines = preg_split('/\R/', $content);
 
@@ -123,11 +128,11 @@ final class NavigationRegion
             $body[] = $indent . $item;
         }
 
-        return implode("\n", array_merge(
+        return $this->ensureImport(implode("\n", array_merge(
             array_slice($lines, 0, $startLine + 1),
             $body,
             array_slice($lines, $endLine)
-        ));
+        )), $importLine);
     }
 
     /**

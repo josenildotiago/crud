@@ -7,6 +7,14 @@ use PHPUnit\Framework\TestCase;
 
 class NavigationRegionTest extends TestCase
 {
+    /**
+     * O import que acompanha o ícone dos itens gerados.
+     *
+     * O `upsert()` recebe e reafirma esta linha a cada chamada; nos testes que só
+     * exercitam a região, ela é ruído e vem daqui.
+     */
+    private const ICON_IMPORT = "import { List } from 'lucide-react';";
+
     private function region(): NavigationRegion
     {
         return new NavigationRegion('// crud:nav:start', '// crud:nav:end');
@@ -28,7 +36,8 @@ class NavigationRegionTest extends TestCase
         $result = $this->region()->upsert(
             $this->sidebarWithEmptyRegion(),
             "'/clientes'",
-            "{ title: 'Clientes', href: '/clientes', icon: List },"
+            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            self::ICON_IMPORT
         );
 
         $this->assertStringContainsString(
@@ -47,13 +56,15 @@ class NavigationRegionTest extends TestCase
         $once = $region->upsert(
             $this->sidebarWithEmptyRegion(),
             "'/clientes'",
-            "{ title: 'Clientes', href: '/clientes', icon: List },"
+            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            self::ICON_IMPORT
         );
 
         $twice = $region->upsert(
             $once,
             "'/clientes'",
-            "{ title: 'Clientes', href: '/clientes', icon: List },"
+            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            self::ICON_IMPORT
         );
 
         $this->assertSame(1, substr_count($twice, "href: '/clientes'"));
@@ -66,13 +77,15 @@ class NavigationRegionTest extends TestCase
         $withFirst = $region->upsert(
             $this->sidebarWithEmptyRegion(),
             "'/clientes'",
-            "{ title: 'Clientes', href: '/clientes', icon: List },"
+            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            self::ICON_IMPORT
         );
 
         $withBoth = $region->upsert(
             $withFirst,
             "'/produtos'",
-            "{ title: 'Produtos', href: '/produtos', icon: List },"
+            "{ title: 'Produtos', href: '/produtos', icon: List },",
+            self::ICON_IMPORT
         );
 
         $this->assertStringContainsString("href: '/clientes'", $withBoth);
@@ -106,13 +119,46 @@ class NavigationRegionTest extends TestCase
         $result = $this->region()->upsert(
             $original,
             "'/configuracoes-sistema'",
-            "{ title: 'Configuracoes Sistema', href: '/configuracoes-sistema', icon: CrudNavIcon },"
+            "{ title: 'Configuracoes Sistema', href: '/configuracoes-sistema', icon: CrudNavIcon },",
+            self::ICON_IMPORT
         );
 
         // Substituir só a linha do `href:` deixaria as irmãs órfãs e o TSX inválido —
         // gravado sem pergunta e sem backup. Recusar devolve o controle a quem chama,
         // que já imprime o trecho para colar à mão.
         $this->assertNull($result);
+    }
+
+    public function test_upsert_reintroduz_o_import_do_icone_que_sumiu(): void
+    {
+        // O usuário troca o ícone do item, e um organizador de imports leva embora o
+        // `CrudNavIcon` que ficou órfão. A geração seguinte reescreve `icon:
+        // CrudNavIcon` — sem o import de volta, o arquivo dele para de compilar, e o
+        // `install()`, que é quem garantia o import, não roda mais: a região já existe.
+        $content = <<<'TSX'
+        import { LayoutGrid } from 'lucide-react';
+        import type { NavItem } from '@/types';
+
+        const mainNavItems: NavItem[] = [
+            { title: 'Dashboard', href: dashboard(), icon: LayoutGrid },
+            // crud:nav:start
+            { title: 'Clientes', href: '/clientes', icon: Users },
+            // crud:nav:end
+        ];
+        TSX;
+
+        $result = $this->region()->upsert(
+            $content,
+            "'/clientes'",
+            "{ title: 'Clientes', href: '/clientes', icon: CrudNavIcon },",
+            "import { List as CrudNavIcon } from 'lucide-react';"
+        );
+
+        $this->assertNotNull($result);
+        $this->assertSame(
+            1,
+            substr_count($result, "import { List as CrudNavIcon } from 'lucide-react';")
+        );
     }
 
     public function test_reconhece_a_regiao_com_item_em_varias_linhas(): void
@@ -142,21 +188,21 @@ class NavigationRegionTest extends TestCase
     {
         $content = "const mainNavItems: NavItem[] = [\n];\n";
 
-        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item'));
+        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item', self::ICON_IMPORT));
     }
 
     public function test_devolve_null_quando_falta_o_marcador_final(): void
     {
         $content = "const mainNavItems: NavItem[] = [\n    // crud:nav:start\n];\n";
 
-        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item'));
+        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item', self::ICON_IMPORT));
     }
 
     public function test_devolve_null_quando_o_marcador_final_vem_antes_do_inicial(): void
     {
         $content = "// crud:nav:end\n// crud:nav:start\n";
 
-        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item'));
+        $this->assertNull($this->region()->upsert($content, "'/clientes'", 'item', self::ICON_IMPORT));
     }
 
     private const OPEN_PATTERN = '/^const mainNavItems\s*:/';
@@ -313,7 +359,8 @@ class NavigationRegionTest extends TestCase
         $result = $region->upsert(
             $installed,
             "'/clientes'",
-            "{ title: 'Clientes', href: '/clientes', icon: List },"
+            "{ title: 'Clientes', href: '/clientes', icon: List },",
+            self::ICON_IMPORT
         );
 
         $this->assertNotNull($result);

@@ -1352,7 +1352,7 @@ JSX;
             $content = $installed;
         }
 
-        $updated = $region->upsert($content, $key, $item);
+        $updated = $region->upsert($content, $key, $item, $config['import']);
 
         if ($updated === null) {
             warning($region->hasMultilineItem($content)
