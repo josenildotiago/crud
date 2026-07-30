@@ -136,7 +136,10 @@ abstract class GeneratorCommand extends Command
     /**
      * Generate the views.
      *
-     * @return $this
+     * Não é `$this`: a implementação delega para o builder da stack e devolve o que ele
+     * devolver — mesma instância, mas o tipo que o chamador vê é a classe.
+     *
+     * @return self
      */
     abstract protected function buildViews();
 
@@ -573,7 +576,6 @@ abstract class GeneratorCommand extends Command
             '{{properties}}' => $properties,
             '{{softDeletesNamespace}}' => $softDeletesNamespace,
             '{{softDeletes}}' => $softDeletes,
-            '{{relations}}' => $relations,
         ];
     }
 

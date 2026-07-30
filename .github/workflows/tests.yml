@@ -86,6 +86,25 @@ jobs:
 
       - run: vendor/bin/phpunit
 
+  static:
+    name: phpstan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+          tools: composer:v2
+
+      - run: composer update --prefer-dist --no-interaction
+
+      # Um job só: o `phpVersion` do phpstan.neon cobre 8.2 a 8.4 nesta execução, e a
+      # análise não depende do Testbench resolvido em cada braço da matrix.
+      - run: vendor/bin/phpstan analyse --no-progress
+
   package:
     name: composer validate
     runs-on: ubuntu-latest

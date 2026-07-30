@@ -30,7 +30,8 @@ class CrudManager
         // This is a simplified parser - in a real implementation you might want to use a proper TS parser
         preg_match_all('/id:\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
 
-        return collect($matches[1] ?? []);
+        // `preg_match_all` sempre popula o grupo 1, mesmo sem casar nada: o `??` era morto.
+        return collect($matches[1]);
     }
 
     /**
