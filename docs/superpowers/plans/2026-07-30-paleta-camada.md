@@ -1237,7 +1237,7 @@ git commit -m "Install the palette files into the user's project"
 
 **Interfaces:**
 - Consumes: `MarkedRegion` (Task 1), o comando da Task 3.
-- Produces: métodos privados `editAppCss()`, `editAppTsx()`, `editAppearancePage()`, cada um devolvendo `bool` (escreveu ou não).
+- Produces: métodos privados `editAppCss()`, `editAppTsx()`, `editAppearancePage()`, todos `void` — nada consome o resultado, e o relato do que ficou de fora sai pelo console.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -1543,7 +1543,12 @@ E os três métodos:
             return;
         }
 
-        $comImport = MarkedRegion::insertImport($novo, $import, '@/components/crud-palette-selector');
+        // A chave de ordenação tem que ser o módulo deste import, não um literal: no vue e
+        // no svelte o seletor é `@/components/CrudPaletteSelector.vue`/`.svelte`, e
+        // posicioná-lo pela string do react o joga para o lugar errado do bloco.
+        preg_match("/from '([^']+)';$/", $import, $modulo);
+
+        $comImport = MarkedRegion::insertImport($novo, $import, $modulo[1]);
 
         if ($comImport === null) {
             $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
