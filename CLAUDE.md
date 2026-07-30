@@ -63,6 +63,7 @@ src/
   CrudServiceProvider.php     # merge de crud.php + themes.php; singleton 'crud'; publishes
   CrudManager.php             # binding 'crud'; detecta sistema de temas instalado
   ModelGenerator.php          # infere relacionamentos Eloquent do schema
+  TableInspection.php          # pré-voo: o que na tabela o código gerado não suporta
   Facades/Crud.php
   config/crud.php             # config mora em src/config/, não em config/
   config/themes.php
@@ -113,7 +114,10 @@ junto ou avisar — não fingir que não existe.
   `$this->template ??= $this->option('stack')` e valida contra `InstallCommand::STACKS`;
   `afterPromptingForMissingArguments()` pula o prompt quando `--stack` vem explícito na
   linha de comando. Coberto por `tests/Unit/InstallCommandStackTest.php`.
-- `debugColumns()` roda em toda geração, despejando JSON no terminal.
+- ~~`debugColumns()` roda em toda geração, despejando JSON no terminal.~~ Resolvido: o
+  método saiu, e o pré-voo da tabela (`src/TableInspection.php`, chamado no `handle()`
+  antes da primeira escrita) ocupou o lugar com algo que serve — ver
+  `docs/superpowers/specs/2026-07-29-preflight-tabela-design.md`.
 - `InstallCommand::STACKS` é `['react', 'vue', 'blade']` — `svelte` e `livewire` são
   rejeitadas no `handle()` antes de qualquer geração.
 - **As respostas interativas de `--api` e `--theme` são descartadas** — mesma raiz do bug

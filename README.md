@@ -139,6 +139,18 @@ pergunta antes de criar a região. Para desligar:
 ],
 ```
 
+#### Pré-voo da tabela
+
+Antes de escrever qualquer arquivo, o pacote confere se a tabela tem o que o código
+gerado assume: `created_at`/`updated_at`, chave primária chamada `id`, e nomes de coluna
+que sejam identificadores válidos. Se algo falta, ele lista os avisos e pergunta se você
+quer gerar mesmo assim — **avisa, não bloqueia**, porque gerar em cima de uma tabela
+legada e ajustar o Model à mão depois é caso legítimo. Numa tabela criada pelas migrations
+do Laravel ele não diz nada.
+
+Em modo não interativo (`--no-interaction`, script, CI) ele imprime os avisos, segue, e
+repete o resumo no fim — por sua conta e risco.
+
 ## 🎨 Sistema de Temas
 
 ### Como Usar no React

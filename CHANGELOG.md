@@ -1,5 +1,24 @@
 # Changelog
 
+## [Não lançado]
+
+### Adicionado
+
+- **Pré-voo da tabela.** Antes de escrever qualquer arquivo, o `getic:install` inspeciona
+  a tabela e avisa o que o código gerado não suporta: falta de `created_at`/`updated_at`
+  (a listagem gerada ordena por `created_at` e falha no banco), chave primária ausente ou
+  com nome diferente de `id` (o `Index` usa `id` para a key da linha e para os links), e
+  coluna cujo nome não é um identificador válido (o Controller e o tipo TypeScript não
+  compilam). **Avisa, não bloqueia:** você confirma e a geração segue. Em modo não
+  interativo ele avisa, segue, e repete o resumo no fim da execução. Numa tabela
+  convencional é silencioso — não pergunta nada.
+
+### Removido
+
+- `debugColumns()`, que despejava o JSON de todas as colunas no terminal em toda geração,
+  e o fazia depois de os arquivos já estarem escritos. O pré-voo entrega, antes da
+  escrita, o que ele fingia entregar.
+
 ## [3.2.0] - 2026-07-29
 
 ### ⚠️ Leia antes de atualizar
