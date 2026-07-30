@@ -43,16 +43,20 @@ da geração segue.
 Quem quer a saída antiga passa `--stack=blade`, mas note que `buildBladeViews()` ainda é
 vazio: só o Controller sai, sem views.
 
-**Arquivos que o pacote escreve ou edita no seu projeto** (stack `react`):
+**Arquivos que o pacote escreve ou edita no seu projeto** (stack `react`). O Controller e o
+Model são a exceção, não a regra: só eles perguntam antes de sobrescrever. Regerar uma
+tabela substitui o arquivo de rotas e as páginas `.tsx` sem aviso, então guarde à parte o
+que editou neles.
 
 | Caminho | O que acontece |
 |---|---|
 | `app/Http/Controllers/{Model}Controller.php` | criado (pergunta antes de sobrescrever) |
 | `app/Models/{Model}.php` | criado (pergunta antes de sobrescrever) |
-| `routes/{model}.php` | criado |
+| `routes/{model}.php` | criado — e **sobrescrito sem perguntar** se já existir |
 | `routes/web.php` | ganha um `require` idempotente |
-| `resources/js/pages/{Model}/*.tsx` | criados |
+| `resources/js/pages/{Model}/*.tsx` | criados — e **sobrescritos sem perguntar** se já existirem |
 | `resources/js/types/{model}.ts` ou `types/index.d.ts` | criado, conforme o layout do app |
+| `resources/js/types/paginated.ts` | criado só se faltar, nunca sobrescrito |
 | `resources/js/types/index.ts` | ganha `export type * from './{model}';` — **editado sem perguntar** |
 | `resources/js/components/ui/table.tsx`, `ui/pagination.tsx` | criados só se faltarem, nunca sobrescritos |
 | `resources/js/components/app-sidebar.tsx` | ganha a região `crud:nav:*` (pergunta na primeira vez) |
@@ -135,7 +139,8 @@ vazio: só o Controller sai, sem views.
   gerado nunca declarava: clicar no link dava 404.
 - `--route` movia as rotas mas não o link da sidebar nem os breadcrumbs dos componentes
   `Index`, `Create`, `Edit` e `Show` — sete lugares recalculavam o segmento da URL por
-  conta própria. Agora todos leem a mesma fonte.
+  conta própria. Agora todos leem a mesma fonte, o que inclui as rotas de `--api`: o
+  segmento de `Route::apiResource` passa a acompanhar a flag, e não só as rotas web.
 - O import do ícone na sidebar vinha sem apelido. Num projeto que já importava `List` do
   `lucide-react`, o identificador ficava ligado duas vezes: erro de compilação em
   TypeScript (`TS2300: Duplicate identifier`) e `SyntaxError` em ES modules. O import

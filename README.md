@@ -325,11 +325,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
     Route::get('/products/create', [ProductController::class, 'create'])->name('products.create');
     Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+    // Precisa vir antes da rota curinga abaixo, senão `bulk-destroy` é lido como {product}.
+    Route::delete('/products/bulk-destroy', [ProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
     Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
     Route::get('/products/{product}/edit', [ProductController::class, 'edit'])->name('products.edit');
     Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update');
     Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
-    Route::delete('/products/bulk', [ProductController::class, 'bulkDestroy'])->name('products.bulk-destroy');
 });
 ```
 
@@ -345,24 +346,40 @@ php artisan vendor:publish --provider="Crud\CrudServiceProvider" --tag="crud-con
 
 Arquivo `config/crud.php`:
 
+Um recorte das chaves que mais se mexe — o arquivo publicado traz todas, comentadas:
+
 ```php
 return [
     'frontend' => 'react', // blade, react, vue
+
     'inertia' => [
         'enabled' => true,
         'components_path' => 'js/pages',
-        'layout_component' => 'Layouts/AppLayout',
+        'layout_component' => 'Layouts/AuthenticatedLayout',
+
+        // 'auto' usa wayfinder se estiver instalado, senão o route() do Ziggy.
+        // Também aceita 'wayfinder' e 'ziggy'. A flag --routes= sobrepõe.
+        'route_helper' => 'auto',
     ],
+
     'api' => [
         'enabled' => true,
+        'prefix' => 'api',
+        'middleware' => ['api'],
         'generate_resources' => true,
         'generate_requests' => true,
     ],
-    'theme_integration' => [
+
+    // Em false, o pacote nunca toca no arquivo de navegação do projeto.
+    'navigation' => [
+        'sidebar' => true,
+    ],
+
+    'themes' => [
         'enabled' => true,
-        'auto_install' => true,
         'default_theme' => 'default',
-    ]
+        'generate_theme_aware_components' => true,
+    ],
 ];
 ```
 

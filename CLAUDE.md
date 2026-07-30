@@ -163,9 +163,11 @@ junto ou avisar — não fingir que não existe.
   análise de 24/08/2025 sobre a 2.1.3 e não descreve o pacote atual.
 - ~~README manda `vendor:publish --tag="config"`.~~ Corrigido em 29/07/2026: a tag real,
   `crud-config`, está no README.
-- `src/stubs/routes.stub` é arquivo morto: os únicos stubs de rota carregados são
-  `ModelRoutes` (`InstallCommand.php:433`) e `ApiRoutes` (`:558`). Ele declara rotas num
-  formato antigo (`{{modelNameLowerCase}}-index`) que nada gera mais.
+- `src/stubs/routes.stub` e `src/stubs/InertiaRoutes.stub` são arquivos mortos: os únicos
+  stubs de rota carregados são `ModelRoutes` e `ApiRoutes`. O `routes.stub` declara rotas
+  num formato antigo (`{{modelNameLowerCase}}-index`) que nada gera mais; o
+  `InertiaRoutes.stub` não é citado em lugar nenhum (`grep -rn InertiaRoutes src/` devolve
+  zero).
 - Prefixo `getic:` no comando principal vs `crud:` nos outros três.
 - `test_install.php` solto na raiz.
 
@@ -185,10 +187,12 @@ vendor/bin/phpunit          # tests/Unit inteiro, menos CrudPackageTest.php
 composer validate
 ```
 
-`.github/workflows/tests.yml` cobre a faixa que o `composer.json` promete: 7 jobs, PHP
-8.2/8.3/8.4 × Testbench ^10 (Laravel 12) / ^11 (Laravel 13), mais dois jobs
-`--prefer-lowest` que provam o piso do constraint. Dois limites que a matrix codifica e
-que não são óbvios:
+`.github/workflows/tests.yml` cobre a faixa que o `composer.json` promete: 8 jobs, PHP
+8.2/8.3/8.4 × Testbench ^10 (Laravel 12) / ^11 (Laravel 13), mais três jobs
+`--prefer-lowest`. Eles provam o piso do constraint só onde o pacote é a restrição
+vinculante — vale para os `illuminate/*`, não vale para `symfony/console` e
+`symfony/process`, cujo piso `^7.0` o framework já eleva antes de chegar em nós. Dois
+limites que a matrix codifica e que não são óbvios:
 
 - **Laravel 13 exige PHP `^8.3`** — a combinação PHP 8.2 + Laravel 13 não existe, e é por
   isso que o `php: >=8.2.0` do composer.json só é honesto via Laravel 12.
