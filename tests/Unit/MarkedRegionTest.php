@@ -156,4 +156,39 @@ class MarkedRegionTest extends TestCase
             MarkedRegion::insertImport('const a = 1;', "import X from '@/x';", '@/x')
         );
     }
+
+    public function test_replace_com_marcadores_na_mesma_linha_devolve_null(): void
+    {
+        $content = "prefix {/* crud:palette:start */} middle {/* crud:palette:end */} suffix";
+
+        $this->assertNull(
+            $this->region()->replace($content, '<Z />')
+        );
+    }
+
+    public function test_remove_com_marcadores_na_mesma_linha_devolve_null(): void
+    {
+        $content = "prefix {/* crud:palette:start */} middle {/* crud:palette:end */} suffix";
+
+        $this->assertNull(
+            $this->region()->remove($content)
+        );
+    }
+
+    public function test_casa_a_primeira_ocorrencia_de_marcador_inicial_com_orfao_antes(): void
+    {
+        $content = "{/* crud:palette:start */}\n"
+            . "{/* crud:palette:end */}\n"
+            . "<AppearanceTabs />\n"
+            . "{/* crud:palette:start */}\n"
+            . "<Original />\n"
+            . "{/* crud:palette:end */}";
+
+        $region = $this->region();
+        $result = $region->replace($content, '<Novo />');
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString('<Novo />', $result);
+        $this->assertStringContainsString('<Original />', $result);
+    }
 }

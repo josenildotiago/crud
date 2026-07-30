@@ -64,6 +64,9 @@ final class MarkedRegion
 
     /**
      * Troca o conteúdo entre os marcadores, preservando o recuo deles.
+     *
+     * Devolve null se a região não existir, estiver malformada ou os marcadores
+     * estiverem na mesma linha.
      */
     public function replace(string $content, string $block): ?string
     {
@@ -72,21 +75,9 @@ final class MarkedRegion
         }
 
         $lines = explode("\n", $content);
-        $start = null;
-        $end = null;
+        [$start, $end] = $this->locate($lines);
 
-        foreach ($lines as $number => $line) {
-            if (str_contains($line, $this->startMarker)) {
-                $start = $number;
-            }
-
-            if (str_contains($line, $this->endMarker)) {
-                $end = $number;
-                break;
-            }
-        }
-
-        if ($start === null || $end === null || $end < $start) {
+        if ($start === null || $end === null || $end === $start) {
             return null;
         }
 
@@ -104,6 +95,9 @@ final class MarkedRegion
 
     /**
      * Remove a região inteira, marcadores inclusive.
+     *
+     * Devolve null se a região não existir, estiver malformada ou os marcadores
+     * estiverem na mesma linha.
      */
     public function remove(string $content): ?string
     {
@@ -112,27 +106,43 @@ final class MarkedRegion
         }
 
         $lines = explode("\n", $content);
-        $start = null;
-        $end = null;
+        [$start, $end] = $this->locate($lines);
 
-        foreach ($lines as $number => $line) {
-            if (str_contains($line, $this->startMarker)) {
-                $start = $number;
-            }
-
-            if (str_contains($line, $this->endMarker)) {
-                $end = $number;
-                break;
-            }
-        }
-
-        if ($start === null || $end === null || $end < $start) {
+        if ($start === null || $end === null || $end === $start) {
             return null;
         }
 
         array_splice($lines, $start, $end - $start + 1);
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Índices das linhas dos marcadores, ou [null, null] se a região for inválida.
+     *
+     * O marcador final só conta depois do inicial, então `end` antes de `start` cai
+     * no mesmo caminho de "não encontrado". A primeira ocorrência do marcador inicial
+     * é sempre usada (guard `$startLine === null &&`).
+     *
+     * @param array<int, string> $lines
+     * @return array{0: int|null, 1: int|null}
+     */
+    private function locate(array $lines): array
+    {
+        $startLine = null;
+
+        foreach ($lines as $i => $line) {
+            if ($startLine === null && str_contains($line, $this->startMarker)) {
+                $startLine = $i;
+                continue;
+            }
+
+            if ($startLine !== null && str_contains($line, $this->endMarker)) {
+                return [$startLine, $i];
+            }
+        }
+
+        return [null, null];
     }
 
     /**
