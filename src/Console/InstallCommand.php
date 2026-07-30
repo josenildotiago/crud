@@ -18,6 +18,9 @@ use function Laravel\Prompts\text;
 use function Laravel\Prompts\info;
 use function Laravel\Prompts\warning;
 
+/**
+ * @phpstan-import-type Finding from \Crud\TableInspection
+ */
 class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
 {
     /**
@@ -205,7 +208,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     /**
      * Frase em português para cada achado do pré-voo.
      *
-     * @param array{code: string, columns: array<int, string>} $finding
+     * @param Finding $finding
      */
     protected function preflightMessage(array $finding): string
     {

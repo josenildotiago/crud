@@ -8,6 +8,20 @@ namespace Crud;
  * Só dados: recebe as colunas no formato de `SHOW COLUMNS` e devolve achados com um
  * código. Não conhece console, não escreve frase e não decide nada — quem traduz para
  * português e quem pergunta é o comando. Assim a prosa muda sem tocar em teste.
+ *
+ * Os códigos são um tipo fechado de propósito: `InstallCommand::preflightMessage()` casa
+ * um `match` sem `default` em cima deles. Declarar o código novo na união abaixo sem
+ * escrever a frase lá é erro de análise estática, em vez de `UnhandledMatchError` no
+ * terminal do usuário.
+ *
+ * O que o PHPStan **não** pega: emitir um `code` daqui que não esteja na união. O tipo do
+ * `$findings` acumulado é largo demais para ele comparar. Enquanto os códigos forem string
+ * solta, essa ponta é manual — fechar as duas exigiria enum, o que mexe nos testes.
+ *
+ * @phpstan-type Finding array{
+ *     code: 'timestamps'|'primary-key-missing'|'primary-key-not-id'|'column-identifier',
+ *     columns: array<int, string>
+ * }
  */
 final class TableInspection
 {
@@ -20,7 +34,7 @@ final class TableInspection
 
     /**
      * @param array<int, object> $columns Formato de `SHOW COLUMNS`.
-     * @return array<int, array{code: string, columns: array<int, string>}>
+     * @return array<int, Finding>
      */
     public function inspect(array $columns): array
     {

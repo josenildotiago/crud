@@ -1,0 +1,20 @@
+# Análise estática do código gerador. Os stubs ficam fora por definição: `src/stubs/` é
+# texto com placeholders `{{...}}`, não PHP válido até a substituição, e o PHPStan só varre
+# `*.php` — nenhum stub tem essa extensão.
+#
+# O nível 5 é onde o pacote está limpo hoje. O 6 exige tipo nativo em ~68 pontos dos
+# métodos antigos do GeneratorCommand; subir é trabalho à parte, não gate de release.
+#
+# O que este arquivo compra, concretamente: `return.missing` é reportado desde o nível 0 e
+# é não-ignorável. É o erro que a v4.0.0 levou para o Packagist — `getRouteImports()` sem
+# `return` no caminho do wayfinder, arquivo que `php -l` aceita e que nenhum teste tocava.
+parameters:
+    level: 5
+    paths:
+        - src
+
+    # Uma execução cobre a faixa que o composer.json promete, em vez de um job por versão:
+    # o que é erro em 8.2 e o que passou a ser erro em 8.4 aparecem juntos.
+    phpVersion:
+        min: 80200
+        max: 80400

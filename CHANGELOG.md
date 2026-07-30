@@ -22,6 +22,12 @@
   contrato que faltava — toda chamada `xRoute()` de um stub renderizado tem que estar na
   linha de import daquele componente. É o teste que a 4.0.0 não tinha: `php -l` vê arquivo
   válido, então só execução (ou análise estática) pega retorno faltando.
+- **PHPStan nível 5 virou gate de CI** (`phpstan.neon`, job `phpstan`). É a rede que faltava:
+  `return.missing` é reportado desde o nível 0 e não é suprimível, então o bug da 4.0.0 não
+  passaria do commit. Deixar verde custou quatro correções internas — chave `{{relations}}`
+  duplicada no mapa de replacements, `match` do pré-voo sem `default` (um código de achado
+  novo era `UnhandledMatchError` no terminal), `@return $this` que o `buildViews()` não
+  cumpre, e um `??` morto no `CrudManager`. Nada disso muda arquivo gerado.
 
 ## [4.0.0] - 2026-07-30
 
