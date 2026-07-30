@@ -280,4 +280,203 @@ class InstallPaletteCommandTest extends TestCase
 
         $this->assertStringNotContainsString('crud:palette:start', $page);
     }
+
+    private function putAppCssVue(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/css/app.css', <<<'CSS'
+        @import 'tailwindcss';
+
+        @import 'tw-animate-css';
+
+        @custom-variant dark (&:is(.dark *));
+        CSS);
+    }
+
+    private function putAppTsVue(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/app.ts', <<<'TS'
+        import { createApp } from 'vue';
+        import { initializeTheme } from '@/hooks/use-appearance';
+        import AppLayout from '@/layouts/AppLayout.vue';
+
+        createApp({}).mount('#app');
+
+        // This will set light / dark mode on load...
+        initializeTheme();
+        TS);
+    }
+
+    private function putAppearancePageVue(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/Appearance.vue', <<<'VUE'
+        <template>
+            <div class="space-y-6">
+                <AppearanceTabs />
+            </div>
+        </template>
+
+        <script setup lang="ts">
+        import AppearanceTabs from '@/components/appearance-tabs';
+        </script>
+        VUE);
+    }
+
+    private function putAppearancePageVueWithCrudList(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/Appearance.vue', <<<'VUE'
+        <template>
+            <div class="space-y-6">
+                <AppearanceTabs />
+            </div>
+        </template>
+
+        <script setup lang="ts">
+        import AppearanceTabs from '@/components/appearance-tabs';
+        import CrudList from '@/components/CrudList.vue';
+        import Heading from '@/components/Heading.vue';
+        </script>
+        VUE);
+    }
+
+    private function putAppearancePageSvelte(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/Appearance.svelte', <<<'SVELTE'
+        <script>
+            import AppearanceTabs from '@/components/appearance-tabs';
+        </script>
+
+        <div class="space-y-6">
+            <AppearanceTabs />
+        </div>
+        SVELTE);
+    }
+
+    public function test_vue_acrescenta_o_import_do_css(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageVue();
+        $this->putAppCssVue();
+
+        $this->artisan('crud:install-palette --stack=vue')->assertExitCode(0);
+
+        $css = $files->get($this->base . '/resources/css/app.css');
+
+        $this->assertStringContainsString(
+            "@import 'tw-animate-css';\n@import './crud-palettes.css';",
+            $css
+        );
+    }
+
+    public function test_vue_acrescenta_a_chamada_de_inicializacao_no_app_ts(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageVue();
+        $this->putAppTsVue();
+
+        $this->artisan('crud:install-palette --stack=vue')->assertExitCode(0);
+
+        $ts = $files->get($this->base . '/resources/js/app.ts');
+
+        $this->assertStringContainsString(
+            "import AppLayout from '@/layouts/AppLayout.vue';\nimport { initializeCrudPalette } from '@/lib/crud-palette';",
+            $ts
+        );
+        $this->assertStringContainsString("initializeTheme();\ninitializeCrudPalette();", $ts);
+    }
+
+    public function test_vue_insere_o_seletor_na_pagina_de_aparencia(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageVue();
+
+        $this->artisan('crud:install-palette --stack=vue')->assertExitCode(0);
+
+        $page = $files->get($this->base . '/resources/js/pages/settings/Appearance.vue');
+
+        $this->assertStringContainsString('<!-- crud:palette:start -->', $page);
+        $this->assertStringContainsString('<CrudPaletteSelector />', $page);
+        $this->assertStringContainsString(
+            "import CrudPaletteSelector from '@/components/CrudPaletteSelector.vue';",
+            $page
+        );
+    }
+
+    public function test_vue_import_em_ordem_correta_com_vizinhos(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageVueWithCrudList();
+
+        $this->artisan('crud:install-palette --stack=vue')->assertExitCode(0);
+
+        $page = $files->get($this->base . '/resources/js/pages/settings/Appearance.vue');
+
+        // A ordem esperada: AppearanceTabs, CrudList, CrudPaletteSelector, Heading
+        // CrudPaletteSelector vem depois de CrudList (C... vs C...) por ordem alfabética
+        $lines = explode("\n", $page);
+        $imports = array_filter($lines, fn ($line) => str_starts_with(trim($line), 'import'));
+
+        $importsStr = implode("\n", $imports);
+
+        $this->assertStringContainsString(
+            "import CrudList from '@/components/CrudList.vue';\nimport CrudPaletteSelector from '@/components/CrudPaletteSelector.vue';",
+            $importsStr
+        );
+    }
+
+    public function test_svelte_acrescenta_o_import_do_css(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageSvelte();
+        $this->putAppCssVue();
+
+        $this->artisan('crud:install-palette --stack=svelte')->assertExitCode(0);
+
+        $css = $files->get($this->base . '/resources/css/app.css');
+
+        $this->assertStringContainsString(
+            "@import 'tw-animate-css';\n@import './crud-palettes.css';",
+            $css
+        );
+    }
+
+    public function test_svelte_acrescenta_a_chamada_de_inicializacao_no_app_ts(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageSvelte();
+        $this->putAppTsVue();
+
+        $this->artisan('crud:install-palette --stack=svelte')->assertExitCode(0);
+
+        $ts = $files->get($this->base . '/resources/js/app.ts');
+
+        $this->assertStringContainsString(
+            "import AppLayout from '@/layouts/AppLayout.vue';\nimport { initializeCrudPalette } from '@/lib/crud-palette';",
+            $ts
+        );
+        $this->assertStringContainsString("initializeTheme();\ninitializeCrudPalette();", $ts);
+    }
+
+    public function test_svelte_insere_o_seletor_na_pagina_de_aparencia(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $this->putAppearancePageSvelte();
+
+        $this->artisan('crud:install-palette --stack=svelte')->assertExitCode(0);
+
+        $page = $files->get($this->base . '/resources/js/pages/settings/Appearance.svelte');
+
+        $this->assertStringContainsString('<!-- crud:palette:start -->', $page);
+        $this->assertStringContainsString('<CrudPaletteSelector />', $page);
+        $this->assertStringContainsString(
+            "import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';",
+            $page
+        );
+    }
 }

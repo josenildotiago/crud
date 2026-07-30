@@ -299,7 +299,18 @@ class InstallPaletteCommand extends Command
             return;
         }
 
-        $comImport = MarkedRegion::insertImport($novo, $import, '@/components/crud-palette-selector');
+        // Extrai o módulo da linha de import para usar a chave correta de ordenação.
+        // A linha tem forma `import X from '@/components/...'`, e precisamos da string
+        // depois do `from`.
+        $modulo = $this->extractModule($import);
+
+        if ($modulo === null) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $comImport = MarkedRegion::insertImport($novo, $import, $modulo);
 
         if ($comImport === null) {
             $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
@@ -309,6 +320,25 @@ class InstallPaletteCommand extends Command
 
         $this->files->put($caminho, $comImport);
         $this->components->info('Atualizado: resources/' . $config['page']);
+    }
+
+    /**
+     * Extrai o módulo (caminho após `from`) de uma linha de import.
+     *
+     * Exemplo: `import X from '@/components/CrudPaletteSelector.vue'` devolve
+     * `@/components/CrudPaletteSelector.vue`.
+     *
+     * Devolve null se a linha não for um import válido.
+     */
+    private function extractModule(string $importLine): ?string
+    {
+        $pattern = '/^\s*import\s.+\bfrom\s+[\'"](?<module>[^\'"]+)[\'"];$/';
+
+        if (preg_match($pattern, $importLine, $match) !== 1) {
+            return null;
+        }
+
+        return $match['module'];
     }
 
     /**
