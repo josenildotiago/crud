@@ -770,6 +770,9 @@ class InstallPaletteCommandTest extends TestCase
         $this->base = sys_get_temp_dir() . '/crud-palette-' . uniqid();
         (new Filesystem())->makeDirectory($this->base . '/resources/js/pages/settings', 0755, true);
         (new Filesystem())->makeDirectory($this->base . '/resources/css', 0755, true);
+        // Sem isto, a guarda de stack pergunta antes de instalar e todo teste desta classe
+        // cai nela. O caso "projeto sem react" apaga este arquivo.
+        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
         $this->app->setBasePath($this->base);
     }
 
@@ -912,12 +915,79 @@ use Crud\Console\InstallPaletteCommand;
             ]);
 ```
 
-- [ ] **Step 5: Rodar até passar**
+- [ ] **Step 5: Escrever o teste da guarda de stack**
+
+O seletor é `.tsx`. Num starter kit vue, svelte ou livewire ele seria peso morto, e as três
+edições cairiam todas no caminho de "não consegui editar". O comando avisa e deixa a decisão
+com o usuário — o mesmo "avisa, não bloqueia" do pré-voo da tabela.
+
+```php
+    public function test_projeto_sem_react_avisa_antes(): void
+    {
+        (new Filesystem())->delete($this->base . '/resources/js/app.tsx');
+
+        $this->artisan('crud:install-palette')
+            ->expectsConfirmation(
+                'Não encontrei `resources/js/app.tsx`: o seletor é React e esta stack ainda não tem o dela. Instalar assim mesmo?',
+                'no'
+            )
+            ->assertExitCode(0);
+
+        $this->assertFalse((new Filesystem())->exists($this->base . '/resources/js/lib/crud-palette.ts'));
+    }
+
+    public function test_projeto_react_nao_pergunta_da_stack(): void
+    {
+        $this->artisan('crud:install-palette')
+            ->doesntExpectOutputToContain('Instalar assim mesmo?')
+            ->assertExitCode(0);
+    }
+```
+
+- [ ] **Step 6: Implementar a guarda**
+
+No começo do `handle()`, antes do `info('🎨 Instalando a camada de paleta...')`:
+
+```php
+        if (!$this->isReactProject() && !confirm(
+            'Não encontrei `resources/js/app.tsx`: o seletor é React e esta stack ainda não tem o dela. Instalar assim mesmo?',
+            default: false
+        )) {
+            info('Instalação cancelada.');
+
+            return self::SUCCESS;
+        }
+```
+
+E o método:
+
+```php
+    /**
+     * O CSS e o `crud-palette.ts` servem qualquer stack; o seletor, não — ele é TSX.
+     */
+    private function isReactProject(): bool
+    {
+        return $this->files->exists(resource_path('js/app.tsx'))
+            || $this->files->exists(resource_path('js/app.jsx'));
+    }
+```
+
+- [ ] **Step 7: Rodar até passar**
 
 Run: `vendor/bin/phpunit --filter InstallPaletteCommandTest`
-Expected: PASS, 3 testes.
+Expected: PASS, 5 testes.
 
-- [ ] **Step 6: Commit**
+Atenção ao escrever os outros testes desta tarefa e das seguintes: os que esperam
+instalação bem-sucedida precisam de `resources/js/app.tsx` no projeto temporário, senão caem
+na guarda. Acrescentar ao `setUp()`:
+
+```php
+        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
+```
+
+E o `test_projeto_sem_react_avisa_antes` apaga esse arquivo antes de rodar.
+
+- [ ] **Step 8: Commit**
 
 ```bash
 git add src/Console/InstallPaletteCommand.php src/CrudServiceProvider.php tests/Unit/InstallPaletteCommandTest.php
@@ -1498,6 +1568,8 @@ class CreatePaletteCommandTest extends TestCase
 
         $this->base = sys_get_temp_dir() . '/crud-create-palette-' . uniqid();
         (new Filesystem())->makeDirectory($this->base . '/resources/css', 0755, true);
+        (new Filesystem())->makeDirectory($this->base . '/resources/js', 0755, true);
+        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
         $this->app->setBasePath($this->base);
         $this->artisan('crud:install-palette')->run();
     }
@@ -1952,12 +2024,14 @@ Tirar `--theme` de todos os exemplos de `getic:install`.
 
 Na tabela de mapa, trocar `InstallThemeSystemCommand.php` e `CreateThemeCommand.php` por `InstallPaletteCommand.php` e `CreatePaletteCommand.php`, e acrescentar `MarkedRegion.php`. Em "Pendências conhecidas", apagar o item do `--theme` descartado e o da tag `crud-assets`. Em "API pública", trocar a tag `theme-system` por `crud-palette`.
 
-- [ ] **Step 4: Verificação manual nos starter kits**
+- [ ] **Step 4: Verificação manual no starter kit react**
 
-Para cada um dos quatro projetos em `/home/sp1d3r/Documentos/projetos/pacotes/laravel/`:
+Só o `projeto-exemplo-react`: esta release entrega a paleta para a stack `react` e mais
+nenhuma. Vue, svelte e livewire entram numa release seguinte, e o que falta lá é um stub de
+seletor por stack — o CSS e o `crud-palette.ts` valem para as quatro sem alteração.
 
 ```bash
-cd projeto-exemplo-react
+cd /home/sp1d3r/Documentos/projetos/pacotes/laravel/projeto-exemplo-react
 tar -czf /tmp/antes.tgz resources package.json
 php artisan crud:install-palette
 npm run types:check
