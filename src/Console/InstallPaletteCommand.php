@@ -2,6 +2,7 @@
 
 namespace Crud\Console;
 
+use Crud\MarkedRegion;
 use Illuminate\Console\Command;
 use Illuminate\Filesystem\Filesystem;
 
@@ -88,6 +89,13 @@ class InstallPaletteCommand extends Command
 
         $this->writeStub(self::STACKS[$this->stack]['stub'], self::STACKS[$this->stack]['target']);
 
+        $this->editAppCss();
+        $this->editAppTsx();
+
+        if (config('crud.palette.settings_page', true)) {
+            $this->editAppearancePage();
+        }
+
         info('✅ Paleta instalada.');
 
         return self::SUCCESS;
@@ -169,5 +177,148 @@ class InstallPaletteCommand extends Command
         $this->files->put($caminho, $this->files->get(__DIR__ . '/../stubs/palette/' . $stub));
 
         $this->components->info("Criado: resources/{$destino}");
+    }
+
+    /**
+     * Carrega as paletas pelo `app.css`, depois do último `@import` do topo.
+     *
+     * `@import` em CSS só vale antes das outras regras, por isso a âncora é o último
+     * import e não o fim do arquivo.
+     */
+    private function editAppCss(): void
+    {
+        $caminho = resource_path('css/app.css');
+        $linha = "@import './crud-palettes.css';";
+
+        if (!$this->files->exists($caminho)) {
+            $this->naoEditou('resources/css/app.css', $linha);
+
+            return;
+        }
+
+        $conteudo = $this->files->get($caminho);
+
+        if (str_contains($conteudo, $linha)) {
+            return;
+        }
+
+        $linhas = explode("\n", $conteudo);
+        $ultimo = null;
+
+        foreach ($linhas as $numero => $atual) {
+            if (str_starts_with(trim($atual), '@import ')) {
+                $ultimo = $numero;
+            }
+        }
+
+        if ($ultimo === null) {
+            $this->naoEditou('resources/css/app.css', $linha);
+
+            return;
+        }
+
+        array_splice($linhas, $ultimo + 1, 0, [$linha]);
+
+        $this->files->put($caminho, implode("\n", $linhas));
+        $this->components->info('Atualizado: resources/css/app.css');
+    }
+
+    /**
+     * Aplica a paleta antes da primeira pintura, no mesmo ponto onde o starter kit já
+     * chama `initializeTheme()`.
+     */
+    private function editAppTsx(): void
+    {
+        $caminho = resource_path(self::STACKS[$this->stack]['entry']);
+        $import = "import { initializeCrudPalette } from '@/lib/crud-palette';";
+        $chamada = 'initializeCrudPalette();';
+        // O import do módulo de ids é igual nos três: é TypeScript puro dos dois lados.
+
+        if (!$this->files->exists($caminho)) {
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
+
+            return;
+        }
+
+        $conteudo = $this->files->get($caminho);
+
+        if (str_contains($conteudo, $chamada)) {
+            return;
+        }
+
+        if (!str_contains($conteudo, 'initializeTheme();')) {
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
+
+            return;
+        }
+
+        $comImport = MarkedRegion::insertImport($conteudo, $import, '@/lib/crud-palette');
+
+        if ($comImport === null) {
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
+
+            return;
+        }
+
+        $this->files->put(
+            $caminho,
+            str_replace('initializeTheme();', "initializeTheme();\n" . $chamada, $comImport)
+        );
+
+        $this->components->info('Atualizado: resources/' . self::STACKS[$this->stack]['entry']);
+    }
+
+    /**
+     * Põe o seletor junto do claro/escuro, dentro de uma região que o pacote gerencia.
+     */
+    private function editAppearancePage(): void
+    {
+        $config = self::STACKS[$this->stack];
+        $caminho = resource_path($config['page']);
+        $import = $config['import'];
+        // O elemento é o mesmo nas três stacks; o que muda é a sintaxe do comentário que
+        // delimita a região — `{/* */}` em TSX, `<!-- -->` em Vue e Svelte.
+        $bloco = '<CrudPaletteSelector />';
+        $region = new MarkedRegion($config['markers'][0], $config['markers'][1]);
+
+        if (!$this->files->exists($caminho)) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $conteudo = $this->files->get($caminho);
+
+        $novo = $region->exists($conteudo)
+            ? $region->replace($conteudo, $bloco)
+            : $region->install($conteudo, '/<AppearanceTabs\s*\/>/', $bloco);
+
+        if ($novo === null) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $comImport = MarkedRegion::insertImport($novo, $import, '@/components/crud-palette-selector');
+
+        if ($comImport === null) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $this->files->put($caminho, $comImport);
+        $this->components->info('Atualizado: resources/' . $config['page']);
+    }
+
+    /**
+     * Não conseguimos escrever com segurança: o usuário recebe o trecho e decide.
+     */
+    private function naoEditou(string $arquivo, string $trecho): void
+    {
+        $this->components->warn("Não consegui editar {$arquivo}. Acrescente à mão:");
+        $this->line('');
+        $this->line($trecho);
+        $this->line('');
     }
 }

@@ -145,6 +145,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Paleta de cores
+    |--------------------------------------------------------------------------
+    |
+    | `settings_page` controla se o `crud:install-palette` insere o seletor na sua
+    | página de aparência. Desligue se preferir posicionar o componente à mão.
+    |
+    */
+    'palette' => [
+        'settings_page' => true,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Theme Integration
     |--------------------------------------------------------------------------
     |

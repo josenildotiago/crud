@@ -148,4 +148,136 @@ class InstallPaletteCommandTest extends TestCase
             ->doesntExpectOutputToContain('assim mesmo?')
             ->assertExitCode(0);
     }
+
+    private function putAppCss(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/css/app.css', <<<'CSS'
+        @import 'tailwindcss';
+
+        @import 'tw-animate-css';
+
+        @custom-variant dark (&:is(.dark *));
+        CSS);
+    }
+
+    private function putAppTsx(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/app.tsx', <<<'TSX'
+        import { createInertiaApp } from '@inertiajs/react';
+        import { initializeTheme } from '@/hooks/use-appearance';
+        import AppLayout from '@/layouts/app-layout';
+
+        createInertiaApp({});
+
+        // This will set light / dark mode on load...
+        initializeTheme();
+        TSX);
+    }
+
+    private function putAppearancePage(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/appearance.tsx', <<<'TSX'
+        import { Head } from '@inertiajs/react';
+        import AppearanceTabs from '@/components/appearance-tabs';
+        import Heading from '@/components/heading';
+
+        export default function Appearance() {
+            return (
+                <div className="space-y-6">
+                    <AppearanceTabs />
+                </div>
+            );
+        }
+        TSX);
+    }
+
+    public function test_acrescenta_o_import_do_css_depois_do_ultimo_import(): void
+    {
+        $this->putAppCss();
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $css = (new Filesystem())->get($this->base . '/resources/css/app.css');
+
+        $this->assertStringContainsString(
+            "@import 'tw-animate-css';\n@import './crud-palettes.css';",
+            $css
+        );
+    }
+
+    public function test_acrescenta_a_chamada_de_inicializacao_no_app_tsx(): void
+    {
+        $this->putAppTsx();
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $tsx = (new Filesystem())->get($this->base . '/resources/js/app.tsx');
+
+        $this->assertStringContainsString(
+            "import AppLayout from '@/layouts/app-layout';\nimport { initializeCrudPalette } from '@/lib/crud-palette';",
+            $tsx
+        );
+        $this->assertStringContainsString("initializeTheme();\ninitializeCrudPalette();", $tsx);
+    }
+
+    public function test_insere_o_seletor_na_pagina_de_aparencia(): void
+    {
+        $this->putAppearancePage();
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $page = (new Filesystem())->get($this->base . '/resources/js/pages/settings/appearance.tsx');
+
+        $this->assertStringContainsString('{/* crud:palette:start */}', $page);
+        $this->assertStringContainsString('<CrudPaletteSelector />', $page);
+        $this->assertStringContainsString(
+            "import { CrudPaletteSelector } from '@/components/crud-palette-selector';",
+            $page
+        );
+    }
+
+    public function test_rodar_duas_vezes_nao_muda_nada(): void
+    {
+        $this->putAppCss();
+        $this->putAppTsx();
+        $this->putAppearancePage();
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $files = new Filesystem();
+        $primeira = [
+            $files->get($this->base . '/resources/css/app.css'),
+            $files->get($this->base . '/resources/js/app.tsx'),
+            $files->get($this->base . '/resources/js/pages/settings/appearance.tsx'),
+        ];
+
+        $this->artisan('crud:install-palette --force')->assertExitCode(0);
+
+        $this->assertSame($primeira[0], $files->get($this->base . '/resources/css/app.css'));
+        $this->assertSame($primeira[1], $files->get($this->base . '/resources/js/app.tsx'));
+        $this->assertSame($primeira[2], $files->get($this->base . '/resources/js/pages/settings/appearance.tsx'));
+    }
+
+    public function test_sem_ancora_nao_escreve_e_avisa(): void
+    {
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/appearance.tsx', '<div>outra coisa</div>');
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $page = (new Filesystem())->get($this->base . '/resources/js/pages/settings/appearance.tsx');
+
+        $this->assertSame('<div>outra coisa</div>', $page);
+    }
+
+    public function test_config_desliga_a_edicao_da_pagina(): void
+    {
+        $this->putAppearancePage();
+        config()->set('crud.palette.settings_page', false);
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $page = (new Filesystem())->get($this->base . '/resources/js/pages/settings/appearance.tsx');
+
+        $this->assertStringNotContainsString('crud:palette:start', $page);
+    }
 }
