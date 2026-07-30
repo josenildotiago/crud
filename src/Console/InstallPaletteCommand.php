@@ -63,6 +63,32 @@ class InstallPaletteCommand extends Command
         ],
     ];
 
+    /**
+     * Arquivos que a versão antiga instalou e que são só dela.
+     *
+     * @var array<int, string>
+     */
+    private const LEGACY_OURS = [
+        'js/lib/themes.ts',
+        'js/components/theme-selector.tsx',
+        'js/components/appearance-dropdown.tsx',
+        'js/components/appearance-theme-selector.tsx',
+        'js/components/theme-demo.tsx',
+        'js/pages/ThemeExample.tsx',
+    ];
+
+    /**
+     * Arquivos do starter kit que a versão antiga sobrescreveu.
+     *
+     * O pacote não apaga nem tenta restaurar: só o git do usuário sabe o que estava lá.
+     *
+     * @var array<int, string>
+     */
+    private const LEGACY_THEIRS = [
+        'js/hooks/use-appearance.tsx',
+        'js/components/appearance-tabs.tsx',
+    ];
+
     /** A stack desta execução, resolvida no `handle()`. */
     private string $stack = 'react';
 
@@ -95,6 +121,8 @@ class InstallPaletteCommand extends Command
         if (config('crud.palette.settings_page', true)) {
             $this->editAppearancePage();
         }
+
+        $this->handleLegacy();
 
         info('✅ Paleta instalada.');
 
@@ -350,5 +378,58 @@ class InstallPaletteCommand extends Command
         $this->line('');
         $this->line($trecho);
         $this->line('');
+    }
+
+    private function handleLegacy(): void
+    {
+        if (!$this->files->exists(resource_path('js/lib/themes.ts'))) {
+            return;
+        }
+
+        $this->components->warn('Encontrei o sistema de temas antigo neste projeto.');
+
+        $sobrescritos = array_values(array_filter(
+            self::LEGACY_THEIRS,
+            fn (string $arquivo): bool => $this->files->exists(resource_path($arquivo))
+        ));
+
+        if ($sobrescritos !== []) {
+            $this->components->warn(
+                'Estes arquivos são do seu starter kit e a versão antiga os substituiu. '
+                    . 'Recupere-os do git:'
+            );
+
+            foreach ($sobrescritos as $arquivo) {
+                $this->line("  git checkout -- resources/{$arquivo}");
+            }
+
+            $this->line('');
+        }
+
+        $nossos = array_values(array_filter(
+            self::LEGACY_OURS,
+            fn (string $arquivo): bool => $this->files->exists(resource_path($arquivo))
+        ));
+
+        if ($nossos === []) {
+            return;
+        }
+
+        $this->components->info('Instalados pela versão antiga do pacote:');
+
+        foreach ($nossos as $arquivo) {
+            $this->line("  resources/{$arquivo}");
+        }
+
+        if (!confirm('Apagar os arquivos que a versão antiga instalou?', default: false)) {
+            return;
+        }
+
+        foreach ($nossos as $arquivo) {
+            $this->files->delete(resource_path($arquivo));
+        }
+
+        $this->components->info('Removidos. Confira também `@radix-ui/react-tabs` no package.json: '
+            . 'a versão antiga acrescentou essa dependência.');
     }
 }

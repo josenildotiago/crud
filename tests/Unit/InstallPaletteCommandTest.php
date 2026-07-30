@@ -479,4 +479,64 @@ class InstallPaletteCommandTest extends TestCase
             $page
         );
     }
+
+    private function putLegacy(): void
+    {
+        $files = new Filesystem();
+        $files->makeDirectory($this->base . '/resources/js/lib', 0755, true);
+        $files->makeDirectory($this->base . '/resources/js/hooks', 0755, true);
+        $files->makeDirectory($this->base . '/resources/js/components', 0755, true);
+        $files->put($this->base . '/resources/js/lib/themes.ts', 'export const themes = [];');
+        $files->put($this->base . '/resources/js/components/theme-selector.tsx', 'antigo');
+        $files->put($this->base . '/resources/js/hooks/use-appearance.tsx', 'do starter kit, sobrescrito');
+    }
+
+    public function test_oferece_apagar_so_os_arquivos_do_pacote(): void
+    {
+        $this->putLegacy();
+
+        $this->artisan('crud:install-palette')
+            ->expectsConfirmation('Apagar os arquivos que a versão antiga instalou?', 'yes')
+            ->assertExitCode(0);
+
+        $files = new Filesystem();
+
+        $this->assertFalse($files->exists($this->base . '/resources/js/lib/themes.ts'));
+        $this->assertFalse($files->exists($this->base . '/resources/js/components/theme-selector.tsx'));
+    }
+
+    public function test_nunca_toca_no_que_e_do_starter_kit(): void
+    {
+        $this->putLegacy();
+
+        $this->artisan('crud:install-palette')
+            ->expectsConfirmation('Apagar os arquivos que a versão antiga instalou?', 'yes')
+            ->assertExitCode(0);
+
+        $files = new Filesystem();
+
+        $this->assertTrue($files->exists($this->base . '/resources/js/hooks/use-appearance.tsx'));
+        $this->assertSame(
+            'do starter kit, sobrescrito',
+            $files->get($this->base . '/resources/js/hooks/use-appearance.tsx')
+        );
+    }
+
+    public function test_recusar_a_limpeza_mantem_tudo(): void
+    {
+        $this->putLegacy();
+
+        $this->artisan('crud:install-palette')
+            ->expectsConfirmation('Apagar os arquivos que a versão antiga instalou?', 'no')
+            ->assertExitCode(0);
+
+        $this->assertTrue((new Filesystem())->exists($this->base . '/resources/js/lib/themes.ts'));
+    }
+
+    public function test_projeto_sem_legado_nao_avisa_nada(): void
+    {
+        $this->artisan('crud:install-palette')
+            ->doesntExpectOutputToContain('Encontrei o sistema de temas antigo neste projeto.')
+            ->assertExitCode(0);
+    }
 }
