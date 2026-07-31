@@ -46,40 +46,109 @@ class CreatePaletteCommand extends Command
         $css = $this->files->get($cssPath);
         $ts = $this->files->get($tsPath);
 
-        // Validar antes de escrever qualquer coisa
-        if (str_contains($css, "data-crud-palette='{$id}'") || str_contains($ts, "id: '{$id}'")) {
-            $this->components->error("Já existe uma paleta `{$id}`.");
+        // Detectar estilo de fim de linha do TS (para preservar ao gravar)
+        $useCRLF = str_contains($ts, "\r\n");
+
+        // Normalizar TS para LF para validação e processamento
+        $tsNormalized = str_replace("\r\n", "\n", $ts);
+
+        // Validar que a âncora existe no TS normalizado
+        if (!str_contains($tsNormalized, "];\n\nexport function getPalette")) {
+            $this->components->error('Âncora de paletas não encontrada no TypeScript. Rode `php artisan crud:install-palette` com `--force` para reconstruir o arquivo.');
 
             return self::FAILURE;
         }
 
-        // Verificar que a âncora existe no TS com a estrutura esperada (LF apenas)
-        // Arquivos com CRLF indicam má configuração do git/editor
-        if (!str_contains($ts, "];\n\nexport function getPalette")) {
-            $this->components->error('Estrutura do arquivo de paletas inválida. Rode `php artisan crud:install-palette` novamente.');
+        // Determinar estado do id nos dois arquivos
+        $paletaPath = $this->determinePaletteState($css, $tsNormalized, $id);
 
-            return self::FAILURE;
+        // Processar cada caso
+        return match ($paletaPath) {
+            'both' => $this->handleDuplicateError($id),
+            'css-only' => $this->handleCompleteTS($ts, $tsNormalized, $tsPath, $id, $useCRLF),
+            'ts-only' => $this->handleCompleteCSS($css, $cssPath, $id, $hue),
+            'none' => $this->handleNewPalette($css, $cssPath, $ts, $tsNormalized, $tsPath, $id, $nome, $hue, $useCRLF),
+        };
+    }
+
+    /**
+     * Determina em quais arquivos o id da paleta existe.
+     *
+     * @return 'both'|'css-only'|'ts-only'|'none'
+     */
+    private function determinePaletteState(string $css, string $tsNormalized, string $id): string
+    {
+        $inCSS = str_contains($css, "data-crud-palette='{$id}'");
+        $inTS = str_contains($tsNormalized, "id: '{$id}'");
+
+        if ($inCSS && $inTS) {
+            return 'both';
         }
 
-        // Acrescentar ao CSS
-        $cssNovo = $css . "\n" . $this->blocks($id, (float) $hue);
+        if ($inCSS) {
+            return 'css-only';
+        }
+
+        if ($inTS) {
+            return 'ts-only';
+        }
+
+        return 'none';
+    }
+
+    private function handleDuplicateError(string $id): int
+    {
+        $this->components->error("Já existe uma paleta `{$id}`.");
+
+        return self::FAILURE;
+    }
+
+    private function handleCompleteTS(string $ts, string $tsNormalized, string $tsPath, string $id, bool $useCRLF): int
+    {
+        // Paleta só no CSS; completa TS
+        $entrada = "    { id: '{$id}', name: '{$this->argument('name')}' },";
+        $tsNovo = str_replace(
+            "];\n\nexport function getPalette",
+            $entrada . "\n];\n\nexport function getPalette",
+            $tsNormalized
+        );
+
+        if ($useCRLF) {
+            $tsNovo = str_replace("\n", "\r\n", $tsNovo);
+        }
+
+        $this->files->put($tsPath, $tsNovo);
+        $this->components->info("Paleta `{$id}` estava só no CSS; acrescentei a entrada na lista. Rode `npm run build` para vê-la.");
+
+        return self::SUCCESS;
+    }
+
+    private function handleCompleteCSS(string $css, string $cssPath, string $id, float $hue): int
+    {
+        // Paleta só no TS; completa CSS
+        $cssNovo = $css . "\n" . $this->blocks($id, $hue);
         $this->files->put($cssPath, $cssNovo);
 
-        // Substituir no TS (validação anterior garante que contém ];\n\n literal)
+        $this->components->info("Paleta `{$id}` estava só na lista; acrescentei os estilos ao CSS. Rode `npm run build` para vê-la.");
+
+        return self::SUCCESS;
+    }
+
+    private function handleNewPalette(string $css, string $cssPath, string $ts, string $tsNormalized, string $tsPath, string $id, string $nome, float $hue, bool $useCRLF): int
+    {
+        // Paleta nova; acrescenta aos dois
+        $cssNovo = $css . "\n" . $this->blocks($id, $hue);
+        $this->files->put($cssPath, $cssNovo);
+
         $entrada = "    { id: '{$id}', name: '{$nome}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
             $entrada . "\n];\n\nexport function getPalette",
-            $ts
+            $tsNormalized
         );
 
-        // Verificar que a substituição realmente aconteceu
-        if ($tsNovo === $ts) {
-            // Desfazer: restaurar o CSS
-            $this->files->put($cssPath, $css);
-            $this->components->error('Falha ao atualizar lista de paletas. Rode `php artisan crud:install-palette` novamente.');
-
-            return self::FAILURE;
+        if ($useCRLF) {
+            $tsNovo = str_replace("\n", "\r\n", $tsNovo);
         }
 
         $this->files->put($tsPath, $tsNovo);

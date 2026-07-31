@@ -69,24 +69,26 @@ class CreatePaletteCommandTest extends TestCase
         $this->artisan('crud:create-palette Laranja --hue=400')->assertExitCode(1);
     }
 
-    public function test_crlf_no_ts_falha_sem_escrever(): void
+    public function test_crlf_no_ts_funciona_e_preserva(): void
     {
         $fs = new Filesystem();
         $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
 
         // Substitui LF por CRLF
         $conteudo = $fs->get($tsPath);
-        $conteudo = str_replace("\n", "\r\n", $conteudo);
-        $fs->put($tsPath, $conteudo);
+        $conteudoCRLF = str_replace("\n", "\r\n", $conteudo);
+        $fs->put($tsPath, $conteudoCRLF);
 
-        $cssBefore = $fs->get($this->base . '/resources/css/crud-palettes.css');
-        $tsBefore = $fs->get($tsPath);
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
 
-        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(1);
+        // TS deve continuar com CRLF (preserva estilo original)
+        $tsDepois = $fs->get($tsPath);
+        $this->assertStringContainsString("\r\n", $tsDepois);
+        $this->assertStringContainsString("{ id: 'laranja', name: 'Laranja' },", $tsDepois);
 
-        // Nenhum dos dois arquivos deve ser modificado
-        $this->assertSame($cssBefore, $fs->get($this->base . '/resources/css/crud-palettes.css'));
-        $this->assertSame($tsBefore, $fs->get($tsPath));
+        // CSS deve ter a paleta
+        $css = $fs->get($this->base . '/resources/css/crud-palettes.css');
+        $this->assertStringContainsString(":root[data-crud-palette='laranja']", $css);
     }
 
     public function test_sem_ancora_no_ts_falha_sem_escrever(): void
@@ -109,7 +111,7 @@ class CreatePaletteCommandTest extends TestCase
         $this->assertSame($tsBefore, $fs->get($tsPath));
     }
 
-    public function test_id_no_css_detectado_como_duplicata(): void
+    public function test_id_so_no_css_completa_ts(): void
     {
         // Cria a paleta primeiro
         $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
@@ -121,11 +123,15 @@ class CreatePaletteCommandTest extends TestCase
         $conteudo = str_replace("    { id: 'laranja', name: 'Laranja' },\n", "", $conteudo);
         $fs->put($tsPath, $conteudo);
 
-        // Tenta criar de novo
-        $this->artisan('crud:create-palette Laranja --hue=100')->assertExitCode(1);
+        // Tenta criar de novo com mesmo hue — deve completar TS
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // TS agora deve ter a entrada
+        $ts = $fs->get($tsPath);
+        $this->assertStringContainsString("{ id: 'laranja', name: 'Laranja' },", $ts);
     }
 
-    public function test_id_no_ts_detectado_como_duplicata(): void
+    public function test_id_so_no_ts_completa_css(): void
     {
         // Cria a paleta primeiro
         $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
@@ -135,16 +141,29 @@ class CreatePaletteCommandTest extends TestCase
         $cssPath = $this->base . '/resources/css/crud-palettes.css';
         $conteudo = $fs->get($cssPath);
 
-        // Remove só o primeiro bloco (claro)
+        // Remove ambos os blocos (claro e escuro)
         $conteudo = preg_replace(
-            "/\\s*:root\\[data-crud-palette='laranja'\\]\\s*\\{[^}]+\\}/s",
+            "/\\s*:root(?:\\.dark)?\\[data-crud-palette='laranja'\\]\\s*\\{[^}]+\\}/s",
             "",
-            $conteudo,
-            1
+            $conteudo
         );
         $fs->put($cssPath, $conteudo);
 
-        // Tenta criar de novo
+        // Tenta criar de novo com mesmo hue — deve completar CSS
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // CSS agora deve ter os blocos
+        $css = $fs->get($cssPath);
+        $this->assertStringContainsString(":root[data-crud-palette='laranja']", $css);
+        $this->assertStringContainsString(":root.dark[data-crud-palette='laranja']", $css);
+    }
+
+    public function test_id_em_ambos_arquivos_recusa(): void
+    {
+        // Cria a paleta primeiro
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // Ambos os arquivos têm a paleta — deve recusar
         $this->artisan('crud:create-palette Laranja --hue=100')->assertExitCode(1);
     }
 }
