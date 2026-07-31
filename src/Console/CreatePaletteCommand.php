@@ -106,7 +106,8 @@ class CreatePaletteCommand extends Command
     private function handleCompleteTS(string $tsNormalized, string $tsPath, string $id, string $nome, bool $useCRLF): int
     {
         // Paleta só no CSS; completa TS
-        $entrada = "    { id: '{$id}', name: '{$nome}' },";
+        $nomeEscapado = addslashes($nome);
+        $entrada = "    { id: '{$id}', name: '{$nomeEscapado}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
             $entrada . "\n];\n\nexport function getPalette",
@@ -140,7 +141,8 @@ class CreatePaletteCommand extends Command
         $cssNovo = $css . "\n" . $this->blocks($id, $hue);
         $this->files->put($cssPath, $cssNovo);
 
-        $entrada = "    { id: '{$id}', name: '{$nome}' },";
+        $nomeEscapado = addslashes($nome);
+        $entrada = "    { id: '{$id}', name: '{$nomeEscapado}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
             $entrada . "\n];\n\nexport function getPalette",

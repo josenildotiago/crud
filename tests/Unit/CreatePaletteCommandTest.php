@@ -190,4 +190,35 @@ class CreatePaletteCommandTest extends TestCase
         // Ambos os arquivos têm a paleta — deve recusar
         $this->artisan('crud:create-palette Laranja --hue=100')->assertExitCode(1);
     }
+
+    public function test_cria_paleta_com_apostrofo_no_nome(): void
+    {
+        $this->artisan('crud:create-palette "D\'Água" --hue=70')->assertExitCode(0);
+
+        $fs = new Filesystem();
+        $ts = $fs->get($this->base . '/resources/js/lib/crud-palette.ts');
+
+        // Aspa simples deve estar escapada para TypeScript válido
+        $this->assertStringContainsString("{ id: 'dagua', name: 'D\\'Água' },", $ts);
+    }
+
+    public function test_completa_paleta_com_apostrofo_no_nome(): void
+    {
+        // Cria a paleta no CSS
+        $this->artisan('crud:create-palette "D\'Água" --hue=70')->assertExitCode(0);
+
+        // Remove do TS mas mantém no CSS
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace("    { id: 'dagua', name: 'D\\'Água' },\n", "", $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        // Completa TS
+        $this->artisan('crud:create-palette "D\'Água" --hue=70')->assertExitCode(0);
+
+        // TS deve ter a entrada com aspa escapada
+        $ts = $fs->get($tsPath);
+        $this->assertStringContainsString("{ id: 'dagua', name: 'D\\'Água' },", $ts);
+    }
 }
