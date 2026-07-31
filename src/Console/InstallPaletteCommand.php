@@ -458,6 +458,21 @@ class InstallPaletteCommand extends Command
 
         $this->components->warn('Encontrei o sistema de temas antigo neste projeto.');
 
+        // Achado 4: CRUD gerado com a antiga flag `--theme` materializou, nas páginas
+        // Index/Create/Edit/Show do recurso, `import ThemeSelector from
+        // '@/components/theme-selector'` e `import { useAppearance } from
+        // '@/hooks/use-appearance'`. Apagar `theme-selector.tsx` (oferecido abaixo) deixa
+        // essas páginas com import não resolvido, e a build quebra sem pista de onde
+        // veio — o comando não sabe quais páginas foram geradas com `--theme` (não
+        // guardamos isso em lugar nenhum), então avisa em vez de tentar adivinhar.
+        $this->components->warn(
+            'Se você gerou CRUD com a flag `--theme` (removida na 5.0.0), as páginas '
+                . 'Index/Create/Edit/Show desses recursos ainda importam '
+                . '`@/components/theme-selector` e `@/hooks/use-appearance`. Regere esses '
+                . 'CRUDs (`php artisan getic:install {tabela}`) antes ou depois de apagar '
+                . 'os arquivos abaixo — a build fica quebrada com import não resolvido até lá.'
+        );
+
         $sobrescritos = array_values(array_filter(
             self::LEGACY_THEIRS,
             fn (string $arquivo): bool => $this->files->exists(resource_path($arquivo))

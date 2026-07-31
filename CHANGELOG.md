@@ -24,6 +24,14 @@ git checkout -- resources/js/components/appearance-tabs.tsx
 O pacote não apaga nem tenta restaurar esses dois — só o git do usuário sabe o que estava
 neles antes.
 
+**Se você gerou algum CRUD com a antiga flag `--theme`, regere-o.** As páginas
+`Index`/`Create`/`Edit`/`Show` desse recurso ainda têm `import ThemeSelector from
+'@/components/theme-selector'` e `import { useAppearance } from '@/hooks/use-appearance'`
+materializados — a flag e os dois placeholders que ela preenchia saíram do gerador nesta
+mesma release. `crud:install-palette` oferece apagar `theme-selector.tsx`; apagando sem
+regerar o CRUD antes, a build quebra com import não resolvido. Regenerar é `php artisan
+getic:install {tabela}` de novo, na mesma tabela.
+
 ### Removido
 
 - Comandos `crud:install-theme-system` e `crud:create-theme`.
@@ -69,6 +77,11 @@ neles antes.
 | `crud:create-theme {nome}` | `crud:create-palette {nome}` |
 | Tag `theme-system` | Tag `crud-palette` |
 | `config('themes.*')` | (removido — sem equivalente; a única chave nova é `config('crud.palette.settings_page')`) |
+
+**CRUD gerado com `--theme`: regere.** A tabela acima é sobre os comandos de tema; a flag
+`--theme` do `getic:install` é outra coisa — saiu junto, e as páginas que ela gerou
+importam componentes que este release remove. Ver o aviso completo em "Leia antes de
+atualizar", no topo deste changelog.
 
 O seletor de paleta é independente do claro/escuro: a alternância `.dark` continua sendo
 inteiramente do starter kit — nada do pacote observa, importa ou reaplica essa classe. O

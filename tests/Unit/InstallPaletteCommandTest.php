@@ -679,4 +679,24 @@ class InstallPaletteCommandTest extends TestCase
             ->doesntExpectOutputToContain('Encontrei o sistema de temas antigo neste projeto.')
             ->assertExitCode(0);
     }
+
+    /**
+     * Achado 4: apagar `theme-selector.tsx` quebra a build de qualquer página CRUD gerada
+     * com a antiga flag `--theme` — ela ainda tem `import ThemeSelector from
+     * '@/components/theme-selector'`. O comando não sabe quais páginas foram geradas
+     * assim, então tem que avisar de qualquer forma, não silenciar o risco.
+     */
+    public function test_avisa_que_paginas_geradas_com_theme_precisam_ser_regeradas(): void
+    {
+        $this->putLegacy();
+
+        // Os dois módulos vivem na mesma linha (um só `warn()`), então uma única
+        // asserção cobrindo os dois: duas chamadas a `expectsOutputToContain()` para
+        // texto dentro da mesma linha colidem no mock de teste do Artisan — só a
+        // primeira reclama a chamada, e a segunda nunca vê o `doWrite()` de novo.
+        $this->artisan('crud:install-palette')
+            ->expectsOutputToContain('@/components/theme-selector` e `@/hooks/use-appearance')
+            ->expectsConfirmation('Apagar os arquivos que a versão antiga instalou?', 'no')
+            ->assertExitCode(0);
+    }
 }
