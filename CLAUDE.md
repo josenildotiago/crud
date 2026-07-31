@@ -163,9 +163,7 @@ junto ou avisar — não fingir que não existe.
   impede testar geração com sqlite `:memory:` no Testbench.
 - ~~`mergeConfigFrom(..., 'themes')` ocupa a chave global `config('themes')`; a tag
   `theme-system` não é prefixada.~~ Sem objeto desde a 5.0.0: `config/themes.php` e a tag
-  `theme-system` saíram junto com o sistema de temas antigo. `crud.php` ainda carrega uma
-  chave `'themes'` interna (`enabled`, `default_theme`, `generate_theme_aware_components`)
-  que nada lê mais — sobra da mesma remoção, sem o problema de colisão original.
+  `theme-system` saíram junto com o sistema de temas antigo.
 - `{{modelTable}}` definido duas vezes com valores diferentes: o pai usa o nome da classe,
   `InstallCommand` sobrescreve com o nome da tabela (o override vence no `array_merge`).
 - ~~`tests/Unit/CrudPackageTest.php` foi escrito contra API inexistente~~ Resolvido na

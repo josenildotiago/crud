@@ -172,7 +172,7 @@ O comando escreve três arquivos e edita três:
 |---|---|
 | `resources/css/crud-palettes.css` | Criado — as paletas, como seletores `:root[data-crud-palette='x']` |
 | `resources/js/lib/crud-palette.ts` | Criado — a lista de paletas e a função que aplica o atributo |
-| Seletor da stack (`crud-palette-selector.tsx`, `.vue` ou `.svelte`) | Criado |
+| Seletor da stack — `crud-palette-selector.tsx` (react), `CrudPaletteSelector.vue` (vue) ou `CrudPaletteSelector.svelte` (svelte) | Criado |
 | `resources/css/app.css` | Editado — acrescenta o `@import` das paletas |
 | Arquivo de entrada da stack (`app.tsx` ou `app.ts`) | Editado — chama `initializeCrudPalette()` |
 | Página de aparência (`settings/appearance`) | Editado — insere `<CrudPaletteSelector />` numa região marcada |
