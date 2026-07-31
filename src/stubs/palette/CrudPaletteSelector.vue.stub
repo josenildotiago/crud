@@ -20,7 +20,11 @@ const choose = (id: string) => {
                 :key="palette.id"
                 type="button"
                 class="rounded-md border px-3 py-1 text-sm"
-                :class="selected === palette.id ? 'bg-primary text-primary-foreground' : ''"
+                :class="
+                    selected === palette.id
+                        ? 'bg-primary text-primary-foreground'
+                        : ''
+                "
                 @click="choose(palette.id)"
             >
                 {{ palette.name }}

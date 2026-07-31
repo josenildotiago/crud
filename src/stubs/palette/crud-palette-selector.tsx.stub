@@ -19,11 +19,15 @@ export function CrudPaletteSelector() {
                 {palettes.map((palette) => (
                     <Button
                         key={palette.id}
-                        variant={selected === palette.id ? 'default' : 'outline'}
+                        variant={
+                            selected === palette.id ? 'default' : 'outline'
+                        }
                         size="sm"
                         onClick={() => choose(palette.id)}
                     >
-                        {selected === palette.id && <Check className="mr-1 h-4 w-4" />}
+                        {selected === palette.id && (
+                            <Check className="mr-1 h-4 w-4" />
+                        )}
                         {palette.name}
                     </Button>
                 ))}
