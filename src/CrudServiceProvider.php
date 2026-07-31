@@ -3,9 +3,7 @@
 namespace Crud;
 
 use Crud\Console\InstallCommand;
-use Crud\Console\CreateThemeCommand;
 use Illuminate\Support\ServiceProvider;
-use Crud\Console\InstallThemeSystemCommand;
 use Crud\Console\InstallPaletteCommand;
 use Crud\Console\InstallOnlyServicesCommand;
 use Crud\Console\CreatePaletteCommand;
@@ -18,7 +16,6 @@ class CrudServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/config/crud.php', 'crud');
-        $this->mergeConfigFrom(__DIR__ . '/config/themes.php', 'themes');
 
         $this->app->singleton('crud', function ($app) {
             return new \Crud\CrudManager($app);
@@ -33,8 +30,6 @@ class CrudServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
-                CreateThemeCommand::class,
-                InstallThemeSystemCommand::class,
                 InstallPaletteCommand::class,
                 InstallOnlyServicesCommand::class,
                 CreatePaletteCommand::class,
@@ -42,17 +37,11 @@ class CrudServiceProvider extends ServiceProvider
 
             $this->publishes([
                 __DIR__ . '/config/crud.php' => config_path('crud.php'),
-                __DIR__ . '/config/themes.php' => config_path('themes.php'),
             ], 'crud-config');
 
             $this->publishes([
-                __DIR__ . '/stubs/js' => resource_path('js/crud'),
-                __DIR__ . '/stubs/css' => resource_path('css/crud'),
-            ], 'crud-assets');
-
-            $this->publishes([
-                __DIR__ . '/stubs/react' => resource_path('js'),
-            ], 'theme-system');
+                __DIR__ . '/stubs/palette' => resource_path('js/crud-palette'),
+            ], 'crud-palette');
         }
     }
 

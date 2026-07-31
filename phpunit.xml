@@ -6,11 +6,6 @@
 >
     <testsuite name="Unit">
             <directory suffix="Test.php">./tests/Unit</directory>
-            <!-- CrudPackageTest.php fica de fora: foi escrito contra uma API que
-                 não existe (ver CLAUDE.md, "Pendências conhecidas"). Registrar os
-                 demais um por um foi o que deixou esse arquivo quebrado passar batido,
-                 então a suíte é o diretório inteiro menos a exceção declarada. -->
-            <exclude>./tests/Unit/CrudPackageTest.php</exclude>
     </testsuite>
     <php>
         <!-- <env name="APP_ENV" value="testing"/>
