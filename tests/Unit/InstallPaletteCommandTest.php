@@ -281,6 +281,54 @@ class InstallPaletteCommandTest extends TestCase
         $this->assertStringNotContainsString('crud:palette:start', $page);
     }
 
+    /**
+     * Achado 2: `MarkedRegion::IMPORT` não casava `;\r`, então `insertImport()` devolvia
+     * null em projeto CRLF e `editAppTsx()`/`editAppearancePage()` desistiam de editar —
+     * mas `editAppCss()` não passa pela `MarkedRegion` e escrevia mesmo assim, misturando
+     * uma linha LF solta no meio de um arquivo CRLF, sem erro que explicasse. Este teste
+     * cobre o projeto inteiro em CRLF: as três edições têm que acontecer, e o resultado
+     * tem que continuar CRLF, sem `\n` solto em lugar nenhum.
+     */
+    public function test_projeto_crlf_recebe_as_tres_edicoes_e_continua_crlf(): void
+    {
+        $files = new Filesystem();
+        $crlf = static fn (string $s): string => str_replace("\n", "\r\n", $s);
+
+        $files->put($this->base . '/resources/css/app.css', $crlf(
+            "@import 'tailwindcss';\n\n@import 'tw-animate-css';\n"
+        ));
+        $files->put($this->base . '/resources/js/app.tsx', $crlf(
+            "import { createInertiaApp } from '@inertiajs/react';\n"
+                . "import AppLayout from '@/layouts/app-layout';\n\n"
+                . "createInertiaApp({});\n\n"
+                . "initializeTheme();\n"
+        ));
+        $files->put($this->base . '/resources/js/pages/settings/appearance.tsx', $crlf(
+            "import AppearanceTabs from '@/components/appearance-tabs';\n\n"
+                . "export default function Appearance() {\n"
+                . "    return (\n"
+                . "        <div className=\"space-y-6\">\n"
+                . "            <AppearanceTabs />\n"
+                . "        </div>\n"
+                . "    );\n"
+                . "}\n"
+        ));
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $css = $files->get($this->base . '/resources/css/app.css');
+        $tsx = $files->get($this->base . '/resources/js/app.tsx');
+        $page = $files->get($this->base . '/resources/js/pages/settings/appearance.tsx');
+
+        $this->assertStringContainsString("@import './crud-palettes.css';", $css);
+        $this->assertStringContainsString('initializeCrudPalette();', $tsx);
+        $this->assertStringContainsString('<CrudPaletteSelector />', $page);
+
+        foreach (['css' => $css, 'app.tsx' => $tsx, 'appearance.tsx' => $page] as $rotulo => $conteudo) {
+            $this->assertSame(0, preg_match('/(?<!\r)\n/', $conteudo), "{$rotulo} tem \\n solto misturado em arquivo CRLF.");
+        }
+    }
+
     private function putAppCssVue(): void
     {
         (new Filesystem())->put($this->base . '/resources/css/app.css', <<<'CSS'

@@ -40,23 +40,24 @@ final class MarkedRegion
             return null;
         }
 
-        $lines = explode("\n", $content);
+        $crlf = self::usesCrlf($content);
+        $lines = self::linesOf($content);
 
         foreach ($lines as $number => $line) {
             if (preg_match($anchorPattern, $line) !== 1) {
                 continue;
             }
 
-            preg_match('/^\s*/', $line, $indent);
+            $indent = self::indentOf($line);
 
             $novo = array_map(
-                static fn (string $l): string => $l === '' ? '' : $indent[0] . $l,
+                static fn (string $l): string => $l === '' ? '' : $indent . $l,
                 array_merge([$this->startMarker], explode("\n", $block), [$this->endMarker])
             );
 
             array_splice($lines, $number + 1, 0, $novo);
 
-            return implode("\n", $lines);
+            return self::restoreEol(implode("\n", $lines), $crlf);
         }
 
         return null;
@@ -74,23 +75,24 @@ final class MarkedRegion
             return null;
         }
 
-        $lines = explode("\n", $content);
+        $crlf = self::usesCrlf($content);
+        $lines = self::linesOf($content);
         [$start, $end] = $this->locate($lines);
 
         if ($start === null || $end === null || $end === $start) {
             return null;
         }
 
-        preg_match('/^\s*/', $lines[$start], $indent);
+        $indent = self::indentOf($lines[$start]);
 
         $novo = array_map(
-            static fn (string $l): string => $l === '' ? '' : $indent[0] . $l,
+            static fn (string $l): string => $l === '' ? '' : $indent . $l,
             explode("\n", $block)
         );
 
         array_splice($lines, $start + 1, $end - $start - 1, $novo);
 
-        return implode("\n", $lines);
+        return self::restoreEol(implode("\n", $lines), $crlf);
     }
 
     /**
@@ -105,7 +107,8 @@ final class MarkedRegion
             return null;
         }
 
-        $lines = explode("\n", $content);
+        $crlf = self::usesCrlf($content);
+        $lines = self::linesOf($content);
         [$start, $end] = $this->locate($lines);
 
         if ($start === null || $end === null || $end === $start) {
@@ -114,7 +117,7 @@ final class MarkedRegion
 
         array_splice($lines, $start, $end - $start + 1);
 
-        return implode("\n", $lines);
+        return self::restoreEol(implode("\n", $lines), $crlf);
     }
 
     /**
@@ -171,7 +174,8 @@ final class MarkedRegion
             return $content;
         }
 
-        $lines = explode("\n", $content);
+        $crlf = self::usesCrlf($content);
+        $lines = self::linesOf($content);
         [$inicio, $fim] = self::scriptBlockRange($lines);
         $interno = str_starts_with($module, '@/');
         $ultimo = null;
@@ -192,7 +196,7 @@ final class MarkedRegion
             if (strcasecmp($match['module'], $module) > 0) {
                 array_splice($lines, $number, 0, [self::indentOf($line) . $importLine]);
 
-                return implode("\n", $lines);
+                return self::restoreEol(implode("\n", $lines), $crlf);
             }
         }
 
@@ -202,7 +206,7 @@ final class MarkedRegion
 
         array_splice($lines, $ultimo + 1, 0, [self::indentOf($lines[$ultimo]) . $importLine]);
 
-        return implode("\n", $lines);
+        return self::restoreEol(implode("\n", $lines), $crlf);
     }
 
     /**
@@ -256,5 +260,40 @@ final class MarkedRegion
         preg_match('/^\s*/', $line, $indent);
 
         return $indent[0];
+    }
+
+    /**
+     * O arquivo usa CRLF se tiver pelo menos um `\r\n` — o mesmo teste que o
+     * `CreatePaletteCommand` já faz para decidir se preserva o fim de linha ao gravar.
+     */
+    private static function usesCrlf(string $content): bool
+    {
+        return str_contains($content, "\r\n");
+    }
+
+    /**
+     * Quebra em linhas tolerando `\r\n`, `\n` e `\r` — como a `NavigationRegion` já faz.
+     * Ao contrário de `explode("\n", ...)`, não deixa um `\r` solto no fim de cada linha
+     * de um arquivo CRLF, que é o que fazia `MarkedRegion::IMPORT` (âncora em `;$`) nunca
+     * casar em projeto CRLF: a linha terminava em `;\r`, não em `;`. Sem casar, `install()`
+     * ainda conseguia (a âncora não depende do fim da linha), mas devolvia conteúdo com a
+     * região nova em LF solta no meio do resto em CRLF — pior que não escrever, porque não
+     * há erro que explique.
+     *
+     * @return array<int, string>
+     */
+    private static function linesOf(string $content): array
+    {
+        return preg_split('/\R/', $content);
+    }
+
+    /**
+     * Recoloca `\r\n` se o arquivo original usava CRLF. As linhas internas trabalham só em
+     * LF (`linesOf()` já tirou o `\r`), então reaplicar depois de `implode("\n", ...)` bate
+     * uma vez só, sem precisar saber quais linhas eram novas e quais já existiam.
+     */
+    private static function restoreEol(string $content, bool $crlf): string
+    {
+        return $crlf ? str_replace("\n", "\r\n", $content) : $content;
     }
 }

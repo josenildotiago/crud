@@ -190,4 +190,76 @@ class MarkedRegionTest extends TestCase
         // Sem guard (bug): reatribui start a cada início, pega [2,4], deixa linhas 0-1.
         $this->assertSame("", $result);
     }
+
+    public function test_install_em_arquivo_crlf_preserva_crlf(): void
+    {
+        $content = str_replace("\n", "\r\n", $this->page());
+
+        $result = $this->region()->install($content, '/<AppearanceTabs \/>/', '<CrudPaletteSelector />');
+
+        $this->assertNotNull($result);
+        $this->assertStringNotContainsString("\r\r\n", $result);
+        $this->assertStringContainsString(
+            "            <AppearanceTabs />\r\n"
+                . "            {/* crud:palette:start */}\r\n"
+                . "            <CrudPaletteSelector />\r\n"
+                . "            {/* crud:palette:end */}",
+            $result
+        );
+        // Nenhum \n solto: todo fim de linha do resultado é \r\n.
+        $this->assertSame(0, preg_match('/(?<!\r)\n/', $result));
+    }
+
+    public function test_replace_em_arquivo_crlf_preserva_crlf(): void
+    {
+        $region = $this->region();
+        $installed = $region->install(str_replace("\n", "\r\n", $this->page()), '/<AppearanceTabs \/>/', '<Antigo />');
+
+        $result = $region->replace($installed, '<Novo />');
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString("<Novo />\r\n", $result);
+        $this->assertSame(0, preg_match('/(?<!\r)\n/', $result));
+    }
+
+    public function test_remove_em_arquivo_crlf_preserva_crlf(): void
+    {
+        $region = $this->region();
+        $installed = $region->install(str_replace("\n", "\r\n", $this->page()), '/<AppearanceTabs \/>/', '<X />');
+
+        $result = $region->remove($installed);
+
+        $this->assertNotNull($result);
+        $this->assertStringNotContainsString('crud:palette', $result);
+        $this->assertSame(0, preg_match('/(?<!\r)\n/', $result));
+    }
+
+    /**
+     * Reproduz o achado 2: `MarkedRegion::IMPORT` termina em `;$`, que não casa `;\r`. Num
+     * arquivo CRLF, cada "linha" de um `explode("\n", ...)` carrega um `\r` sobrando no
+     * fim, e o import nunca casa — `insertImport()` devolvia null mesmo com import de
+     * verdade presente, e o chamador desistia de editar o arquivo inteiro.
+     */
+    public function test_insert_import_em_arquivo_crlf_casa_e_preserva_crlf(): void
+    {
+        $content = str_replace(
+            "\n",
+            "\r\n",
+            "import AppLayout from '@/layouts/app-layout';\n\nexport default function A() {}"
+        );
+
+        $result = MarkedRegion::insertImport(
+            $content,
+            "import { initializeCrudPalette } from '@/lib/crud-palette';",
+            '@/lib/crud-palette'
+        );
+
+        $this->assertNotNull($result);
+        $this->assertStringContainsString(
+            "import AppLayout from '@/layouts/app-layout';\r\n"
+                . "import { initializeCrudPalette } from '@/lib/crud-palette';\r\n",
+            $result
+        );
+        $this->assertSame(0, preg_match('/(?<!\r)\n/', $result));
+    }
 }

@@ -230,7 +230,13 @@ class InstallPaletteCommand extends Command
             return;
         }
 
-        $linhas = explode("\n", $conteudo);
+        // `preg_split('/\R/', ...)` em vez de `explode("\n", ...)`: este método não passa
+        // pela `MarkedRegion`, então precisa da mesma tolerância a CRLF por conta própria.
+        // Sem isso, um projeto CRLF ainda encontrava a âncora (`str_starts_with` não liga
+        // para o fim da linha) e escrevia a linha nova em LF solta no meio do resto em
+        // CRLF — sem erro nenhum que explicasse por que só este arquivo mudou.
+        $crlf = str_contains($conteudo, "\r\n");
+        $linhas = preg_split('/\R/', $conteudo);
         $ultimo = null;
 
         foreach ($linhas as $numero => $atual) {
@@ -247,7 +253,8 @@ class InstallPaletteCommand extends Command
 
         array_splice($linhas, $ultimo + 1, 0, [$linha]);
 
-        $this->files->put($caminho, implode("\n", $linhas));
+        $novo = implode("\n", $linhas);
+        $this->files->put($caminho, $crlf ? str_replace("\n", "\r\n", $novo) : $novo);
         $this->components->info('Atualizado: resources/css/app.css');
     }
 
@@ -288,9 +295,15 @@ class InstallPaletteCommand extends Command
             return;
         }
 
+        // `MarkedRegion::insertImport()` já preserva CRLF, mas este `str_replace` é nosso,
+        // fora dela — sem o mesmo cuidado, ele grudava um "\n" cru depois de
+        // `initializeTheme();` mesmo em arquivo CRLF, misturando fim de linha no meio do
+        // resto do arquivo (achado 2).
+        $quebra = str_contains($comImport, "\r\n") ? "\r\n" : "\n";
+
         $this->files->put(
             $caminho,
-            str_replace('initializeTheme();', "initializeTheme();\n" . $chamada, $comImport)
+            str_replace('initializeTheme();', 'initializeTheme();' . $quebra . $chamada, $comImport)
         );
 
         $this->components->info('Atualizado: resources/' . self::STACKS[$this->stack]['entry']);
