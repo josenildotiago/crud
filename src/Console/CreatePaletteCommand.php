@@ -54,7 +54,17 @@ class CreatePaletteCommand extends Command
 
         // Validar que a âncora existe no TS normalizado
         if (!str_contains($tsNormalized, "];\n\nexport function getPalette")) {
-            $this->components->error('Âncora de paletas não encontrada no TypeScript. Rode `php artisan crud:install-palette` com `--force` para reconstruir o arquivo.');
+            // Não recomendar `crud:install-palette --force` de cara: ele reconstrói o
+            // arquivo a partir do stub e apaga qualquer paleta que o usuário tenha
+            // criado — inclusive as que não têm relação com este erro (achado 3).
+            $this->components->error(
+                'Âncora de paletas não encontrada no TypeScript. O arquivo parece ter sido '
+                    . 'editado além do que o comando reconhece. Copie as paletas que você '
+                    . 'criou para outro lugar antes de decidir o que fazer — '
+                    . '`php artisan crud:install-palette --force` reconstrói o arquivo a '
+                    . 'partir do stub original, mas apaga toda paleta que não veio com o '
+                    . 'pacote.'
+            );
 
             return self::FAILURE;
         }

@@ -111,6 +111,25 @@ class CreatePaletteCommandTest extends TestCase
         $this->assertSame($tsBefore, $fs->get($tsPath));
     }
 
+    /**
+     * Achado 3: a mensagem de erro recomendava `crud:install-palette --force` sem avisar
+     * que isso reconstrói o `crud-palette.ts` a partir do stub e apaga qualquer paleta
+     * que o usuário tenha criado — inclusive paletas sem nenhuma relação com este erro.
+     */
+    public function test_mensagem_de_ancora_ausente_nao_recomenda_force_as_cegas(): void
+    {
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace('export function getPalette', 'export function OTHER_FUNC', $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        $this->artisan('crud:create-palette Laranja --hue=70')
+            ->expectsOutputToContain('apaga toda paleta')
+            ->assertExitCode(1);
+    }
+
     public function test_id_so_no_css_completa_ts(): void
     {
         // Cria a paleta primeiro

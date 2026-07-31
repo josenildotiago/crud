@@ -189,22 +189,79 @@ class InstallPaletteCommand extends Command
         return null;
     }
 
+    /**
+     * Destinos que carregam paleta — os dois únicos onde sobrescrever pode apagar dado do
+     * usuário criado com `crud:create-palette`. Os seletores (`STACKS[...]['target']`) só
+     * têm código do pacote: sobrescrever ali nunca perde nada que o usuário escreveu.
+     *
+     * @var array<int, string>
+     */
+    private const CARREGAM_PALETA = ['css/crud-palettes.css', 'js/lib/crud-palette.ts'];
+
     private function writeStub(string $stub, string $destino): void
     {
         $caminho = resource_path($destino);
+        $novo = $this->files->get(__DIR__ . '/../stubs/palette/' . $stub);
 
-        if ($this->files->exists($caminho) && !$this->option('force')) {
-            if (!confirm("O arquivo resources/{$destino} já existe. Sobrescrever?", default: false)) {
-                $this->components->warn("Mantido: resources/{$destino}");
+        if ($this->files->exists($caminho)) {
+            $atual = $this->files->get($caminho);
+            $extras = in_array($destino, self::CARREGAM_PALETA, true)
+                ? $this->extraPaletteIds($atual, $novo)
+                : [];
 
-                return;
+            if ($extras !== []) {
+                // `--force` pula a confirmação de sobrescrita comum, mas não esta: ali a
+                // perda é de arquivo reinstalável, aqui é de paleta que o usuário criou
+                // com `crud:create-palette` e não existe em lugar nenhum do pacote. Por
+                // isso o confirm roda sempre, com ou sem `--force` (achado 3).
+                $this->components->warn(
+                    "resources/{$destino} tem paletas que não vêm no pacote: " . implode(', ', $extras)
+                        . '. Sobrescrever com o stub original apaga essas paletas.'
+                );
+
+                if (!confirm('Sobrescrever mesmo assim?', default: false)) {
+                    $this->components->warn("Mantido: resources/{$destino}");
+
+                    return;
+                }
+            } elseif (!$this->option('force')) {
+                if (!confirm("O arquivo resources/{$destino} já existe. Sobrescrever?", default: false)) {
+                    $this->components->warn("Mantido: resources/{$destino}");
+
+                    return;
+                }
             }
         }
 
         $this->files->ensureDirectoryExists(dirname($caminho));
-        $this->files->put($caminho, $this->files->get(__DIR__ . '/../stubs/palette/' . $stub));
+        $this->files->put($caminho, $novo);
 
         $this->components->info("Criado: resources/{$destino}");
+    }
+
+    /**
+     * Ids de paleta presentes em `$atual` e ausentes em `$novo` (o stub original).
+     *
+     * Funciona nos dois formatos sem saber qual é qual: o padrão do CSS
+     * (`data-crud-palette='id'`) e o do TS (`id: 'id'`) não colidem, então aplicar os
+     * dois regexes em qualquer um dos arquivos só acha o que existe de verdade nele.
+     *
+     * @return array<int, string>
+     */
+    private function extraPaletteIds(string $atual, string $novo): array
+    {
+        return array_values(array_diff($this->paletteIds($atual), $this->paletteIds($novo)));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function paletteIds(string $conteudo): array
+    {
+        preg_match_all("/data-crud-palette='([^']+)'/", $conteudo, $css);
+        preg_match_all("/id:\s*'([^']+)'/", $conteudo, $ts);
+
+        return array_values(array_unique(array_merge($css[1], $ts[1])));
     }
 
     /**

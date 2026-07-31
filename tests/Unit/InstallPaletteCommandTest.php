@@ -101,6 +101,50 @@ class InstallPaletteCommandTest extends TestCase
         $this->assertSame('MEU CONTEUDO', $files->get($this->base . '/resources/js/lib/crud-palette.ts'));
     }
 
+    /**
+     * Achado 3: `--force` sobrescrevia `crud-palettes.css` e `crud-palette.ts` a partir do
+     * stub sem avisar, levando junto qualquer paleta que `crud:create-palette` tenha
+     * acrescentado. A perda é de dado do usuário, não de arquivo reinstalável — por isso
+     * o comando tem que perguntar mesmo com `--force`, que só pula a confirmação de
+     * sobrescrita comum.
+     */
+    public function test_force_com_paleta_extra_avisa_perda_e_recusar_mantem(): void
+    {
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        $files = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+        $cssPath = $this->base . '/resources/css/crud-palettes.css';
+
+        $this->artisan('crud:install-palette --force')
+            ->expectsOutputToContain('laranja')
+            ->expectsConfirmation('Sobrescrever mesmo assim?', 'no')
+            ->expectsConfirmation('Sobrescrever mesmo assim?', 'no')
+            ->assertExitCode(0);
+
+        $this->assertStringContainsString("id: 'laranja'", $files->get($tsPath));
+        $this->assertStringContainsString("data-crud-palette='laranja'", $files->get($cssPath));
+    }
+
+    public function test_force_com_paleta_extra_confirmado_apaga_a_paleta(): void
+    {
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        $files = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+        $cssPath = $this->base . '/resources/css/crud-palettes.css';
+
+        $this->artisan('crud:install-palette --force')
+            ->expectsConfirmation('Sobrescrever mesmo assim?', 'yes')
+            ->expectsConfirmation('Sobrescrever mesmo assim?', 'yes')
+            ->assertExitCode(0);
+
+        $this->assertStringNotContainsString("id: 'laranja'", $files->get($tsPath));
+        $this->assertStringNotContainsString("data-crud-palette='laranja'", $files->get($cssPath));
+    }
+
     public function test_stack_invalida_falha(): void
     {
         $this->artisan('crud:install-palette --stack=angular')->assertExitCode(1);
