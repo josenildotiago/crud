@@ -35,6 +35,19 @@ class CreatePaletteCommand extends Command
         $nome = $this->argument('name') ?? text('Nome da paleta?', required: true);
         $id = Str::slug($nome);
 
+        if ($id === '') {
+            // `Str::slug()` translitera o que reconhece e descarta o resto; um nome sem
+            // nenhum caractere latino (achado 7) não deixa nada para transliterar, e o id
+            // sai vazio. Sem este guard, o comando criava
+            // `:root[data-crud-palette='']` no CSS e `{ id: '', name: '...' }` no TS.
+            $this->components->error(
+                "Não consegui gerar um identificador a partir de `{$nome}`. Use um nome "
+                    . 'com pelo menos um caractere latino (a-z, 0-9).'
+            );
+
+            return self::FAILURE;
+        }
+
         $hue = $this->option('hue') ?? text('Matiz OKLCH (0 a 360)?', default: '250');
 
         if (!is_numeric($hue) || $hue < 0 || $hue > 360) {

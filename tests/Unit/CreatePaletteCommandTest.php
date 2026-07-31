@@ -69,6 +69,25 @@ class CreatePaletteCommandTest extends TestCase
         $this->artisan('crud:create-palette Laranja --hue=400')->assertExitCode(1);
     }
 
+    /**
+     * Achado 7: `Str::slug('青い')` devolve string vazia — sem caractere latino para
+     * transliterar, não sobra nada. Sem guard, o comando criava
+     * `:root[data-crud-palette='']` no CSS e `{ id: '', name: '青い' }` no TS: paleta sem
+     * id nenhum, indistinguível da paleta seguinte que também desse slug vazio.
+     */
+    public function test_nome_sem_ascii_falha_sem_escrever(): void
+    {
+        $fs = new Filesystem();
+        $cssBefore = $fs->get($this->base . '/resources/css/crud-palettes.css');
+        $tsBefore = $fs->get($this->base . '/resources/js/lib/crud-palette.ts');
+
+        $this->artisan('crud:create-palette 青い --hue=200')->assertExitCode(1);
+
+        $this->assertSame($cssBefore, $fs->get($this->base . '/resources/css/crud-palettes.css'));
+        $this->assertSame($tsBefore, $fs->get($this->base . '/resources/js/lib/crud-palette.ts'));
+        $this->assertStringNotContainsString("data-crud-palette='']", $fs->get($this->base . '/resources/css/crud-palettes.css'));
+    }
+
     public function test_crlf_no_ts_funciona_e_preserva(): void
     {
         $fs = new Filesystem();
