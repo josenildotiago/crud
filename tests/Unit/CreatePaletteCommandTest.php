@@ -240,6 +240,31 @@ class CreatePaletteCommandTest extends TestCase
         $this->assertStringContainsString("{ id: 'dagua', name: 'D\\'Água' },", $ts);
     }
 
+    /**
+     * Achado 8: `addslashes()` não escapa quebra de linha real. Um nome com `\n` de
+     * verdade (não a sequência de duas letras) quebrava a string de uma linha só do
+     * TypeScript gerado — `crud:create-palette "$(printf 'a\nb')"` produzia TS
+     * sintaticamente inválido. `addcslashes($nome, "\n\r")` junto do `addslashes()`
+     * resolve: escapa a quebra de linha real na sequência de duas letras `\n`, sem
+     * reescapar a barra que o `addslashes()` já tenha posto (as duas funções mexem em
+     * conjuntos de caracteres disjuntos).
+     */
+    public function test_nome_com_quebra_de_linha_real_gera_typescript_valido(): void
+    {
+        $nome = "a\nb";
+
+        $this->artisan('crud:create-palette', ['name' => $nome, '--hue' => '70'])->assertExitCode(0);
+
+        $fs = new Filesystem();
+        $ts = $fs->get($this->base . '/resources/js/lib/crud-palette.ts');
+
+        $this->assertStringContainsString("{ id: 'a-b', name: 'a\\nb' },", $ts);
+
+        // Nenhuma linha da entrada da lista pode terminar sem fechar a string — ou seja,
+        // não pode haver quebra de linha real entre as aspas de `name: '...'`.
+        $this->assertDoesNotMatchRegularExpression("/name: 'a\n/", $ts);
+    }
+
     public function test_completa_paleta_com_apostrofo_no_nome(): void
     {
         // Cria a paleta no CSS

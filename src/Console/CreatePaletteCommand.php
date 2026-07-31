@@ -129,7 +129,7 @@ class CreatePaletteCommand extends Command
     private function handleCompleteTS(string $tsNormalized, string $tsPath, string $id, string $nome, bool $useCRLF): int
     {
         // Paleta só no CSS; completa TS
-        $nomeEscapado = addslashes($nome);
+        $nomeEscapado = $this->escapeNomeParaTS($nome);
         $entrada = "    { id: '{$id}', name: '{$nomeEscapado}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
@@ -164,7 +164,7 @@ class CreatePaletteCommand extends Command
         $cssNovo = $css . "\n" . $this->blocks($id, $hue);
         $this->files->put($cssPath, $cssNovo);
 
-        $nomeEscapado = addslashes($nome);
+        $nomeEscapado = $this->escapeNomeParaTS($nome);
         $entrada = "    { id: '{$id}', name: '{$nomeEscapado}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
@@ -181,6 +181,23 @@ class CreatePaletteCommand extends Command
         $this->components->info("Paleta `{$id}` criada. Rode `npm run build` para vê-la.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Escapa o nome para entrar numa string TypeScript de aspas simples, numa linha só.
+     *
+     * `addslashes()` cobre aspa e barra invertida, mas não quebra de linha real — um nome
+     * com `\n` de verdade (não a sequência de duas letras) produzia TypeScript
+     * sintaticamente inválido: a string `name: '...'` terminava sem fechar (achado 8).
+     * `addcslashes($nome, "\n\r")` resolve, convertendo a quebra real na sequência de
+     * duas letras `\n`/`\r`. A ordem importa: `addslashes()` primeiro, porque ele não
+     * mexe em bytes de quebra de linha, e `addcslashes()` depois não mexe em barra
+     * invertida — as duas trabalham em conjuntos de caracteres disjuntos, então rodar
+     * nesta ordem não escapa a barra invertida da outra duas vezes.
+     */
+    private function escapeNomeParaTS(string $nome): string
+    {
+        return addcslashes(addslashes($nome), "\n\r");
     }
 
     /**
