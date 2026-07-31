@@ -152,8 +152,18 @@ final class MarkedRegion
      * build do usuário. Grupo aqui é "começa com `@/`" ou "não começa"; dentro do grupo a
      * ordem é alfabética, insensível a caixa, como o eslint pede.
      *
-     * Devolve o conteúdo intacto se o módulo já estiver importado, e null se o arquivo não
-     * tiver import nenhum — sem âncora, não há onde acertar.
+     * A linha entra com o mesmo recuo do vizinho que serviu de referência — um `.tsx` ou
+     * `.vue` só tem um bloco de import, sem recuo nenhum, mas o `.svelte` do starter kit
+     * tem dois `<script>`: um `module`, com o import da rota do breadcrumb, e um de
+     * instância, com os imports de componente, cada linha recuada em 4 espaços. Por isso
+     * a busca fica restrita ao bloco de instância quando há mais de um `<script>` —
+     * `scriptBlockRange()` decide qual. Sem essa restrição, um import `@/` do bloco
+     * `module` podia vencer a comparação alfabética antes do laço alcançar os vizinhos de
+     * verdade, e a linha nova saía sem recuo e no lugar errado (visto de verdade no
+     * `projeto-exemplo-svelte`: `npx prettier --check` reprovava o arquivo).
+     *
+     * Devolve o conteúdo intacto se o módulo já estiver importado, e null se não houver
+     * import nenhum na faixa de busca — sem âncora, não há onde acertar.
      */
     public static function insertImport(string $content, string $importLine, string $module): ?string
     {
@@ -162,10 +172,13 @@ final class MarkedRegion
         }
 
         $lines = explode("\n", $content);
+        [$inicio, $fim] = self::scriptBlockRange($lines);
         $interno = str_starts_with($module, '@/');
         $ultimo = null;
 
-        foreach ($lines as $number => $line) {
+        for ($number = $inicio; $number < $fim; $number++) {
+            $line = $lines[$number];
+
             if (preg_match(self::IMPORT, $line, $match) !== 1) {
                 continue;
             }
@@ -177,7 +190,7 @@ final class MarkedRegion
             $ultimo = $number;
 
             if (strcasecmp($match['module'], $module) > 0) {
-                array_splice($lines, $number, 0, [$importLine]);
+                array_splice($lines, $number, 0, [self::indentOf($line) . $importLine]);
 
                 return implode("\n", $lines);
             }
@@ -187,8 +200,61 @@ final class MarkedRegion
             return null;
         }
 
-        array_splice($lines, $ultimo + 1, 0, [$importLine]);
+        array_splice($lines, $ultimo + 1, 0, [self::indentOf($lines[$ultimo]) . $importLine]);
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * Faixa de linhas `[início, fim)` onde `insertImport()` procura e insere.
+     *
+     * Um `.tsx` não tem tag `<script>` nenhuma — a faixa é o arquivo inteiro. Um `.vue` do
+     * starter kit tem só um bloco `<script setup>` — também vale o arquivo inteiro, porque
+     * não há ambiguidade para resolver. Um `.svelte` tem dois: `<script module>`, e o de
+     * instância. Escolhemos o de instância porque é lá que o starter kit organiza os
+     * imports de componente — os mesmos que `<AppearanceTabs />` e companhia usam no
+     * template. Se nenhum bloco identificar como não-module (arquivo atípico), cai de volta
+     * para o arquivo inteiro em vez de devolver uma faixa vazia.
+     *
+     * @param array<int, string> $lines
+     * @return array{0: int, 1: int}
+     */
+    private static function scriptBlockRange(array $lines): array
+    {
+        $blocks = [];
+        $inicio = null;
+        $module = false;
+
+        foreach ($lines as $number => $line) {
+            if ($inicio === null && preg_match('/^\s*<script\b([^>]*)>/i', $line, $tag) === 1) {
+                $inicio = $number;
+                $module = (bool) preg_match('/\bmodule\b/', $tag[1]);
+                continue;
+            }
+
+            if ($inicio !== null && preg_match('#^\s*</script>#i', $line) === 1) {
+                $blocks[] = ['inicio' => $inicio, 'fim' => $number, 'module' => $module];
+                $inicio = null;
+            }
+        }
+
+        if (count($blocks) <= 1) {
+            return [0, count($lines)];
+        }
+
+        foreach ($blocks as $bloco) {
+            if (!$bloco['module']) {
+                return [$bloco['inicio'] + 1, $bloco['fim']];
+            }
+        }
+
+        return [0, count($lines)];
+    }
+
+    private static function indentOf(string $line): string
+    {
+        preg_match('/^\s*/', $line, $indent);
+
+        return $indent[0];
     }
 }

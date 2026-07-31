@@ -338,12 +338,39 @@ class InstallPaletteCommandTest extends TestCase
         VUE);
     }
 
+    /**
+     * Forma real da página no starter kit svelte: dois blocos `<script>`, com import
+     * recuado em 4 espaços nos dois. `<script module>` traz o import da rota do
+     * breadcrumb (`@/routes/appearance`, também `@/`) — é o que expôs o bug do achado 1:
+     * o `insertImport()` varria o arquivo inteiro e achava esse import primeiro, inserindo
+     * a linha nova ali, sem recuo, em vez de ir para o bloco de instância junto dos
+     * outros imports de componente. Ver
+     * `/home/sp1d3r/Documentos/projetos/pacotes/laravel/projeto-exemplo-svelte/resources/js/pages/settings/Appearance.svelte`
+     * (estrutura, não o conteúdo — aquele arquivo já foi editado pela instalação).
+     */
     private function putAppearancePageSvelte(): void
     {
         (new Filesystem())->put($this->base . '/resources/js/pages/settings/Appearance.svelte', <<<'SVELTE'
-        <script>
-            import AppearanceTabs from '@/components/appearance-tabs';
+        <script module lang="ts">
+            import { edit as editAppearance } from '@/routes/appearance';
+
+            export const layout = {
+                breadcrumbs: [
+                    {
+                        title: 'Appearance settings',
+                        href: editAppearance(),
+                    },
+                ],
+            };
         </script>
+
+        <script lang="ts">
+            import AppearanceTabs from '@/components/AppearanceTabs.svelte';
+            import AppHead from '@/components/AppHead.svelte';
+            import Heading from '@/components/Heading.svelte';
+        </script>
+
+        <AppHead title="Appearance settings" />
 
         <div class="space-y-6">
             <AppearanceTabs />
@@ -474,9 +501,30 @@ class InstallPaletteCommandTest extends TestCase
 
         $this->assertStringContainsString('<!-- crud:palette:start -->', $page);
         $this->assertStringContainsString('<CrudPaletteSelector />', $page);
+
+        // O import tem que herdar o recuo de 4 espaços dos vizinhos do bloco de
+        // instância (achado 1) — sem recuo, `npx prettier --check` reprova o arquivo.
         $this->assertStringContainsString(
-            "import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';",
+            "    import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';",
             $page
+        );
+
+        // E tem que entrar no bloco `<script lang="ts">` de instância, junto dos outros
+        // imports de componente — não no `<script module lang="ts">` de cima, que só tem
+        // o import da rota do breadcrumb.
+        $this->assertStringContainsString(
+            "    import AppHead from '@/components/AppHead.svelte';\n"
+                . "    import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';\n"
+                . "    import Heading from '@/components/Heading.svelte';",
+            $page
+        );
+
+        $moduleBlockEnd = strpos($page, '</script>');
+        $importPosition = strpos($page, "import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';");
+        $this->assertGreaterThan(
+            $moduleBlockEnd,
+            $importPosition,
+            'O import da paleta entrou no bloco <script module>, e não no bloco de instância.'
         );
     }
 
