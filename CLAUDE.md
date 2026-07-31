@@ -104,7 +104,7 @@ ressuscitar sem decidir antes qual motor processa os stubs.
 
 1. Nome e assinatura dos comandos Artisan e suas flags
 2. Chaves de `src/config/crud.php`
-3. Tags de publish (`crud-config`, `crud-palette`)
+3. Tags de publish (`crud-config`)
 4. Placeholders `{{...}}` — quem usa `crud.stub_path` customizado depende deles
 5. Estrutura dos arquivos gerados que o usuário depois edita à mão
 

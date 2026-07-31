@@ -233,8 +233,14 @@ Renomeações, todas breaking e cobertas pelo major:
 |---|---|
 | `crud:install-theme-system` | `crud:install-palette` |
 | `crud:create-theme` | `crud:create-palette` |
-| tag de publish `theme-system` | `crud-palette` |
+| tag de publish `theme-system` | (nenhuma — ver nota abaixo) |
 | `config('themes.*')` | `config('crud.palette.*')` |
+
+A tag de publish planejada aqui, `crud-palette`, saiu antes do release: a revisão final
+notou que `InstallPaletteCommand` lê os stubs sempre de `__DIR__.'/../stubs/palette/'` e
+nunca consulta `crud.stub_path` nem o destino que a tag publicava
+(`resources/js/crud-palette/`). Publicar não mudava nada — API pública morta. Sem tag
+nenhuma no lugar de `theme-system`.
 
 ## Testes
 

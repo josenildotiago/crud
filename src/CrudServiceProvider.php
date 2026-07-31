@@ -39,9 +39,12 @@ class CrudServiceProvider extends ServiceProvider
                 __DIR__ . '/config/crud.php' => config_path('crud.php'),
             ], 'crud-config');
 
-            $this->publishes([
-                __DIR__ . '/stubs/palette' => resource_path('js/crud-palette'),
-            ], 'crud-palette');
+            // Achado 6: não existe tag `crud-palette`. Publicar `src/stubs/palette` para
+            // `resources/js/crud-palette/` não tinha efeito nenhum — InstallPaletteCommand
+            // lê sempre de `__DIR__.'/../stubs/palette/'` e nunca consulta
+            // `crud.stub_path` nem esse destino publicado. Tag de publish é API pública
+            // (item 3 de "API pública" no CLAUDE.md); numa release major, o certo é
+            // remover, não deixar API morta.
         }
     }
 

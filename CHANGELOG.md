@@ -60,7 +60,6 @@ getic:install {tabela}` de novo, na mesma tabela.
   arquivo, **não escreve** — avisa e imprime o trecho para colar à mão.
 - **`crud:create-palette {nome}`** — acrescenta uma paleta nova aos dois arquivos
   compartilhados.
-- Tag de publish `crud-palette`.
 - `config('crud.palette.settings_page')` — desliga a inserção automática do seletor na
   página de aparência, para quem prefere posicionar o componente à mão.
 - Uma paleta define **nove variáveis de acento** (`--primary`, `--primary-foreground`,
@@ -75,7 +74,7 @@ getic:install {tabela}` de novo, na mesma tabela.
 |---|---|
 | `crud:install-theme-system` | `crud:install-palette` |
 | `crud:create-theme {nome}` | `crud:create-palette {nome}` |
-| Tag `theme-system` | Tag `crud-palette` |
+| Tag `theme-system` | (removida — sem tag equivalente; `InstallPaletteCommand` não honra `crud.stub_path`, então uma tag `crud-palette` não teria efeito nenhum) |
 | `config('themes.*')` | (removido — sem equivalente; a única chave nova é `config('crud.palette.settings_page')`) |
 
 **CRUD gerado com `--theme`: regere.** A tabela acima é sobre os comandos de tema; a flag
