@@ -1,8 +1,8 @@
-# Laravel CRUD Generator v4.0.2
+# Laravel CRUD Generator v5.0.0
 
 [![tests](https://github.com/josenildotiago/crud/actions/workflows/tests.yml/badge.svg)](https://github.com/josenildotiago/crud/actions/workflows/tests.yml)
 
-Um pacote moderno para Laravel que gera operações CRUD completas com integração React.js e sistema de temas dinâmicos.
+Um pacote moderno para Laravel que gera operações CRUD completas com integração React.js e uma camada de paleta de cores.
 
 ## 🚀 Características Principais
 
@@ -20,13 +20,13 @@ Um pacote moderno para Laravel que gera operações CRUD completas com integraç
 - **Suporte Multi-Database**: Compatível com MySQL, PostgreSQL, SQLite e SQL Server
 - **Design RESTful**: Gera controllers e rotas RESTful limpos
 
-### 🎨 Sistema de Temas Dinâmicos
+### 🎨 Camada de Paleta de Cores
 
-- **Sistema de Cores OKLCH**: Suporte ao espaço de cor moderno para temas vibrantes e consistentes
-- **CSS Custom Properties**: Mudança de tema em tempo real sem reload da página
-- **Integração React**: Hooks e componentes integrados para gerenciamento de temas
-- **Temas Persistentes**: Preferências do usuário salvas entre sessões
-- **Criação Automática**: Comando para criar novos temas personalizados
+- **Sistema de Cores OKLCH**: Suporte ao espaço de cor moderno para paletas vibrantes e consistentes
+- **CSS Custom Properties**: Troca de paleta em tempo real, sem reload da página
+- **React, Vue e Svelte**: Um seletor por stack, instalado dentro da página de aparência do starter kit
+- **Persistente**: Preferência salva em `localStorage`
+- **Criação Automática**: Comando para acrescentar novas paletas
 
 ### ⚛️ Integração React.js + shadcn/ui
 
@@ -54,31 +54,32 @@ composer require josenildotiago/crud
 
 ## 🎯 Início Rápido
 
-### 1. Instalar Sistema de Temas (Opcional)
+### 1. Instalar a Camada de Paleta (Opcional)
 
 ```bash
-php artisan crud:install-theme-system
+php artisan crud:install-palette
 ```
 
 Este comando irá:
 
-- Detectar seu stack frontend (React.js + Inertia.js)
-- Instalar configuração de temas
-- Gerar componentes React TypeScript
-- Configurar CSS custom properties
+- Detectar seu stack frontend (`react`, `vue` ou `svelte` — pela página de aparência do
+  projeto; ou aceita `--stack=` explícito)
+- Escrever `resources/css/crud-palettes.css` e `resources/js/lib/crud-palette.ts`
+- Gerar o seletor de paleta da stack detectada
+- Editar `resources/css/app.css`, o arquivo de entrada da stack e a página de aparência,
+  sempre de forma idempotente — rodar de novo não duplica nada
 
-### 2. Criar Seu Primeiro Tema (Opcional)
+### 2. Criar Sua Primeira Paleta (Opcional)
 
 ```bash
-php artisan crud:create-theme meu-tema
+php artisan crud:create-palette minha-paleta
 ```
 
 Prompts interativos irão guiá-lo através de:
 
-- Nome e identificador do tema
-- Cores primárias e secundárias (formato OKLCH)
-- Seleção de tema claro/escuro
-- Geração automática de paleta de cores
+- Nome e identificador da paleta
+- Matiz OKLCH (0 a 360)
+- Geração automática dos dois modos, claro e escuro
 
 ### 3. Gerar Recursos CRUD
 
@@ -105,9 +106,6 @@ php artisan getic:install orders --relationship
 
 # Stack específico
 php artisan getic:install categories --stack=react
-
-# Com integração de temas
-php artisan getic:install posts --theme
 
 # Escolhendo o helper de rotas dos componentes React
 php artisan getic:install clientes --routes=wayfinder
@@ -148,56 +146,79 @@ Em modo não interativo (`--no-interaction`, script, CI) ele imprime os avisos, 
 repete o resumo no fim — por sua conta e risco. O padrão da pergunta é gerar (apertar Enter
 continua).
 
-Uma exceção: se você aceitar instalar o sistema de temas no prompt inicial, ele é instalado
-antes, porque roda na fase de perguntas do próprio Artisan — cancelar no pré-voo não desfaz
-isso.
+`getic:install` não instala a paleta — os dois comandos são independentes; rode
+`crud:install-palette` quando quiser.
 
-## 🎨 Sistema de Temas
+## 🎨 Paleta de Cores
 
-### Como Usar no React
+As paletas mudam só o **acento** da interface: `--primary`, `--primary-foreground`,
+`--ring`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-ring`,
+`--chart-1`, `--chart-2` e `--chart-3`. Nenhuma variável de superfície entra — cor de fundo
+e de texto continuam do starter kit, que já acerta o contraste nos dois modos.
 
-```tsx
-import { useAppearance } from "@/hooks/use-appearance";
-import { ThemeSelector } from "@/components/theme-selector";
+O claro/escuro **não é do pacote**: continua sendo a classe `.dark` que o starter kit já
+gerencia. A paleta escreve só o atributo `data-crud-palette` no `<html>` e guarda a escolha
+em `localStorage` — as duas dimensões, cor e modo, são independentes uma da outra.
 
-function MyComponent() {
-  const { theme, themeId, updateTheme } = useAppearance();
+### Instalação
 
-  return (
-    <div>
-      <ThemeSelector />
-      {/* Tema aplicado automaticamente via CSS custom properties */}
-    </div>
-  );
-}
+```bash
+php artisan crud:install-palette
 ```
 
-### Temas Disponíveis
+O comando escreve três arquivos e edita três:
 
-- **Padrão**: Preto e branco clássico
-- **Azul**: Profissional e confiável
-- **Verde**: Natureza e crescimento
-- **Roxo**: Moderno e criativo
-- **Vermelho**: Energia e ação
-- **+ Personalizados**: Crie quantos quiser!
+| Arquivo | O que acontece |
+|---|---|
+| `resources/css/crud-palettes.css` | Criado — as paletas, como seletores `:root[data-crud-palette='x']` |
+| `resources/js/lib/crud-palette.ts` | Criado — a lista de paletas e a função que aplica o atributo |
+| Seletor da stack (`crud-palette-selector.tsx`, `.vue` ou `.svelte`) | Criado |
+| `resources/css/app.css` | Editado — acrescenta o `@import` das paletas |
+| Arquivo de entrada da stack (`app.tsx` ou `app.ts`) | Editado — chama `initializeCrudPalette()` |
+| Página de aparência (`settings/appearance`) | Editado — insere `<CrudPaletteSelector />` numa região marcada |
+
+Rodar de novo é seguro: cada edição é idempotente, e nada é duplicado. Quando o comando não
+reconhece o arquivo (versão do starter kit fora do padrão, edição manual que mudou a âncora
+esperada), ele **não escreve** — avisa e imprime o trecho para você colar à mão.
+
+Desligue a inserção automática do seletor na página de aparência com:
+
+```php
+// config/crud.php
+'palette' => [
+    'settings_page' => false,
+],
+```
+
+O pacote guarda a escolha só em `localStorage` — o HTML inicial do servidor não sabe qual
+paleta o navegador tem, e por um instante a página pinta com a paleta padrão até o
+JavaScript rodar. Para zero flash, sincronize a escolha também num cookie chamado
+`crud-palette` (à sua conta — o pacote não faz isso) e leia-o no HTML inicial:
+
+```blade
+<html data-crud-palette="{{ request()->cookie('crud-palette') }}">
+```
+
+### Criar uma paleta nova
+
+```bash
+php artisan crud:create-palette minha-paleta
+```
 
 ## 📋 Comandos Disponíveis
 
 ```bash
-# Instalar sistema de temas
-php artisan crud:install-theme-system
+# Instalar a camada de paleta
+php artisan crud:install-palette
 
-# Criar novo tema personalizado
-php artisan crud:create-theme {nome}
+# Criar uma paleta nova
+php artisan crud:create-palette {nome}
 
 # Gerar CRUD completo
 php artisan getic:install {tabela}
 
 # Com relacionamentos
 php artisan getic:install {tabela} --relationship
-
-# Com temas
-php artisan getic:install {tabela} --theme
 
 # Escolhendo o helper de rotas dos componentes React (default: auto)
 php artisan getic:install {tabela} --routes=wayfinder
@@ -211,17 +232,17 @@ php artisan getic:install {tabela} --routes=wayfinder
 # Instalar pacote
 composer require josenildotiago/crud
 
-# Instalar sistema de temas
-php artisan crud:install-theme-system
+# Instalar a camada de paleta
+php artisan crud:install-palette
 
-# Criar tema personalizado
-php artisan crud:create-theme corporativo
+# Criar uma paleta personalizada
+php artisan crud:create-palette corporativo
 ```
 
 ### 2. Gerar CRUD para Produtos
 
 ```bash
-php artisan getic:install products --theme
+php artisan getic:install products
 ```
 
 ### 3. Resultado Gerado
@@ -360,10 +381,9 @@ return [
         'sidebar' => true,
     ],
 
-    'themes' => [
-        'enabled' => true,
-        'default_theme' => 'default',
-        'generate_theme_aware_components' => true,
+    // Em false, `crud:install-palette` não insere o seletor na página de aparência.
+    'palette' => [
+        'settings_page' => true,
     ],
 ];
 ```
@@ -391,7 +411,7 @@ return [
 
 - **Lazy Loading**: Componentes carregados sob demanda
 - **Code Splitting**: Divisão automática de código
-- **CSS Optimization**: Custom properties para temas
+- **CSS Optimization**: Custom properties para a paleta de cores
 - **Database Queries**: Queries otimizadas com Eloquent
 
 ### Caching
@@ -414,7 +434,7 @@ vendor/bin/pest
 
 - **Unit Tests**: Commands, Manager, Generator
 - **Integration Tests**: Geração completa de CRUD
-- **Component Tests**: Temas e componentes React
+- **Component Tests**: Paleta e componentes React
 
 ## 📚 Documentação Adicional
 

@@ -60,19 +60,19 @@ pacote, **sem** espaços). A separação é só o espaço.
 
 ```
 src/
-  CrudServiceProvider.php     # merge de crud.php + themes.php; singleton 'crud'; publishes
-  CrudManager.php             # binding 'crud'; detecta sistema de temas instalado
+  CrudServiceProvider.php     # merge de crud.php; singleton 'crud'; publishes
+  CrudManager.php             # binding 'crud'; detecta se a camada de paleta está instalada
   ModelGenerator.php          # infere relacionamentos Eloquent do schema
   TableInspection.php         # pré-voo: o que na tabela o código gerado não suporta
   NavigationRegion.php        # região marcada da navegação do usuário; molde do TableInspection
+  MarkedRegion.php            # região marcada de propósito geral, usada pela paleta (app.css, entry, appearance page)
   Facades/Crud.php
   config/crud.php             # config mora em src/config/, não em config/
-  config/themes.php
   Console/
     GeneratorCommand.php      # base abstrata: introspecção de schema + replacements
     InstallCommand.php        # getic:install — fluxo principal
-    InstallThemeSystemCommand.php   # crud:install-theme-system
-    CreateThemeCommand.php          # crud:create-theme
+    InstallPaletteCommand.php       # crud:install-palette
+    CreatePaletteCommand.php        # crud:create-palette
     InstallOnlyServicesCommand.php  # crud:install-only-services
     buildOptions.php          # trait
   stubs/                      # o produto real do pacote
@@ -103,8 +103,8 @@ ressuscitar sem decidir antes qual motor processa os stubs.
 ## API pública (mudar = breaking)
 
 1. Nome e assinatura dos comandos Artisan e suas flags
-2. Chaves de `src/config/crud.php` e `src/config/themes.php`
-3. Tags de publish (`crud-config`, `crud-assets`, `theme-system`)
+2. Chaves de `src/config/crud.php`
+3. Tags de publish (`crud-config`, `crud-palette`)
 4. Placeholders `{{...}}` — quem usa `crud.stub_path` customizado depende deles
 5. Estrutura dos arquivos gerados que o usuário depois edita à mão
 
@@ -146,13 +146,6 @@ junto ou avisar — não fingir que não existe.
   `id`"), embora a conclusão — o Model gerado não vai funcionar — continue válida. Casos
   reais no banco de referência: `model_has_permissions`, `model_has_roles`,
   `role_has_permissions`. Nenhum teste cobre chave composta.
-- **A resposta interativa de `--theme` é descartada** — mesma raiz do bug do `--stack`.
-  `afterPromptingForMissingArguments()` grava em `$this->options['theme']` (o array custom
-  do `GeneratorCommand`, que só é lido para `route`), mas `buildReactComponents()` lê
-  `$this->option('theme')` (a opção do Symfony). Responder "sim" no prompt não faz nada; só
-  funciona passando `--theme` na linha de comando. Era o mesmo com `--api`, que saiu na
-  4.0.0 — este é o último caso.
-- Tag `crud-assets` publica `src/stubs/js` e `src/stubs/css` — nenhum dos dois existe.
 - `$this->name = $this->_buildClassName()` sobrescreve o `$name` do `Illuminate\Console\Command`.
 - **O Controller das stacks `vue` e `blade` redireciona para rota que não existe.**
   `InstallCommand.php:290` escolhe `Controller.stub` quando a stack não é `react`, e ele
@@ -168,15 +161,16 @@ junto ou avisar — não fingir que não existe.
 - `config/crud.php` anuncia `mysql, pgsql, sqlite, sqlsrv`, mas `getColumns()` e
   `getAllTableNames()` usam `SHOW COLUMNS` / `SHOW TABLES` — MySQL puro. É isso que
   impede testar geração com sqlite `:memory:` no Testbench.
-- `mergeConfigFrom(..., 'themes')` ocupa a chave global `config('themes')`; a tag
-  `theme-system` não é prefixada. Ambas colidem com outros pacotes.
+- ~~`mergeConfigFrom(..., 'themes')` ocupa a chave global `config('themes')`; a tag
+  `theme-system` não é prefixada.~~ Sem objeto desde a 5.0.0: `config/themes.php` e a tag
+  `theme-system` saíram junto com o sistema de temas antigo. `crud.php` ainda carrega uma
+  chave `'themes'` interna (`enabled`, `default_theme`, `generate_theme_aware_components`)
+  que nada lê mais — sobra da mesma remoção, sem o problema de colisão original.
 - `{{modelTable}}` definido duas vezes com valores diferentes: o pai usa o nome da classe,
   `InstallCommand` sobrescreve com o nome da tabela (o override vence no `array_merge`).
-- `tests/Unit/CrudPackageTest.php` foi escrito contra API inexistente: espera `getThemes()`
-  devolvendo array associativo (devolve `Collection` de ids) e arquivos em
-  `js/types/themes.ts` (o código usa `js/lib/themes.ts`). Especificação aspiracional, não
-  suíte válida. Desde 29/07/2026 o `phpunit.xml` carrega `./tests/Unit` inteiro com
-  `<exclude>` explícito deste arquivo — antes ele passava batido por não estar na lista.
+- ~~`tests/Unit/CrudPackageTest.php` foi escrito contra API inexistente~~ Resolvido na
+  5.0.0: o arquivo foi embora junto com o `getThemes()` que ele testava, e o `phpunit.xml`
+  voltou a carregar `./tests/Unit` inteiro sem `<exclude>`.
 - ~~Versões divergentes entre `composer.json`, README e REPORT.md.~~ Resolvido em
   29/07/2026: o campo `version` saiu do composer.json (Packagist deriva da tag git), o
   README foi para 3.2.0, e o `REPORT.md` foi carimbado como documento histórico — é a
@@ -202,7 +196,7 @@ junto ou avisar — não fingir que não existe.
 ## Verificação
 
 ```bash
-vendor/bin/phpunit          # tests/Unit inteiro, menos CrudPackageTest.php
+vendor/bin/phpunit          # tests/Unit inteiro
 vendor/bin/phpstan analyse  # nível 5 sobre src/, tem que ficar em zero
 composer validate
 ```
