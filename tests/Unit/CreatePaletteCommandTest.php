@@ -158,6 +158,30 @@ class CreatePaletteCommandTest extends TestCase
         $this->assertStringContainsString(":root.dark[data-crud-palette='laranja']", $css);
     }
 
+    public function test_completa_ts_com_nome_via_prompt(): void
+    {
+        // Cria a paleta no CSS
+        $this->artisan('crud:create-palette Laranja --hue=70')->assertExitCode(0);
+
+        // Remove do TS mas mantém no CSS
+        $fs = new Filesystem();
+        $tsPath = $this->base . '/resources/js/lib/crud-palette.ts';
+        $conteudo = $fs->get($tsPath);
+        $conteudo = str_replace("    { id: 'laranja', name: 'Laranja' },\n", "", $conteudo);
+        $fs->put($tsPath, $conteudo);
+
+        // Tenta completar TS com nome via prompt (sem argumento)
+        $this->artisan('crud:create-palette --hue=70')
+            ->expectsQuestion('Nome da paleta?', 'Laranja')
+            ->assertExitCode(0);
+
+        // TS deve ter a entrada com o nome correto
+        $ts = $fs->get($tsPath);
+        $this->assertStringContainsString("{ id: 'laranja', name: 'Laranja' },", $ts);
+        // NÃO deve ter nome vazio
+        $this->assertStringNotContainsString("{ id: 'laranja', name: '' },", $ts);
+    }
+
     public function test_id_em_ambos_arquivos_recusa(): void
     {
         // Cria a paleta primeiro

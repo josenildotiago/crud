@@ -65,9 +65,9 @@ class CreatePaletteCommand extends Command
         // Processar cada caso
         return match ($paletaPath) {
             'both' => $this->handleDuplicateError($id),
-            'css-only' => $this->handleCompleteTS($ts, $tsNormalized, $tsPath, $id, $useCRLF),
+            'css-only' => $this->handleCompleteTS($tsNormalized, $tsPath, $id, $nome, $useCRLF),
             'ts-only' => $this->handleCompleteCSS($css, $cssPath, $id, $hue),
-            'none' => $this->handleNewPalette($css, $cssPath, $ts, $tsNormalized, $tsPath, $id, $nome, $hue, $useCRLF),
+            'none' => $this->handleNewPalette($css, $cssPath, $tsNormalized, $tsPath, $id, $nome, $hue, $useCRLF),
         };
     }
 
@@ -103,10 +103,10 @@ class CreatePaletteCommand extends Command
         return self::FAILURE;
     }
 
-    private function handleCompleteTS(string $ts, string $tsNormalized, string $tsPath, string $id, bool $useCRLF): int
+    private function handleCompleteTS(string $tsNormalized, string $tsPath, string $id, string $nome, bool $useCRLF): int
     {
         // Paleta só no CSS; completa TS
-        $entrada = "    { id: '{$id}', name: '{$this->argument('name')}' },";
+        $entrada = "    { id: '{$id}', name: '{$nome}' },";
         $tsNovo = str_replace(
             "];\n\nexport function getPalette",
             $entrada . "\n];\n\nexport function getPalette",
@@ -134,7 +134,7 @@ class CreatePaletteCommand extends Command
         return self::SUCCESS;
     }
 
-    private function handleNewPalette(string $css, string $cssPath, string $ts, string $tsNormalized, string $tsPath, string $id, string $nome, float $hue, bool $useCRLF): int
+    private function handleNewPalette(string $css, string $cssPath, string $tsNormalized, string $tsPath, string $id, string $nome, float $hue, bool $useCRLF): int
     {
         // Paleta nova; acrescenta aos dois
         $cssNovo = $css . "\n" . $this->blocks($id, $hue);
