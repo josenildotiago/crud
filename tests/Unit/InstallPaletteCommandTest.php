@@ -629,6 +629,10 @@ class InstallPaletteCommandTest extends TestCase
         $files->put($this->base . '/resources/js/lib/themes.ts', 'export const themes = [];');
         $files->put($this->base . '/resources/js/components/theme-selector.tsx', 'antigo');
         $files->put($this->base . '/resources/js/hooks/use-appearance.tsx', 'do starter kit, sobrescrito');
+        // Do starter kit Laravel 12, usado pelo app-header.tsx — não é arquivo que o
+        // pacote instalou (achado 5). A versão antiga sobrescrevia com o stub dela, mas
+        // apagar sem mais é apagar arquivo do usuário que outro componente importa.
+        $files->put($this->base . '/resources/js/components/appearance-dropdown.tsx', 'do starter kit laravel 12, usado pelo app-header');
     }
 
     public function test_oferece_apagar_so_os_arquivos_do_pacote(): void
@@ -659,6 +663,31 @@ class InstallPaletteCommandTest extends TestCase
         $this->assertSame(
             'do starter kit, sobrescrito',
             $files->get($this->base . '/resources/js/hooks/use-appearance.tsx')
+        );
+    }
+
+    /**
+     * Achado 5: `appearance-dropdown.tsx` estava em `LEGACY_OURS`, que o comando oferece
+     * apagar. No starter kit Laravel 12 (que o pacote suporta) esse arquivo é do kit e é
+     * importado por `app-header.tsx` — apagar quebra o projeto. Confirmar a limpeza não
+     * pode levar este arquivo junto, e ele tem que aparecer na lista de `git checkout --`
+     * do grupo "do starter kit", não na de "instalados pela versão antiga".
+     */
+    public function test_appearance_dropdown_e_do_starter_kit_nao_e_apagado(): void
+    {
+        $this->putLegacy();
+
+        $this->artisan('crud:install-palette')
+            ->expectsOutputToContain('git checkout -- resources/js/components/appearance-dropdown.tsx')
+            ->expectsConfirmation('Apagar os arquivos que a versão antiga instalou?', 'yes')
+            ->assertExitCode(0);
+
+        $files = new Filesystem();
+
+        $this->assertTrue($files->exists($this->base . '/resources/js/components/appearance-dropdown.tsx'));
+        $this->assertSame(
+            'do starter kit laravel 12, usado pelo app-header',
+            $files->get($this->base . '/resources/js/components/appearance-dropdown.tsx')
         );
     }
 

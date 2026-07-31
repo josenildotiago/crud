@@ -71,7 +71,6 @@ class InstallPaletteCommand extends Command
     private const LEGACY_OURS = [
         'js/lib/themes.ts',
         'js/components/theme-selector.tsx',
-        'js/components/appearance-dropdown.tsx',
         'js/components/appearance-theme-selector.tsx',
         'js/components/theme-demo.tsx',
         'js/pages/ThemeExample.tsx',
@@ -82,11 +81,18 @@ class InstallPaletteCommand extends Command
      *
      * O pacote não apaga nem tenta restaurar: só o git do usuário sabe o que estava lá.
      *
+     * `appearance-dropdown.tsx` mora aqui, não em `LEGACY_OURS` (achado 5): no starter kit
+     * Laravel 12, que o pacote suporta, é arquivo do kit, importado por `app-header.tsx` —
+     * a versão antiga o sobrescrevia com o stub dela (ver `CHANGELOG.md`, "Removido" da
+     * 5.0.0), mas o arquivo em si não é criação do pacote. Oferecer apagar quebraria um
+     * projeto que nunca pediu para o pacote mexer nesse componente.
+     *
      * @var array<int, string>
      */
     private const LEGACY_THEIRS = [
         'js/hooks/use-appearance.tsx',
         'js/components/appearance-tabs.tsx',
+        'js/components/appearance-dropdown.tsx',
     ];
 
     /** A stack desta execução, resolvida no `handle()`. */
