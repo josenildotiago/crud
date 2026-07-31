@@ -260,7 +260,11 @@ que dá para fixar em PHP:
    ordem dos grupos de import, ordem alfabética, `import type`, chaves no `if`. Os três kits
    impõem as mesmas regras, então o contrato é um só.
 5. **Detecção de stack** — assevera que cada arquivo de entrada leva ao seletor certo, e que
-   um projeto que não casa com nenhuma das três pergunta antes de instalar.
+   um projeto que não casa com nenhuma das três erra e sai (`FAILURE`, sem escrever nada),
+   com mensagem dizendo para passar `--stack=` se for uma delas. A implementação não
+   pergunta neste caso — perguntar faria sentido para uma stack **ambígua**, não para uma
+   que o projeto simplesmente não tem; a revisão final considerou isso melhor do que o
+   texto original desta seção previa.
 
 Verificação manual, obrigatória antes da tag e não automatizável aqui:
 

@@ -77,7 +77,8 @@ php artisan crud:create-palette minha-paleta
 
 Prompts interativos irão guiá-lo através de:
 
-- Nome e identificador da paleta
+- Nome da paleta (o identificador sai sozinho do nome, via slug — não há prompt separado
+  para ele)
 - Matiz OKLCH (0 a 360)
 - Geração automática dos dois modos, claro e escuro
 
