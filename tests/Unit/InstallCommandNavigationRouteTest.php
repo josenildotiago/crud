@@ -22,8 +22,7 @@ class RouteAndSidebarSpyInstallCommand extends InstallCommand
                                             {--stack=react : Frontend stack (react, vue, blade)}
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
-                                            {--relationship : Specify if you want to establish a relationship}
-                                            {--theme : Include theme-aware components}';
+                                            {--relationship : Specify if you want to establish a relationship}';
 
     protected function tableExists()
     {

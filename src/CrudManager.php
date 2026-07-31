@@ -3,7 +3,6 @@
 namespace Crud;
 
 use Illuminate\Contracts\Foundation\Application;
-use Illuminate\Support\Collection;
 
 class CrudManager
 {
@@ -15,32 +14,11 @@ class CrudManager
     }
 
     /**
-     * Get all available themes.
+     * A camada de paleta está instalada neste projeto?
      */
-    public function getThemes(): Collection
+    public function isPaletteInstalled(): bool
     {
-        $themesPath = resource_path('js/lib/themes.ts');
-
-        if (!file_exists($themesPath)) {
-            return collect();
-        }
-
-        // Parse themes from TypeScript file
-        $content = file_get_contents($themesPath);
-        // This is a simplified parser - in a real implementation you might want to use a proper TS parser
-        preg_match_all('/id:\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
-
-        // `preg_match_all` sempre popula o grupo 1, mesmo sem casar nada: o `??` era morto.
-        return collect($matches[1]);
-    }
-
-    /**
-     * Check if theme system is installed.
-     */
-    public function isThemeSystemInstalled(): bool
-    {
-        return file_exists(resource_path('js/lib/themes.ts')) &&
-            file_exists(resource_path('js/hooks/use-appearance.tsx'));
+        return file_exists(resource_path('js/lib/crud-palette.ts'));
     }
 
     /**

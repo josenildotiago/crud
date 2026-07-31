@@ -145,16 +145,15 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Theme Integration
+    | Paleta de cores
     |--------------------------------------------------------------------------
     |
-    | Integração com o sistema de temas dinâmicos
+    | `settings_page` controla se o `crud:install-palette` insere o seletor na sua
+    | página de aparência. Desligue se preferir posicionar o componente à mão.
     |
     */
-    'themes' => [
-        'enabled' => true,
-        'default_theme' => 'default',
-        'generate_theme_aware_components' => true,
+    'palette' => [
+        'settings_page' => true,
     ],
 
     /*

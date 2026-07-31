@@ -1,5 +1,12 @@
 # Documentação Técnica - Laravel CRUD Generator v3.0.18
 
+> **Documento histórico.** Descreve a v3.0.18: cita a geração de API (`ApiController.stub`,
+> `FormRequest.stub`) que saiu do pacote na 4.0.0 sem nunca ter funcionado, e o sistema de
+> temas (`CreateThemeCommand`, `InstallThemeSystemCommand`, `themes.php`) que saiu na 5.0.0.
+> Não foi atualizado desde então e **não descreve o pacote atual**. Para o estado corrente
+> — inclusive a camada de paleta que substituiu o sistema de temas — ver o `CHANGELOG.md` e
+> o `README.md`.
+
 ## Visão Geral
 
 Este documento descreve a arquitetura e funcionamento do pacote Laravel CRUD Generator v3.0.18, um sistema moderno para geração automática de operações CRUD com integração React.js e sistema de temas dinâmicos.

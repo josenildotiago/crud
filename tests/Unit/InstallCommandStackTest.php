@@ -18,8 +18,7 @@ class StackSpyInstallCommand extends InstallCommand
                                             {--stack=react : Frontend stack (react, vue, blade)}
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
-                                            {--relationship : Specify if you want to establish a relationship}
-                                            {--theme : Include theme-aware components}';
+                                            {--relationship : Specify if you want to establish a relationship}';
 
     /** @var array<int, string> */
     public array $calls = [];
@@ -230,5 +229,12 @@ class InstallCommandStackTest extends TestCase
         $this->artisan('test:stack-spy users')->assertExitCode(0);
 
         $this->assertSame('ziggy', $command->resolvedRouteHelper());
+    }
+
+    public function test_a_flag_de_tema_nao_existe_mais(): void
+    {
+        $command = new InstallCommand(new Filesystem());
+
+        $this->assertFalse($command->getDefinition()->hasOption('theme'));
     }
 }

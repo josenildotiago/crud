@@ -1,0 +1,34 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { getPalette, palettes, setPalette } from '@/lib/crud-palette';
+
+const selected = ref<string>(getPalette());
+
+const choose = (id: string) => {
+    setPalette(id);
+    selected.value = id;
+};
+</script>
+
+<template>
+    <div class="space-y-2">
+        <p class="text-sm font-medium">Paleta de cores</p>
+
+        <div class="flex flex-wrap gap-2">
+            <button
+                v-for="palette in palettes"
+                :key="palette.id"
+                type="button"
+                class="rounded-md border px-3 py-1 text-sm"
+                :class="
+                    selected === palette.id
+                        ? 'bg-primary text-primary-foreground'
+                        : ''
+                "
+                @click="choose(palette.id)"
+            >
+                {{ palette.name }}
+            </button>
+        </div>
+    </div>
+</template>

@@ -3,7 +3,6 @@ import { ArrowLeftIcon, PencilIcon, TrashIcon } from 'lucide-react';
 import React from 'react';
 import AppLayout from '@/layouts/app-layout';{{routeImports}}
 import type { {{modelName}} } from '@/types';
-{{themeImports}}
 
 interface ShowProps {
     {{modelCamel}}: {{modelName}};

@@ -15,8 +15,7 @@ class LintSpyInstallCommand extends InstallCommand
                                             {--stack=react : Frontend stack (react, vue, blade)}
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
-                                            {--relationship : Specify if you want to establish a relationship}
-                                            {--theme : Include theme-aware components}';
+                                            {--relationship : Specify if you want to establish a relationship}';
 
     protected function tableExists()
     {
@@ -75,8 +74,6 @@ class LintSpyInstallCommand extends InstallCommand
             '{{showFields}}' => $this->generateShowFields(),
             '{{searchPlaceholder}}' => $this->getSearchPlaceholder(),
             '{{colSpan}}' => $this->getColSpan(),
-            '{{themeImports}}' => '',
-            '{{themeComponents}}' => '',
             '{{routeImports}}' => $this->getRouteImports($component),
         ]);
 
@@ -129,7 +126,7 @@ class GeneratedLintContractTest extends TestCase
         $modules = [];
 
         foreach (explode("\n", $rendered) as $line) {
-            if (preg_match("/^import .* from '([^']+)';$/", $line, $match) === 1) {
+            if (preg_match("/^\s*import .* from '([^']+)';$/", $line, $match) === 1) {
                 $modules[] = $match[1];
                 continue;
             }
@@ -288,6 +285,106 @@ class GeneratedLintContractTest extends TestCase
                     "{$component}: linha " . ($numero + 1) . " ({$line}) precisa de linha em branco antes."
                 );
             }
+        }
+    }
+
+    /**
+     * O seletor não passa por replacement nenhum — é arquivo pronto — mas é TSX que o
+     * pacote escreve no projeto do usuário, então vale o mesmo contrato dos componentes.
+     */
+    public function test_os_seletores_de_paleta_respeitam_o_contrato_de_lint(): void
+    {
+        $stubs = [
+            'crud-palette-selector.tsx.stub',
+            'CrudPaletteSelector.vue.stub',
+            'CrudPaletteSelector.svelte.stub',
+        ];
+
+        foreach ($stubs as $stub) {
+            $this->assertSelectorImportsAreOrdered($stub);
+        }
+    }
+
+    /**
+     * Achado do dono, verificado nos três starter kits em 31/07/2026: os dois primeiros
+     * stubs estouravam o `printWidth: 80` (`tabWidth: 4`) que os três `.prettierrc`
+     * compartilham, e `npx prettier --check resources/` passou a acusar um arquivo que o
+     * usuário nunca escreveu — regressão nova desta release, diferente das seis páginas
+     * CRUD que já reprovavam o formatador antes dela (pendência antiga, fora deste teste).
+     * Corrigido deixando o próprio `prettier` do projeto quebrar as linhas: `npx prettier
+     * --write` de dentro de cada starter kit, para herdar a config de lá. Este teste trava
+     * o limite para a próxima paleta acrescentada aos stubs não estourar de novo.
+     */
+    public function test_os_seletores_de_paleta_cabem_em_80_colunas(): void
+    {
+        $stubs = [
+            'crud-palette-selector.tsx.stub',
+            'CrudPaletteSelector.vue.stub',
+            'CrudPaletteSelector.svelte.stub',
+        ];
+
+        foreach ($stubs as $stub) {
+            $conteudo = file_get_contents(__DIR__ . '/../../src/stubs/palette/' . $stub);
+
+            $this->assertIsString($conteudo, "stub {$stub} não encontrado");
+
+            foreach (explode("\n", $conteudo) as $numero => $linha) {
+                $this->assertLessThanOrEqual(
+                    80,
+                    mb_strlen($linha),
+                    "{$stub}: linha " . ($numero + 1) . " passa de 80 colunas."
+                );
+            }
+        }
+    }
+
+    /**
+     * Os três starter kits impõem o mesmo `import/order`: externos antes dos `@/`, cada
+     * grupo em ordem alfabética. Em `.vue` e `.svelte` os imports vivem indentados dentro
+     * do bloco `<script>`, então o regex aceita espaço em branco antes do `import`.
+     */
+    private function assertSelectorImportsAreOrdered(string $stub): void
+    {
+        $rendered = file_get_contents(__DIR__ . '/../../src/stubs/palette/' . $stub);
+
+        $this->assertIsString($rendered, "stub {$stub} não encontrado");
+
+        $modules = $this->importedModules($rendered);
+        $internos = false;
+
+        foreach ($modules as $module) {
+            if (str_starts_with($module, '@/')) {
+                $internos = true;
+                continue;
+            }
+
+            $this->assertFalse($internos, "{$stub}: `{$module}` é externo e veio depois de um import `@/`.");
+        }
+
+        $grupos = [
+            'externo' => array_values(array_filter($modules, static fn (string $m): bool => !str_starts_with($m, '@/'))),
+            'interno' => array_values(array_filter($modules, static fn (string $m): bool => str_starts_with($m, '@/'))),
+        ];
+
+        foreach ($grupos as $nome => $grupo) {
+            $ordenado = $grupo;
+            usort($ordenado, static fn (string $a, string $b): int => strcasecmp($a, $b));
+
+            $this->assertSame($ordenado, $grupo, "{$stub}: o grupo {$nome} não está em ordem alfabética.");
+        }
+    }
+
+    public function test_nenhum_stub_react_carrega_placeholder_de_tema(): void
+    {
+        $stubs = glob(__DIR__ . '/../../src/stubs/react/*.stub');
+
+        $this->assertNotEmpty($stubs, 'Nenhum arquivo .stub encontrado em src/stubs/react/');
+
+        foreach ($stubs as $stub) {
+            $conteudo = file_get_contents($stub);
+
+            $this->assertStringNotContainsString('{{themeImports}}', $conteudo, basename($stub));
+            $this->assertStringNotContainsString('{{themeComponents}}', $conteudo, basename($stub));
         }
     }
 }

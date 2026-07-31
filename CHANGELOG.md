@@ -1,5 +1,105 @@
 # Changelog
 
+## [5.0.0] - 2026-07-31
+
+### ⚠️ Leia antes de atualizar
+
+**O sistema de temas saiu do pacote — quem tem `crud:install-theme-system` instalado
+precisa agir antes de atualizar.** No Laravel 13, ele quebrava o `tsc` do projeto com
+`Property 'resolvedAppearance' does not exist`. A causa: o instalador antigo sobrescrevia
+`resources/js/hooks/use-appearance.tsx` e `resources/js/components/appearance-tabs.tsx` —
+os dois são do starter kit, não do pacote — e a versão publicada não expunha a API que o
+kit atual usa. Não dava para corrigir sem reescrever o sistema inteiro, então ele foi
+substituído por uma camada mais simples: a **paleta de cores**.
+
+Rode `php artisan crud:install-palette`. Ele detecta o sistema antigo (`js/lib/themes.ts`),
+oferece apagar o que **o pacote** instalou, e lista, para os arquivos que eram **do starter
+kit** e foram sobrescritos, o comando para recuperá-los:
+
+```bash
+git checkout -- resources/js/hooks/use-appearance.tsx
+git checkout -- resources/js/components/appearance-tabs.tsx
+```
+
+O pacote não apaga nem tenta restaurar esses dois — só o git do usuário sabe o que estava
+neles antes.
+
+**Se você gerou algum CRUD com a antiga flag `--theme`, regere-o.** As páginas
+`Index`/`Create`/`Edit`/`Show` desse recurso ainda têm `import ThemeSelector from
+'@/components/theme-selector'` e `import { useAppearance } from '@/hooks/use-appearance'`
+materializados — a flag e os dois placeholders que ela preenchia saíram do gerador nesta
+mesma release. `crud:install-palette` oferece apagar `theme-selector.tsx`; apagando sem
+regerar o CRUD antes, a build quebra com import não resolvido. Regenerar é `php artisan
+getic:install {tabela}` de novo, na mesma tabela.
+
+### Removido
+
+- Comandos `crud:install-theme-system` e `crud:create-theme`.
+- Flag `--theme` do `getic:install`, o prompt correspondente no fluxo interativo, e os
+  placeholders `{{themeImports}}` e `{{themeComponents}}`.
+- `config/themes.php` e a chave global `config('themes')` que ele populava.
+- Tag de publish `theme-system`.
+- Tag de publish `crud-assets` — apontava para `src/stubs/js` e `src/stubs/css`, que nunca
+  existiram.
+- `CrudManager::getThemes()`.
+- Os oito stubs de `src/stubs/react/` que o `crud:install-theme-system` instalava:
+  `themes.ts`, `use-appearance.tsx`, `theme-selector.tsx`, `appearance-dropdown.tsx`,
+  `appearance-theme-selector.tsx`, `appearance-tabs.tsx`, `theme-demo.tsx` e
+  `ThemeExample.tsx`.
+
+### Adicionado
+
+- **`crud:install-palette`** — instala a camada de paleta nas stacks `react`, `vue` e
+  `svelte` (detecta qual pelo projeto, ou aceita `--stack=`). Escreve dois arquivos
+  compartilhados (`resources/css/crud-palettes.css`, `resources/js/lib/crud-palette.ts`) e
+  um seletor específico da stack, e edita três arquivos do usuário de forma idempotente:
+  `resources/css/app.css` (acrescenta o `@import` das paletas), o arquivo de entrada da
+  stack (chama `initializeCrudPalette()` no mesmo ponto onde o starter kit já chama
+  `initializeTheme()`) e a página de aparência (insere `<CrudPaletteSelector />` numa
+  região marcada, ao lado do `<AppearanceTabs />` do próprio kit). Quando não reconhece o
+  arquivo, **não escreve** — avisa e imprime o trecho para colar à mão.
+- **`crud:create-palette {nome}`** — acrescenta uma paleta nova aos dois arquivos
+  compartilhados.
+- `config('crud.palette.settings_page')` — desliga a inserção automática do seletor na
+  página de aparência, para quem prefere posicionar o componente à mão.
+- Uma paleta define **nove variáveis de acento** (`--primary`, `--primary-foreground`,
+  `--ring`, `--sidebar-primary`, `--sidebar-primary-foreground`, `--sidebar-ring`,
+  `--chart-1`, `--chart-2`, `--chart-3`) e **nenhuma de superfície**. Superfície e texto são
+  o que faz claro/escuro legível nos dois modos, e o starter kit já acertou esse contraste
+  — a paleta não mexe nisso, só no acento.
+
+### Migração
+
+| Antes | Depois |
+|---|---|
+| `crud:install-theme-system` | `crud:install-palette` |
+| `crud:create-theme {nome}` | `crud:create-palette {nome}` |
+| Tag `theme-system` | (removida — sem tag equivalente; `InstallPaletteCommand` não honra `crud.stub_path`, então uma tag `crud-palette` não teria efeito nenhum) |
+| `config('themes.*')` | (removido — sem equivalente; a única chave nova é `config('crud.palette.settings_page')`) |
+
+**CRUD gerado com `--theme`: regere.** A tabela acima é sobre os comandos de tema; a flag
+`--theme` do `getic:install` é outra coisa — saiu junto, e as páginas que ela gerou
+importam componentes que este release remove. Ver o aviso completo em "Leia antes de
+atualizar", no topo deste changelog.
+
+O seletor de paleta é independente do claro/escuro: a alternância `.dark` continua sendo
+inteiramente do starter kit — nada do pacote observa, importa ou reaplica essa classe. O
+pacote só escreve o atributo `data-crud-palette` no `<html>` e persiste a escolha em
+`localStorage`.
+
+### Fora de escopo
+
+- Stack `livewire`: as variáveis de acento são do Flux (`--color-accent`), o seletor é
+  Blade com Alpine, e a persistência é do store do Flux — desenho diferente o bastante para
+  merecer spec própria. `crud:install-palette` continua sem suporte a ela.
+
+### Por que major
+
+Renomear dois comandos publicados (item 1 da API pública do `CLAUDE.md`) e remover uma tag
+de publish (item 3) quebra quem automatiza a instalação com o nome antigo. Somado à
+migração manual que quem tinha o sistema de temas instalado precisa fazer, não há leitura
+possível como minor.
+
 ## [4.0.2] - 2026-07-30
 
 ### Corrigido

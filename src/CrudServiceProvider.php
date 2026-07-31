@@ -3,10 +3,10 @@
 namespace Crud;
 
 use Crud\Console\InstallCommand;
-use Crud\Console\CreateThemeCommand;
 use Illuminate\Support\ServiceProvider;
-use Crud\Console\InstallThemeSystemCommand;
+use Crud\Console\InstallPaletteCommand;
 use Crud\Console\InstallOnlyServicesCommand;
+use Crud\Console\CreatePaletteCommand;
 
 class CrudServiceProvider extends ServiceProvider
 {
@@ -16,7 +16,6 @@ class CrudServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/config/crud.php', 'crud');
-        $this->mergeConfigFrom(__DIR__ . '/config/themes.php', 'themes');
 
         $this->app->singleton('crud', function ($app) {
             return new \Crud\CrudManager($app);
@@ -31,24 +30,21 @@ class CrudServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 InstallCommand::class,
-                CreateThemeCommand::class,
-                InstallThemeSystemCommand::class,
+                InstallPaletteCommand::class,
                 InstallOnlyServicesCommand::class,
+                CreatePaletteCommand::class,
             ]);
 
             $this->publishes([
                 __DIR__ . '/config/crud.php' => config_path('crud.php'),
-                __DIR__ . '/config/themes.php' => config_path('themes.php'),
             ], 'crud-config');
 
-            $this->publishes([
-                __DIR__ . '/stubs/js' => resource_path('js/crud'),
-                __DIR__ . '/stubs/css' => resource_path('css/crud'),
-            ], 'crud-assets');
-
-            $this->publishes([
-                __DIR__ . '/stubs/react' => resource_path('js'),
-            ], 'theme-system');
+            // Achado 6: não existe tag `crud-palette`. Publicar `src/stubs/palette` para
+            // `resources/js/crud-palette/` não tinha efeito nenhum — InstallPaletteCommand
+            // lê sempre de `__DIR__.'/../stubs/palette/'` e nunca consulta
+            // `crud.stub_path` nem esse destino publicado. Tag de publish é API pública
+            // (item 3 de "API pública" no CLAUDE.md); numa release major, o certo é
+            // remover, não deixar API morta.
         }
     }
 

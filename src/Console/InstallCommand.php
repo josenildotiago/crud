@@ -30,13 +30,12 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
                                             {--stack=react : Frontend stack (react, vue, blade)}
                                             {--routes= : Route helper for the generated components (ziggy, wayfinder)}
                                             {--route= : Custom route name}
-                                            {--relationship : Specify if you want to establish a relationship}
-                                            {--theme : Include theme-aware components}';
+                                            {--relationship : Specify if you want to establish a relationship}';
 
     /**
      * The console command description.
      */
-    protected $description = 'Cria um CRUD moderno com React.js e sistema de temas';
+    protected $description = 'Cria um CRUD a partir de uma tabela existente (Model, Controller e rotas; views completas na stack React)';
 
     /**
      * Stacks frontend aceitas pelo gerador.
@@ -323,17 +322,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             );
         }
 
-        // Theme integration
-        if ($this->template === 'react' && confirm('Deseja incluir sistema de temas dinâmicos?')) {
-            $this->options['theme'] = true;
-
-            if (!app('crud')->isThemeSystemInstalled()) {
-                if (confirm('Sistema de temas não detectado. Instalar agora?')) {
-                    $this->call('crud:install-theme-system');
-                }
-            }
-        }
-
         // Relationship logic
         if (confirm('Deseja estabelecer um relacionamento?')) {
             $relatedTable = select(
@@ -442,8 +430,6 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
             '{{tableHeaders}}' => $tableHead,
             '{{formFields}}' => $formFields,
             '{{showFields}}' => $showFields,
-            '{{themeImports}}' => $this->option('theme') ? $this->getThemeImports() : '',
-            '{{themeComponents}}' => $this->option('theme') ? $this->getThemeComponents() : '',
         ]);
 
         $components = ['Index', 'Create', 'Edit', 'Show', 'FormField'];
@@ -707,26 +693,6 @@ JSX;
                 <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100">{{{modelNameLowerCase}}.{$column}}</dd>
             </div>
         </div>
-JSX;
-    }
-
-    /**
-     * Get theme imports for React components.
-     */
-    protected function getThemeImports(): string
-    {
-        return "import { useAppearance } from '@/hooks/use-appearance';\nimport ThemeSelector from '@/components/theme-selector';";
-    }
-
-    /**
-     * Get theme components for React.
-     */
-    protected function getThemeComponents(): string
-    {
-        return <<<JSX
-            <div className="mb-4 flex justify-end">
-                <ThemeSelector />
-            </div>
 JSX;
     }
 

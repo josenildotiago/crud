@@ -1,0 +1,28 @@
+<script lang="ts">
+    import { getPalette, palettes, setPalette } from '@/lib/crud-palette';
+
+    let selected = $state(getPalette());
+
+    function choose(id: string) {
+        setPalette(id);
+        selected = id;
+    }
+</script>
+
+<div class="space-y-2">
+    <p class="text-sm font-medium">Paleta de cores</p>
+
+    <div class="flex flex-wrap gap-2">
+        {#each palettes as palette (palette.id)}
+            <button
+                type="button"
+                class="rounded-md border px-3 py-1 text-sm"
+                class:bg-primary={selected === palette.id}
+                class:text-primary-foreground={selected === palette.id}
+                onclick={() => choose(palette.id)}
+            >
+                {palette.name}
+            </button>
+        {/each}
+    </div>
+</div>

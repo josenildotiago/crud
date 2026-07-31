@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';{{routeImports}}
-{{themeImports}}
 
 export default function Create() {
     const { data, setData, {{formStoreMethod}}, processing, errors } = useForm({

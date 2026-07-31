@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Trocar o sistema de temas por uma camada de paleta que nunca toca no que é do starter kit, encerrando a colisão que hoje quebra o `tsc` do projeto do usuário.
+**Goal:** Trocar o sistema de temas por uma camada de paleta que nunca toca no que é do starter kit, encerrando a colisão que hoje quebra o `tsc` do projeto do usuário. Vale para react, vue e svelte; livewire é outra spec.
 
 **Architecture:** As paletas viram CSS estático com seletor `:root[data-crud-palette='x']` e `:root.dark[data-crud-palette='x']`. O único trabalho do JavaScript é escrever o atributo no `<html>` e persistir no `localStorage`. O claro/escuro continua sendo da classe `.dark` do starter kit, e nenhum código do pacote observa, importa ou reaplica nada quando ele muda.
 
@@ -448,12 +448,14 @@ git commit -m "Add MarkedRegion for edits inside the user's own files"
 ### Task 2: Os três stubs da paleta
 
 **Files:**
-- Create: `src/stubs/palette/crud-palettes.css.stub`, `src/stubs/palette/crud-palette.ts.stub`, `src/stubs/palette/crud-palette-selector.tsx.stub`
+- Create: `src/stubs/palette/crud-palettes.css.stub`, `src/stubs/palette/crud-palette.ts.stub`,
+  `src/stubs/palette/crud-palette-selector.tsx.stub`, `src/stubs/palette/CrudPaletteSelector.vue.stub`,
+  `src/stubs/palette/CrudPaletteSelector.svelte.stub`
 - Modify: `tests/Unit/GeneratedLintContractTest.php`
 
 **Interfaces:**
 - Consumes: nada.
-- Produces: o contrato TypeScript que o seletor e o `app.tsx` consomem —
+- Produces: o contrato TypeScript que os seletores e o arquivo de entrada da stack consomem —
   ```ts
   export const palettes: { id: string; name: string }[];
   export function getPalette(): string;
@@ -471,11 +473,29 @@ Acrescentar ao final de `tests/Unit/GeneratedLintContractTest.php`, dentro da cl
      * O seletor não passa por replacement nenhum — é arquivo pronto — mas é TSX que o
      * pacote escreve no projeto do usuário, então vale o mesmo contrato dos componentes.
      */
-    public function test_o_seletor_de_paleta_respeita_o_contrato_de_lint(): void
+    public function test_os_seletores_de_paleta_respeitam_o_contrato_de_lint(): void
     {
-        $rendered = file_get_contents(__DIR__ . '/../../src/stubs/palette/crud-palette-selector.tsx.stub');
+        $stubs = [
+            'crud-palette-selector.tsx.stub',
+            'CrudPaletteSelector.vue.stub',
+            'CrudPaletteSelector.svelte.stub',
+        ];
 
-        $this->assertIsString($rendered, 'stub do seletor de paleta não encontrado');
+        foreach ($stubs as $stub) {
+            $this->assertSelectorImportsAreOrdered($stub);
+        }
+    }
+
+    /**
+     * Os três starter kits impõem o mesmo `import/order`: externos antes dos `@/`, cada
+     * grupo em ordem alfabética. Em `.vue` e `.svelte` os imports vivem dentro do bloco
+     * `<script>`, e a varredura por linha acha do mesmo jeito.
+     */
+    private function assertSelectorImportsAreOrdered(string $stub): void
+    {
+        $rendered = file_get_contents(__DIR__ . '/../../src/stubs/palette/' . $stub);
+
+        $this->assertIsString($rendered, "stub {$stub} não encontrado");
 
         $modules = $this->importedModules($rendered);
         $internos = false;
@@ -486,7 +506,7 @@ Acrescentar ao final de `tests/Unit/GeneratedLintContractTest.php`, dentro da cl
                 continue;
             }
 
-            $this->assertFalse($internos, "`{$module}` é externo e veio depois de um import `@/`.");
+            $this->assertFalse($internos, "{$stub}: `{$module}` é externo e veio depois de um import `@/`.");
         }
 
         $grupos = [
@@ -498,15 +518,15 @@ Acrescentar ao final de `tests/Unit/GeneratedLintContractTest.php`, dentro da cl
             $ordenado = $grupo;
             usort($ordenado, static fn (string $a, string $b): int => strcasecmp($a, $b));
 
-            $this->assertSame($ordenado, $grupo, "o grupo {$nome} do seletor não está em ordem alfabética.");
+            $this->assertSame($ordenado, $grupo, "{$stub}: o grupo {$nome} não está em ordem alfabética.");
         }
     }
 ```
 
 - [ ] **Step 2: Rodar e ver falhar**
 
-Run: `vendor/bin/phpunit --filter test_o_seletor_de_paleta_respeita_o_contrato_de_lint`
-Expected: FAIL — `file_get_contents` não acha o stub.
+Run: `vendor/bin/phpunit --filter test_os_seletores_de_paleta_respeitam_o_contrato_de_lint`
+Expected: FAIL — `file_get_contents` não acha os stubs.
 
 - [ ] **Step 3: Escrever `src/stubs/palette/crud-palettes.css.stub`**
 
@@ -676,7 +696,9 @@ export function initializeCrudPalette(): void {
 
 - [ ] **Step 5: Escrever `src/stubs/palette/crud-palette-selector.tsx.stub`**
 
-Ordem dos imports conferida contra o `import/order` do starter kit: externos primeiro, alfabéticos; depois os `@/`, alfabéticos.
+Ordem dos imports conferida contra o `import/order` dos starter kits: externos primeiro,
+alfabéticos; depois os `@/`, alfabéticos. Vale igual nos três kits — os três configuram
+`import/order` com `alphabetize: { order: 'asc', caseInsensitive: true }`.
 
 ```tsx
 import { Check } from 'lucide-react';
@@ -714,21 +736,96 @@ export function CrudPaletteSelector() {
 }
 ```
 
-- [ ] **Step 6: Rodar o teste de contrato**
+- [ ] **Step 6: Escrever `src/stubs/palette/CrudPaletteSelector.vue.stub`**
+
+**Atenção ao ler este stub:** o `{{ palette.name }}` do template é interpolação do Vue, com
+espaços. Ele não é placeholder do pacote — os do pacote são `{{semEspaco}}` — e este arquivo
+nunca passa por `str_replace`: o `InstallPaletteCommand` copia byte a byte. Não "consertar".
+
+```vue
+<script setup lang="ts">
+import { ref } from 'vue';
+import { getPalette, palettes, setPalette } from '@/lib/crud-palette';
+
+const selected = ref<string>(getPalette());
+
+const choose = (id: string) => {
+    setPalette(id);
+    selected.value = id;
+};
+</script>
+
+<template>
+    <div class="space-y-2">
+        <p class="text-sm font-medium">Paleta de cores</p>
+
+        <div class="flex flex-wrap gap-2">
+            <button
+                v-for="palette in palettes"
+                :key="palette.id"
+                type="button"
+                class="rounded-md border px-3 py-1 text-sm"
+                :class="selected === palette.id ? 'bg-primary text-primary-foreground' : ''"
+                @click="choose(palette.id)"
+            >
+                {{ palette.name }}
+            </button>
+        </div>
+    </div>
+</template>
+```
+
+- [ ] **Step 7: Escrever `src/stubs/palette/CrudPaletteSelector.svelte.stub`**
+
+O starter kit svelte é Svelte 5: estado reativo é `$state`, como em `lib/theme.svelte.ts` do
+próprio kit.
+
+```svelte
+<script lang="ts">
+    import { getPalette, palettes, setPalette } from '@/lib/crud-palette';
+
+    let selected = $state(getPalette());
+
+    function choose(id: string) {
+        setPalette(id);
+        selected = id;
+    }
+</script>
+
+<div class="space-y-2">
+    <p class="text-sm font-medium">Paleta de cores</p>
+
+    <div class="flex flex-wrap gap-2">
+        {#each palettes as palette (palette.id)}
+            <button
+                type="button"
+                class="rounded-md border px-3 py-1 text-sm"
+                class:bg-primary={selected === palette.id}
+                class:text-primary-foreground={selected === palette.id}
+                onclick={() => choose(palette.id)}
+            >
+                {palette.name}
+            </button>
+        {/each}
+    </div>
+</div>
+```
+
+- [ ] **Step 8: Rodar o teste de contrato**
 
 Run: `vendor/bin/phpunit --filter GeneratedLintContractTest`
 Expected: PASS, 11 testes.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add src/stubs/palette tests/Unit/GeneratedLintContractTest.php
-git commit -m "Add the palette stubs: four palettes, the id module and the selector"
+git commit -m "Add the palette stubs: four palettes, the id module and three selectors"
 ```
 
 ---
 
-### Task 3: `crud:install-palette` escreve os três arquivos
+### Task 3: `crud:install-palette` detecta a stack e escreve os arquivos
 
 **Files:**
 - Create: `src/Console/InstallPaletteCommand.php`, `tests/Unit/InstallPaletteCommandTest.php`
@@ -739,9 +836,11 @@ git commit -m "Add the palette stubs: four palettes, the id module and the selec
 - Produces:
   ```php
   class InstallPaletteCommand extends Command
-  protected $signature = 'crud:install-palette {--force : Sobrescreve arquivos existentes sem perguntar}';
+  protected $signature = 'crud:install-palette
+                          {--stack= : react, vue ou svelte (padrão: detectar pelo projeto)}
+                          {--force : Sobrescreve arquivos existentes sem perguntar}';
   ```
-  Escreve `resources/css/crud-palettes.css`, `resources/js/lib/crud-palette.ts` e `resources/js/components/crud-palette-selector.tsx`.
+  Escreve `resources/css/crud-palettes.css` e `resources/js/lib/crud-palette.ts` — iguais nas três stacks — mais o seletor da stack detectada. A detecção é pela página de aparência, porque `app.ts` serve vue e svelte e não distingue.
 
 - [ ] **Step 1: Escrever o teste que falha**
 
@@ -770,9 +869,13 @@ class InstallPaletteCommandTest extends TestCase
         $this->base = sys_get_temp_dir() . '/crud-palette-' . uniqid();
         (new Filesystem())->makeDirectory($this->base . '/resources/js/pages/settings', 0755, true);
         (new Filesystem())->makeDirectory($this->base . '/resources/css', 0755, true);
-        // Sem isto, a guarda de stack pergunta antes de instalar e todo teste desta classe
-        // cai nela. O caso "projeto sem react" apaga este arquivo.
-        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
+        // A deteccao de stack e pela pagina de aparencia: sem ela, todo teste desta classe
+        // cairia no erro de "nao identifiquei a stack". Os casos de vue e svelte apagam
+        // este arquivo e criam o equivalente deles.
+        (new Filesystem())->put(
+            $this->base . '/resources/js/pages/settings/appearance.tsx',
+            "import AppearanceTabs from '@/components/appearance-tabs';\n<AppearanceTabs />"
+        );
         $this->app->setBasePath($this->base);
     }
 
@@ -783,7 +886,7 @@ class InstallPaletteCommandTest extends TestCase
         parent::tearDown();
     }
 
-    public function test_escreve_os_tres_arquivos(): void
+    public function test_escreve_os_arquivos_compartilhados_e_o_seletor_react(): void
     {
         $this->artisan('crud:install-palette')->assertExitCode(0);
 
@@ -792,6 +895,30 @@ class InstallPaletteCommandTest extends TestCase
         $this->assertTrue($files->exists($this->base . '/resources/css/crud-palettes.css'));
         $this->assertTrue($files->exists($this->base . '/resources/js/lib/crud-palette.ts'));
         $this->assertTrue($files->exists($this->base . '/resources/js/components/crud-palette-selector.tsx'));
+    }
+
+    public function test_projeto_vue_recebe_o_seletor_vue(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $files->put($this->base . '/resources/js/pages/settings/Appearance.vue', '<template><AppearanceTabs /></template>');
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $this->assertTrue($files->exists($this->base . '/resources/js/components/CrudPaletteSelector.vue'));
+        $this->assertFalse($files->exists($this->base . '/resources/js/components/crud-palette-selector.tsx'));
+    }
+
+    public function test_projeto_svelte_recebe_o_seletor_svelte(): void
+    {
+        $files = new Filesystem();
+        $files->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+        $files->put($this->base . '/resources/js/pages/settings/Appearance.svelte', '<div><AppearanceTabs /></div>');
+
+        $this->artisan('crud:install-palette')->assertExitCode(0);
+
+        $this->assertTrue($files->exists($this->base . '/resources/js/components/CrudPaletteSelector.svelte'));
+        $this->assertFalse($files->exists($this->base . '/resources/js/components/crud-palette-selector.tsx'));
     }
 
     public function test_o_css_traz_as_quatro_paletas_em_claro_e_escuro(): void
@@ -844,20 +971,59 @@ use function Laravel\Prompts\info;
 class InstallPaletteCommand extends Command
 {
     protected $signature = 'crud:install-palette
+                            {--stack= : react, vue ou svelte (padrão: detectar pelo projeto)}
                             {--force : Sobrescreve arquivos existentes sem perguntar}';
 
     protected $description = 'Instala a camada de paleta de cores sobre o starter kit';
 
     /**
-     * Stub do pacote => caminho dentro de `resources/`.
+     * Stub => caminho em `resources/`, para o que é igual nas três stacks.
      *
      * @var array<string, string>
      */
-    private const FILES = [
+    private const SHARED = [
         'crud-palettes.css.stub' => 'css/crud-palettes.css',
         'crud-palette.ts.stub' => 'js/lib/crud-palette.ts',
-        'crud-palette-selector.tsx.stub' => 'js/components/crud-palette-selector.tsx',
     ];
+
+    /**
+     * O que cada stack tem de próprio.
+     *
+     * A detecção é pela página de aparência, não pelo arquivo de entrada: `app.ts` serve
+     * vue e svelte, então ele não distingue as duas. As âncoras não entram aqui porque são
+     * as mesmas nos três kits — `<AppearanceTabs />` e `initializeTheme();`.
+     *
+     * @var array<string, array{page: string, entry: string, stub: string, target: string, markers: array{0: string, 1: string}, import: string}>
+     */
+    private const STACKS = [
+        'react' => [
+            'page' => 'js/pages/settings/appearance.tsx',
+            'entry' => 'js/app.tsx',
+            'stub' => 'crud-palette-selector.tsx.stub',
+            'target' => 'js/components/crud-palette-selector.tsx',
+            'markers' => ['{/* crud:palette:start */}', '{/* crud:palette:end */}'],
+            'import' => "import { CrudPaletteSelector } from '@/components/crud-palette-selector';",
+        ],
+        'vue' => [
+            'page' => 'js/pages/settings/Appearance.vue',
+            'entry' => 'js/app.ts',
+            'stub' => 'CrudPaletteSelector.vue.stub',
+            'target' => 'js/components/CrudPaletteSelector.vue',
+            'markers' => ['<!-- crud:palette:start -->', '<!-- crud:palette:end -->'],
+            'import' => "import CrudPaletteSelector from '@/components/CrudPaletteSelector.vue';",
+        ],
+        'svelte' => [
+            'page' => 'js/pages/settings/Appearance.svelte',
+            'entry' => 'js/app.ts',
+            'stub' => 'CrudPaletteSelector.svelte.stub',
+            'target' => 'js/components/CrudPaletteSelector.svelte',
+            'markers' => ['<!-- crud:palette:start -->', '<!-- crud:palette:end -->'],
+            'import' => "import CrudPaletteSelector from '@/components/CrudPaletteSelector.svelte';",
+        ],
+    ];
+
+    /** A stack desta execução, resolvida no `handle()`. */
+    private string $stack = 'react';
 
     public function __construct(private readonly Filesystem $files)
     {
@@ -866,15 +1032,85 @@ class InstallPaletteCommand extends Command
 
     public function handle(): int
     {
-        info('🎨 Instalando a camada de paleta...');
+        $stack = $this->resolveStack();
 
-        foreach (self::FILES as $stub => $destino) {
+        if ($stack === null) {
+            return self::FAILURE;
+        }
+
+        $this->stack = $stack;
+
+        info("🎨 Instalando a camada de paleta ({$this->stack})...");
+
+        foreach (self::SHARED as $stub => $destino) {
             $this->writeStub($stub, $destino);
         }
+
+        $this->writeStub(self::STACKS[$this->stack]['stub'], self::STACKS[$this->stack]['target']);
 
         info('✅ Paleta instalada.');
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Qual stack instalar: `--stack` manda, senão vale o que o projeto revela.
+     *
+     * Pedir uma stack que não bate com o projeto é o caso que merece pergunta: o usuário
+     * pode estar fazendo isso de propósito, mas na maioria das vezes é engano, e o
+     * resultado seria um seletor que a build dele não compila.
+     *
+     * Devolve null quando não há como seguir — quem chama devolve FAILURE.
+     */
+    private function resolveStack(): ?string
+    {
+        $pedida = $this->option('stack');
+        $detectada = $this->detectStack();
+
+        if ($pedida !== null && !array_key_exists($pedida, self::STACKS)) {
+            $this->components->error(
+                "Stack `{$pedida}` inválida. Opções: " . implode(', ', array_keys(self::STACKS))
+            );
+
+            return null;
+        }
+
+        if ($pedida === null && $detectada === null) {
+            $this->components->error(
+                'Não identifiquei a stack deste projeto: não achei a página de aparência de '
+                    . 'nenhuma das stacks suportadas (react, vue, svelte). Se for uma delas, '
+                    . 'passe --stack=. O livewire ainda não tem paleta.'
+            );
+
+            return null;
+        }
+
+        if ($pedida !== null && $detectada !== null && $pedida !== $detectada) {
+            if (!confirm(
+                "Você pediu `{$pedida}`, mas este projeto parece `{$detectada}`. Instalar `{$pedida}` assim mesmo?",
+                default: false
+            )) {
+                info('Instalação cancelada.');
+
+                return null;
+            }
+        }
+
+        return $pedida ?? $detectada;
+    }
+
+    /**
+     * A stack que o projeto revela, ou null se não for nenhuma das três.
+     */
+    private function detectStack(): ?string
+    {
+        foreach (self::STACKS as $stack => $config) {
+            if ($this->files->exists(resource_path($config['page']))) {
+                return $stack;
+            }
+        }
+
+        return null;
     }
 
     private function writeStub(string $stub, string $destino): void
@@ -915,77 +1151,74 @@ use Crud\Console\InstallPaletteCommand;
             ]);
 ```
 
-- [ ] **Step 5: Escrever o teste da guarda de stack**
-
-O seletor é `.tsx`. Num starter kit vue, svelte ou livewire ele seria peso morto, e as três
-edições cairiam todas no caminho de "não consegui editar". O comando avisa e deixa a decisão
-com o usuário — o mesmo "avisa, não bloqueia" do pré-voo da tabela.
+- [ ] **Step 5: Escrever os testes da resolução de stack**
 
 ```php
-    public function test_projeto_sem_react_avisa_antes(): void
+    public function test_stack_invalida_falha(): void
     {
-        (new Filesystem())->delete($this->base . '/resources/js/app.tsx');
-
-        $this->artisan('crud:install-palette')
-            ->expectsConfirmation(
-                'Não encontrei `resources/js/app.tsx`: o seletor é React e esta stack ainda não tem o dela. Instalar assim mesmo?',
-                'no'
-            )
-            ->assertExitCode(0);
+        $this->artisan('crud:install-palette --stack=angular')->assertExitCode(1);
 
         $this->assertFalse((new Filesystem())->exists($this->base . '/resources/js/lib/crud-palette.ts'));
     }
 
-    public function test_projeto_react_nao_pergunta_da_stack(): void
+    public function test_projeto_que_nao_e_nenhuma_das_tres_falha_dizendo_o_que_fazer(): void
+    {
+        (new Filesystem())->delete($this->base . '/resources/js/pages/settings/appearance.tsx');
+
+        $this->artisan('crud:install-palette')
+            ->expectsOutputToContain('Não identifiquei a stack deste projeto')
+            ->assertExitCode(1);
+    }
+
+    public function test_stack_pedida_diferente_da_detectada_pergunta_antes(): void
+    {
+        // O projeto é react (a página do setUp), mas o usuário pediu vue.
+        $this->artisan('crud:install-palette --stack=vue')
+            ->expectsConfirmation(
+                'Você pediu `vue`, mas este projeto parece `react`. Instalar `vue` assim mesmo?',
+                'no'
+            )
+            ->assertExitCode(1);
+
+        $this->assertFalse((new Filesystem())->exists($this->base . '/resources/js/lib/crud-palette.ts'));
+    }
+
+    public function test_stack_pedida_diferente_e_confirmada_instala_a_pedida(): void
+    {
+        $this->artisan('crud:install-palette --stack=vue')
+            ->expectsConfirmation(
+                'Você pediu `vue`, mas este projeto parece `react`. Instalar `vue` assim mesmo?',
+                'yes'
+            )
+            ->assertExitCode(0);
+
+        $this->assertTrue((new Filesystem())->exists($this->base . '/resources/js/components/CrudPaletteSelector.vue'));
+    }
+
+    public function test_stack_detectada_nao_pergunta_nada(): void
     {
         $this->artisan('crud:install-palette')
-            ->doesntExpectOutputToContain('Instalar assim mesmo?')
+            ->doesntExpectOutputToContain('assim mesmo?')
             ->assertExitCode(0);
     }
 ```
 
-- [ ] **Step 6: Implementar a guarda**
+- [ ] **Step 6: Implementar a resolução de stack**
 
-No começo do `handle()`, antes do `info('🎨 Instalando a camada de paleta...')`:
-
-```php
-        if (!$this->isReactProject() && !confirm(
-            'Não encontrei `resources/js/app.tsx`: o seletor é React e esta stack ainda não tem o dela. Instalar assim mesmo?',
-            default: false
-        )) {
-            info('Instalação cancelada.');
-
-            return self::SUCCESS;
-        }
-```
-
-E o método:
-
-```php
-    /**
-     * O CSS e o `crud-palette.ts` servem qualquer stack; o seletor, não — ele é TSX.
-     */
-    private function isReactProject(): bool
-    {
-        return $this->files->exists(resource_path('js/app.tsx'))
-            || $this->files->exists(resource_path('js/app.jsx'));
-    }
-```
+Já está escrita no Step 3: os métodos `resolveStack()` e `detectStack()`, mais a opção
+`--stack` na `$signature`. Este passo é conferir que os cinco casos do teste batem com o
+que aquele código faz, em especial o texto exato das mensagens — `expectsConfirmation` e
+`expectsOutputToContain` casam string literal.
 
 - [ ] **Step 7: Rodar até passar**
 
 Run: `vendor/bin/phpunit --filter InstallPaletteCommandTest`
-Expected: PASS, 5 testes.
+Expected: PASS, 10 testes.
 
-Atenção ao escrever os outros testes desta tarefa e das seguintes: os que esperam
-instalação bem-sucedida precisam de `resources/js/app.tsx` no projeto temporário, senão caem
-na guarda. Acrescentar ao `setUp()`:
-
-```php
-        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
-```
-
-E o `test_projeto_sem_react_avisa_antes` apaga esse arquivo antes de rodar.
+Atenção ao escrever os testes desta tarefa e das seguintes: a stack é detectada pela página
+de aparência, então todo teste que espera instalação bem-sucedida precisa da página no
+projeto temporário — é o que o `setUp()` cria. Os casos de vue e svelte apagam a página
+react e criam a deles.
 
 - [ ] **Step 8: Commit**
 
@@ -1004,7 +1237,7 @@ git commit -m "Install the palette files into the user's project"
 
 **Interfaces:**
 - Consumes: `MarkedRegion` (Task 1), o comando da Task 3.
-- Produces: métodos privados `editAppCss()`, `editAppTsx()`, `editAppearancePage()`, cada um devolvendo `bool` (escreveu ou não).
+- Produces: métodos privados `editAppCss()`, `editAppTsx()`, `editAppearancePage()`, todos `void` — nada consome o resultado, e o relato do que ficou de fora sai pelo console.
 
 - [ ] **Step 1: Escrever os testes que falham**
 
@@ -1240,12 +1473,13 @@ E os três métodos:
      */
     private function editAppTsx(): void
     {
-        $caminho = resource_path('js/app.tsx');
+        $caminho = resource_path(self::STACKS[$this->stack]['entry']);
         $import = "import { initializeCrudPalette } from '@/lib/crud-palette';";
         $chamada = 'initializeCrudPalette();';
+        // O import do módulo de ids é igual nos três: é TypeScript puro dos dois lados.
 
         if (!$this->files->exists($caminho)) {
-            $this->naoEditou('resources/js/app.tsx', $import . "\n" . $chamada);
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
 
             return;
         }
@@ -1257,7 +1491,7 @@ E os três métodos:
         }
 
         if (!str_contains($conteudo, 'initializeTheme();')) {
-            $this->naoEditou('resources/js/app.tsx', $import . "\n" . $chamada);
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
 
             return;
         }
@@ -1265,7 +1499,7 @@ E os três métodos:
         $comImport = MarkedRegion::insertImport($conteudo, $import, '@/lib/crud-palette');
 
         if ($comImport === null) {
-            $this->naoEditou('resources/js/app.tsx', $import . "\n" . $chamada);
+            $this->naoEditou('resources/' . self::STACKS[$this->stack]['entry'], $import . "\n" . $chamada);
 
             return;
         }
@@ -1275,7 +1509,7 @@ E os três métodos:
             str_replace('initializeTheme();', "initializeTheme();\n" . $chamada, $comImport)
         );
 
-        $this->components->info('Atualizado: resources/js/app.tsx');
+        $this->components->info('Atualizado: resources/' . self::STACKS[$this->stack]['entry']);
     }
 
     /**
@@ -1283,13 +1517,16 @@ E os três métodos:
      */
     private function editAppearancePage(): void
     {
-        $caminho = resource_path('js/pages/settings/appearance.tsx');
-        $import = "import { CrudPaletteSelector } from '@/components/crud-palette-selector';";
+        $config = self::STACKS[$this->stack];
+        $caminho = resource_path($config['page']);
+        $import = $config['import'];
+        // O elemento é o mesmo nas três stacks; o que muda é a sintaxe do comentário que
+        // delimita a região — `{/* */}` em TSX, `<!-- -->` em Vue e Svelte.
         $bloco = '<CrudPaletteSelector />';
-        $region = new MarkedRegion('{/* crud:palette:start */}', '{/* crud:palette:end */}');
+        $region = new MarkedRegion($config['markers'][0], $config['markers'][1]);
 
         if (!$this->files->exists($caminho)) {
-            $this->naoEditou('resources/js/pages/settings/appearance.tsx', $import . "\n" . $bloco);
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
 
             return;
         }
@@ -1301,21 +1538,32 @@ E os três métodos:
             : $region->install($conteudo, '/<AppearanceTabs\s*\/>/', $bloco);
 
         if ($novo === null) {
-            $this->naoEditou('resources/js/pages/settings/appearance.tsx', $import . "\n" . $bloco);
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
 
             return;
         }
 
-        $comImport = MarkedRegion::insertImport($novo, $import, '@/components/crud-palette-selector');
+        // A chave de ordenação tem que ser o módulo deste import, não um literal: no vue e
+        // no svelte o seletor é `@/components/CrudPaletteSelector.vue`/`.svelte`, e
+        // posicioná-lo pela string do react o joga para o lugar errado do bloco.
+        $modulo = $this->extractModule($import);
+
+        if ($modulo === null) {
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
+
+            return;
+        }
+
+        $comImport = MarkedRegion::insertImport($novo, $import, $modulo);
 
         if ($comImport === null) {
-            $this->naoEditou('resources/js/pages/settings/appearance.tsx', $import . "\n" . $bloco);
+            $this->naoEditou('resources/' . $config['page'], $import . "\n" . $bloco);
 
             return;
         }
 
         $this->files->put($caminho, $comImport);
-        $this->components->info('Atualizado: resources/js/pages/settings/appearance.tsx');
+        $this->components->info('Atualizado: resources/' . $config['page']);
     }
 
     /**
@@ -1340,7 +1588,7 @@ Expected: PASS, 9 testes.
 ```bash
 vendor/bin/phpstan analyse --no-progress
 git add src/Console/InstallPaletteCommand.php src/config/crud.php tests/Unit/InstallPaletteCommandTest.php
-git commit -m "Wire the palette into app.css, app.tsx and the appearance page"
+git commit -m "Wire the palette into app.css, the entry file and the appearance page"
 ```
 
 ---
@@ -1568,8 +1816,9 @@ class CreatePaletteCommandTest extends TestCase
 
         $this->base = sys_get_temp_dir() . '/crud-create-palette-' . uniqid();
         (new Filesystem())->makeDirectory($this->base . '/resources/css', 0755, true);
-        (new Filesystem())->makeDirectory($this->base . '/resources/js', 0755, true);
-        (new Filesystem())->put($this->base . '/resources/js/app.tsx', 'placeholder');
+        // A stack e detectada pela pagina de aparencia; sem ela o install falha antes de escrever.
+        (new Filesystem())->makeDirectory($this->base . '/resources/js/pages/settings', 0755, true);
+        (new Filesystem())->put($this->base . '/resources/js/pages/settings/appearance.tsx', '<AppearanceTabs />');
         $this->app->setBasePath($this->base);
         $this->artisan('crud:install-palette')->run();
     }
@@ -2024,22 +2273,30 @@ Tirar `--theme` de todos os exemplos de `getic:install`.
 
 Na tabela de mapa, trocar `InstallThemeSystemCommand.php` e `CreateThemeCommand.php` por `InstallPaletteCommand.php` e `CreatePaletteCommand.php`, e acrescentar `MarkedRegion.php`. Em "Pendências conhecidas", apagar o item do `--theme` descartado e o da tag `crud-assets`. Em "API pública", trocar a tag `theme-system` por `crud-palette`.
 
-- [ ] **Step 4: Verificação manual no starter kit react**
+- [ ] **Step 4: Verificação manual nos três starter kits**
 
-Só o `projeto-exemplo-react`: esta release entrega a paleta para a stack `react` e mais
-nenhuma. Vue, svelte e livewire entram numa release seguinte, e o que falta lá é um stub de
-seletor por stack — o CSS e o `crud-palette.ts` valem para as quatro sem alteração.
+`projeto-exemplo-react`, `-vue` e `-svelte`. O `-livewire` fica de fora: a paleta dele é
+outra spec, porque lá as variáveis são do Flux (`--color-accent`), o seletor é Blade com
+Alpine e a persistência é do store do Flux.
+
+Em cada um dos três, dentro de `/home/sp1d3r/Documentos/projetos/pacotes/laravel/`:
 
 ```bash
-cd /home/sp1d3r/Documentos/projetos/pacotes/laravel/projeto-exemplo-react
-tar -czf /tmp/antes.tgz resources package.json
+tar -czf /tmp/antes-<stack>.tgz resources package.json
 php artisan crud:install-palette
-npm run types:check
 npm run lint:check
+npm run types:check     # tsc no react, vue-tsc no vue, svelte-check no svelte
 php artisan crud:install-palette --force   # segunda vez
 ```
 
-Esperado: `tsc` e `eslint` limpos, e a segunda execução não altera arquivo nenhum (`diff` contra o backup mostra só os três arquivos novos e as três linhas acrescentadas). No navegador: trocar de paleta e alternar claro/escuro, confirmando que as duas dimensões são independentes.
+Esperado nos três: `lint:check` e o checador de tipos limpos; a segunda execução não altera
+arquivo nenhum, e o `diff` contra o backup mostra só os três arquivos novos e as três linhas
+acrescentadas. No navegador: trocar de paleta e alternar claro/escuro, confirmando que as
+duas dimensões são independentes.
+
+Confirmar também a pergunta de stack cruzada: rodar `php artisan crud:install-palette
+--stack=react` dentro do `projeto-exemplo-vue` e verificar que ele pergunta antes, em vez de
+escrever um `.tsx` num projeto Vue.
 
 Restaurar os projetos ao fim, ou deixá-los instalados se o dono preferir.
 

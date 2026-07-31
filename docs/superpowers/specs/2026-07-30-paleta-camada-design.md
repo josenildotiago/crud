@@ -136,8 +136,9 @@ Contrato das quatro funções, para não sobrar decisão para a implementação:
 - `setPalette('default')` **remove** o atributo do `<html>` e grava `'default'`;
 - `initializeCrudPalette()` é idempotente e pode ser chamada mais de uma vez.
 
-**`resources/js/components/crud-palette-selector.tsx`** — único arquivo que sabe React.
-Consome as quatro funções acima e os componentes shadcn que o pacote já instala.
+**O seletor** — único arquivo que sabe de framework, e por isso o único que existe em três
+versões: `components/crud-palette-selector.tsx`, `.vue` e `.svelte`. O comando instala a
+versão da stack detectada, e só ela. As três consomem as mesmas quatro funções acima.
 
 ### No pacote
 
@@ -185,8 +186,13 @@ atributo no blade à mão; o README documenta como.
 | Arquivo | O que entra | Âncora | Idempotência | Se a âncora não existir |
 |---|---|---|---|---|
 | `resources/css/app.css` | `@import './crud-palettes.css';` | o último `@import` do topo | presença da string | não edita, imprime a linha |
-| `resources/js/app.tsx` | o import e a chamada `initializeCrudPalette();` | a chamada `initializeTheme();` | presença da chamada | não edita, imprime as duas linhas |
-| `pages/settings/appearance.tsx` | o bloco do seletor entre `{/* crud:palette:start */}` e `{/* crud:palette:end */}` | a linha que renderiza `<AppearanceTabs />` | marcadores presentes → `replace` | não edita, imprime o bloco |
+| o arquivo de entrada da stack | o import e a chamada `initializeCrudPalette();` | a chamada `initializeTheme();` | presença da chamada | não edita, imprime as duas linhas |
+| a página de aparência da stack | o bloco do seletor entre os marcadores | a linha que renderiza `<AppearanceTabs />` | marcadores presentes → `replace` | não edita, imprime o bloco |
+
+O arquivo de entrada e a página variam por stack (ver a tabela em **Escopo**); as duas
+âncoras, não — são a mesma string nos três kits. Os marcadores acompanham a sintaxe de
+comentário do arquivo: `{/* crud:palette:start */}` em TSX, `<!-- crud:palette:start -->` em
+Vue e Svelte.
 
 Rodar o comando duas vezes tem que produzir arquivos idênticos.
 
@@ -227,8 +233,14 @@ Renomeações, todas breaking e cobertas pelo major:
 |---|---|
 | `crud:install-theme-system` | `crud:install-palette` |
 | `crud:create-theme` | `crud:create-palette` |
-| tag de publish `theme-system` | `crud-palette` |
+| tag de publish `theme-system` | (nenhuma — ver nota abaixo) |
 | `config('themes.*')` | `config('crud.palette.*')` |
+
+A tag de publish planejada aqui, `crud-palette`, saiu antes do release: a revisão final
+notou que `InstallPaletteCommand` lê os stubs sempre de `__DIR__.'/../stubs/palette/'` e
+nunca consulta `crud.stub_path` nem o destino que a tag publicava
+(`resources/js/crud-palette/`). Publicar não mudava nada — API pública morta. Sem tag
+nenhuma no lugar de `theme-system`.
 
 ## Testes
 
@@ -244,21 +256,60 @@ que dá para fixar em PHP:
    assevera que não escreveu e que imprimiu o trecho.
 3. **Detecção do sistema antigo** — assevera a separação nos dois grupos e que nenhum arquivo
    do grupo 2 é tocado.
-4. **Contrato de lint** — `crud-palette-selector.tsx` entra no `GeneratedLintContractTest`
-   existente: ordem dos grupos de import, ordem alfabética, `import type`, chaves no `if`.
+4. **Contrato de lint** — os três seletores entram no `GeneratedLintContractTest` existente:
+   ordem dos grupos de import, ordem alfabética, `import type`, chaves no `if`. Os três kits
+   impõem as mesmas regras, então o contrato é um só.
+5. **Detecção de stack** — assevera que cada arquivo de entrada leva ao seletor certo, e que
+   um projeto que não casa com nenhuma das três erra e sai (`FAILURE`, sem escrever nada),
+   com mensagem dizendo para passar `--stack=` se for uma delas. A implementação não
+   pergunta neste caso — perguntar faria sentido para uma stack **ambígua**, não para uma
+   que o projeto simplesmente não tem; a revisão final considerou isso melhor do que o
+   texto original desta seção previa.
 
 Verificação manual, obrigatória antes da tag e não automatizável aqui:
 
-- instalar nos quatro starter kits e conferir `tsc --noEmit` e `npm run lint:check` limpos;
+- instalar nos três starter kits e conferir limpos o `lint:check` e o checador de tipos de
+  cada um (`tsc --noEmit` no react, `vue-tsc --noEmit` no vue, `svelte-check` no svelte);
 - trocar de paleta no navegador e alternar claro/escuro, confirmando que as duas dimensões
   são independentes;
 - rodar o comando duas vezes e conferir que os arquivos não mudam.
 
 ## Escopo
 
-Só a stack `react`. Vue, svelte e livewire ficam de fora: os builders delas ainda não geram
-CRUD. O `crud-palettes.css` e o `crud-palette.ts` são agnósticos de framework, então quando
-essas stacks existirem falta só o seletor de cada uma.
+**React, vue e svelte.** Livewire fica para uma spec própria.
+
+Os três primeiros compartilham o mecanismo inteiro, o que foi medido nos starter kits em
+30/07/2026: definem o mesmo conjunto de variáveis do shadcn, e as duas âncoras são a **mesma
+string** nos três — `<AppearanceTabs />` na página de aparência e `initializeTheme();` no
+arquivo de entrada, na linha 31 dos três. Os três também impõem as mesmas regras de lint
+(`import/order` alfabético, `consistent-type-imports`, `curly`).
+
+O que muda entre eles é só endereço e linguagem do seletor:
+
+| Stack | Entrada | Página de aparência | Seletor |
+|---|---|---|---|
+| react | `resources/js/app.tsx` | `pages/settings/appearance.tsx` | `.tsx` |
+| vue | `resources/js/app.ts` | `pages/settings/Appearance.vue` | `.vue` |
+| svelte | `resources/js/app.ts` | `pages/settings/Appearance.svelte` | `.svelte` |
+
+O `crud-palettes.css` e o `crud-palette.ts` servem os três sem uma linha diferente — o
+módulo de ids é TypeScript puro, e vue e svelte importam TS igual.
+
+### Por que livewire fica fora
+
+Não é "mais um seletor": as três dimensões mudam ao mesmo tempo.
+
+- **Variáveis.** O kit não define `--primary` nenhum. Ele tematiza pelo Flux, com
+  `--color-accent`, `--color-accent-content` e `--color-accent-foreground`, declaradas em
+  `@theme` e sobrescritas num `@layer theme` sob `.dark`. As nove variáveis desta spec não
+  existem lá.
+- **Seletor.** A página de aparência é um componente Livewire 4 de arquivo único
+  (`resources/views/pages/settings/⚡appearance.blade.php`) usando `flux:radio.group` com
+  `x-model="$flux.appearance"`. É Blade com Alpine, não componente com estado local.
+- **Persistência.** A preferência mora no store do Flux, não no `localStorage` deste pacote.
+
+Enfiar isso aqui significaria dois mecanismos convivendo na mesma release e condicionais de
+stack no meio do desenho dos outros três.
 
 ## Fora de escopo
 

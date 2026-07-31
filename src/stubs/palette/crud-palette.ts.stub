@@ -1,0 +1,51 @@
+/**
+ * Paleta de cores — camada do pacote josenildotiago/crud.
+ *
+ * As cores moram no CSS (`resources/css/crud-palettes.css`); este arquivo só conhece ids.
+ * Claro/escuro não passa por aqui: continua sendo da classe `.dark` do seu starter kit.
+ */
+
+const STORAGE_KEY = 'crud-palette';
+
+export const palettes: { id: string; name: string }[] = [
+    { id: 'default', name: 'Padrão' },
+    { id: 'azul', name: 'Azul' },
+    { id: 'verde', name: 'Verde' },
+    { id: 'roxo', name: 'Roxo' },
+    { id: 'vermelho', name: 'Vermelho' },
+];
+
+export function getPalette(): string {
+    if (typeof window === 'undefined') {
+        return 'default';
+    }
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+
+    // Id órfão (paleta apagada do CSS) cai no padrão: a tela nunca fica sem cor definida.
+    if (!stored || !palettes.some((palette) => palette.id === stored)) {
+        return 'default';
+    }
+
+    return stored;
+}
+
+export function setPalette(id: string): void {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    localStorage.setItem(STORAGE_KEY, id);
+
+    if (id === 'default') {
+        document.documentElement.removeAttribute('data-crud-palette');
+
+        return;
+    }
+
+    document.documentElement.setAttribute('data-crud-palette', id);
+}
+
+export function initializeCrudPalette(): void {
+    setPalette(getPalette());
+}
