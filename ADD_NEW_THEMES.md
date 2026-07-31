@@ -1,3 +1,6 @@
+> **Documento histórico.** Descreve o sistema de temas removido na 5.0.0. Para o que existe
+> hoje — a camada de paleta de cores — ver a seção "🎨 Paleta de Cores" do `README.md`.
+
 ## 📋 Visão Geral
 
 Este relatório documenta a implementação completa de um sistema de temas dinâmicos para aplicações Laravel usando ReactJS com Inertia.js, TailwindCSS v4 e shadcn/ui. O sistema permite alternar entre diferentes paletas de cores em tempo real, mantendo suporte ao modo claro/escuro.

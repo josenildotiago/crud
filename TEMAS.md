@@ -1,5 +1,8 @@
 # Sistema de Temas Dinâmicos
 
+> **Documento histórico.** Descreve o sistema de temas removido na 5.0.0. Para o que existe
+> hoje — a camada de paleta de cores — ver a seção "🎨 Paleta de Cores" do `README.md`.
+
 Este sistema permite alternar entre diferentes temas de cores em tempo real, além do modo claro/escuro tradicional.
 
 ## Como Funciona

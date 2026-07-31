@@ -190,14 +190,13 @@ Desligue a inserção automática do seletor na página de aparência com:
 ],
 ```
 
-O pacote guarda a escolha só em `localStorage` — o HTML inicial do servidor não sabe qual
-paleta o navegador tem, e por um instante a página pinta com a paleta padrão até o
-JavaScript rodar. Para zero flash, sincronize a escolha também num cookie chamado
-`crud-palette` (à sua conta — o pacote não faz isso) e leia-o no HTML inicial:
-
-```blade
-<html data-crud-palette="{{ request()->cookie('crud-palette') }}">
-```
+O pacote guarda a escolha só em `localStorage`. A paleta é aplicada no arquivo de entrada
+(`initializeCrudPalette()`, chamado no mesmo ponto onde o starter kit já chama
+`initializeTheme()`), então pode haver um piscar breve da paleta padrão no primeiro
+carregamento — só o acento muda de cor por um instante, o fundo e o texto não invertem.
+Se isso incomodar, dá para eliminar gravando a preferência também num cookie e renderizando
+o atributo `data-crud-palette` direto no HTML inicial (`app.blade.php`), mas isso é por sua
+conta: o pacote não grava cookie nenhum hoje.
 
 ### Criar uma paleta nova
 

@@ -35,7 +35,7 @@ class InstallCommand extends GeneratorCommand implements PromptsForMissingInput
     /**
      * The console command description.
      */
-    protected $description = 'Cria um CRUD moderno com React.js e sistema de temas';
+    protected $description = 'Cria um CRUD moderno com React.js, Vue ou Blade a partir de uma tabela existente';
 
     /**
      * Stacks frontend aceitas pelo gerador.
