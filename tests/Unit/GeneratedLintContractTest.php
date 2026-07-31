@@ -343,4 +343,18 @@ class GeneratedLintContractTest extends TestCase
             $this->assertSame($ordenado, $grupo, "{$stub}: o grupo {$nome} não está em ordem alfabética.");
         }
     }
+
+    public function test_nenhum_stub_react_carrega_placeholder_de_tema(): void
+    {
+        $stubs = glob(__DIR__ . '/../../src/stubs/react/*.stub');
+
+        $this->assertNotEmpty($stubs, 'Nenhum arquivo .stub encontrado em src/stubs/react/');
+
+        foreach ($stubs as $stub) {
+            $conteudo = file_get_contents($stub);
+
+            $this->assertStringNotContainsString('{{themeImports}}', $conteudo, basename($stub));
+            $this->assertStringNotContainsString('{{themeComponents}}', $conteudo, basename($stub));
+        }
+    }
 }

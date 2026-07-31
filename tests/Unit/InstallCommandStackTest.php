@@ -231,4 +231,11 @@ class InstallCommandStackTest extends TestCase
 
         $this->assertSame('ziggy', $command->resolvedRouteHelper());
     }
+
+    public function test_a_flag_de_tema_nao_existe_mais(): void
+    {
+        $command = new InstallCommand(new Filesystem());
+
+        $this->assertFalse($command->getDefinition()->hasOption('theme'));
+    }
 }

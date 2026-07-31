@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/app-layout';{{routeImports}}
 import type { {{modelName}} } from '@/types';
-{{themeImports}}
 
 interface EditProps {
     {{modelCamel}}: {{modelName}};
